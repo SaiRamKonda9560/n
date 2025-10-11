@@ -1349,7 +1349,6 @@ const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: a
     const players = state.gameData.players;
     const matchedPlayer = players.find((player: any) => player.UserId === presence.userId);
     if (matchedPlayer) {
-      matchedPlayer.isOffline = false;
       return { state, accept: true };
     }
     return { state, accept: false }; // reject new players after game started
@@ -1367,9 +1366,18 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
 
   if (state.gameData.isGameStarted) {
     // Broadcast updated player info to joining players
+    let addP: any[]=[];
     presences.forEach(p => {
-    dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`, Object.values(p)));
+      const matchedPlayer = state.gameData.players.find((player: any) => player.UserId === p.userId);
+      if(matchedPlayer)
+      if(matchedPlayer.isOffline){
+        matchedPlayer.isOffline = false;
+        addP.push(p);
+      }
+
     });
+    dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`, Object.values(addP)));
+
   } 
   else {
     // Start game when all players are connected

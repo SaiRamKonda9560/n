@@ -1369,15 +1369,14 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     let addP: any[]=[];
     presences.forEach(p => {
       const matchedPlayer = state.gameData.players.find((player: any) => player.UserId === p.userId);
-      if(matchedPlayer)
+      if(matchedPlayer){
       if(matchedPlayer.isOffline){
         matchedPlayer.isOffline = false;
         addP.push(p);
       }
-
+      }
     });
     dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`, Object.values(addP)));
-
   } 
   else {
     // Start game when all players are connected

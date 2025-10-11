@@ -1387,181 +1387,199 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
 
   return gameData;
 }
-const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
-    const state = {
-        presences: {} as Record<string, any>,
+
+//#region  
+interface MatchState {
+    presences: Record<string, nkruntime.Presence>;
+    delay: number;
+    tickCount: number;
+    commends: [string, any][];
+    gameData: LudoGameData;
+}
+
+interface MatchParams {
+    boardIndex: number;
+    numberOfPlayers: number;
+    gameMode: string;
+}
+
+// Initialize the match
+const matchInit = (ctx: nkruntime.Context, logger: nkruntime.Logger, nk: nkruntime.Nakama, params: MatchParams): nkruntime.Match => {
+    const state: MatchState = {
+        presences: {},
         delay: 0,
         tickCount: 0,
-        commends: [] as [string, any][],
-        gameData: genLudoGameData(params.boardIndex, params.numberOfPlayers, params.gameMode,30)
+        commends: [],
+        gameData: genLudoGameData(params.boardIndex, params.numberOfPlayers, params.gameMode, 30),
     };
     return { state, tickRate: 1, label: JSON.stringify(params) };
 };
-function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any) {
-    const [commendName, obj] = commend;
-    switch (commendName) {
-        case "addDelay":
-            state.delay = (state.delay as number) + (obj as number);
+
+// Apply a command to the state
+function applyCommand(command: [string, any], state: MatchState, dispatcher: nkruntime.MatchDispatcher, nk: nkruntime.Nakama): void {
+    const [commandName, obj] = command;
+    switch (commandName) {
+        case 'addDelay':
+            if (typeof obj === 'number') {
+                state.delay += obj;
+            } else {
+                //logger.error(`Invalid addDelay value: ${obj}`);
+            }
             break;
-        case "setDelay":
-            state.delay = obj as number;
+        case 'setDelay':
+            if (typeof obj === 'number') {
+                state.delay = obj;
+            } else {
+                //logger.error(`Invalid setDelay value: ${obj}`);
+            }
+            break;
+        default:
+            const message = `${commandName}:${JSON.stringify(obj)}`;
+            dispatcher.broadcastMessage(0, nk.stringToBinary(message), Object.values(state.presences));
             break;
     }
-if (commendName !== "addDelay" && commendName !== "setDelay") {
-    dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
-    );
 }
-}
-const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
-  logger.info("matchJoinAttempt called for user:", presence.userId);
 
-  if (state.gameData.isGameStarted) {
-    const players = state.gameData.players;
-    const matchedPlayer = players.find((player: any) => player.UserId === presence.userId);
-    if (matchedPlayer) {
-      return { state, accept: true };
-    }
-    return { state, accept: false }; // reject new players after game started
-  } else {
-    return { state, accept: true }; // allow join before game starts
-  }
-};
-const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
-  // Store new presences
-  presences.forEach(p => {
-    state.presences[p.sessionId] = p;
-  });
-
-  logger.info("matchJoin called, players now:", Object.keys(state.presences));
-
-  if (state.gameData.isGameStarted) {
-    // Broadcast updated player info to joining players
-    let addP: any[]=[];
-    presences.forEach(p => {
-      const matchedPlayer = state.gameData.players.find((player: any) => player.UserId === p.userId);
-      if(matchedPlayer){
-      if(matchedPlayer.isOffline){
-        matchedPlayer.isOffline = false;
-        addP.push(p);
-      }
-      }
-    });
-    dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`, Object.values(addP)));
-  } 
-  else {
-    // Start game when all players are connected
-    if (Object.keys(state.presences).length === state.gameData.players.length ) {
-      const GameData = Object.assign(new LudoGameData(), state.gameData);
-      logger.info("🔔✅ All players connected 🎉");
-      Object.values(state.presences).forEach((p: any, idx: number) => {
-        if (state.gameData.players[idx]) 
-        {
-          state.gameData.players[idx].UserId = p.userId;
-        }
-      });
-      GameData.start(logger, nk);
-      state.gameData = GameData;
-    }
-  }
-
-  return { state };
-};
-const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
-  presences.forEach(p => {
-    // Find the player in gameData and mark as offline
-    const player = state.gameData.players.find((pl: any) => pl.UserId === p.userId || pl.id === p.userId);  
-    if (player) {
-      player.isOffline = true;
-    }
-    // Remove from active presences
-    delete state.presences[p.sessionId];
-  });
-  logger.info("matchLeave called, players now:", Object.keys(state.presences));
-  // Broadcast updated player status to all remaining players   
-  dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainPlayersData:${JSON.stringify(state.gameData.players)}`, Object.values(state.presences)));
-  return { state };
-};
-const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
-    const presences: nkruntime.Presence[] = [];
-    for (const key in state.presences) {
-        if (state.presences.hasOwnProperty(key)) {
-            presences.push(state.presences[key]);
-        }
-    }
+// Handle join attempts
+const matchJoinAttempt = (ctx: nkruntime.Context,logger: nkruntime.Logger,nk: nkruntime.Nakama,dispatcher: nkruntime.MatchDispatcher,tick: number,state: MatchState,presence: nkruntime.Presence,metadata: any): nkruntime.Match => {
+    logger.info(`matchJoinAttempt called for user: ${presence.userId}`);
 
     if (state.gameData.isGameStarted) {
+        const matchedPlayer = state.gameData.players.find((player) => player.UserId === presence.userId);
+        return { state, accept: !!matchedPlayer };
+    }
+    return { state, accept: true };
+};
 
-          let gameData = Object.assign(new LudoGameData(), state.gameData);
-          if (Object.keys(state.presences).length === 0 || state.tickCount>1800 || gameData.isGameComplected) {
-            ctx.matchTerminate();
-          }
-          gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
-            if ((state.delay as number) > 0) {
-                state.delay = (state.delay as number) - 1;
+// Handle players joining the match
+const matchJoin = (
+    ctx: nkruntime.Context,
+    logger: nkruntime.Logger,
+    nk: nkruntime.Nakama,
+    dispatcher: nkruntime.MatchDispatcher,
+    tick: number,
+    state: MatchState,
+    presences: nkruntime.Presence[]
+): nkruntime.Match => {
+    presences.forEach((presence) => {
+        state.presences[presence.sessionId] = presence;
+    });
+
+    logger.info(`matchJoin called, players now: ${Object.keys(state.presences)}`);
+
+    if (state.gameData.isGameStarted) {
+        const reconnectedPlayers: nkruntime.Presence[] = [];
+        presences.forEach((presence) => {
+            const matchedPlayer = state.gameData.players.find((player) => player.UserId === presence.userId);
+            if (matchedPlayer && matchedPlayer.isOffline) {
+                matchedPlayer.isOffline = false;
+                reconnectedPlayers.push(presence);
             }
-            else{
-                state.commends.push(...gameData.GameLogic(logger,new Signal("tick", 0, "0")));
-
+        });
+        if (reconnectedPlayers.length > 0) {
+            const message = `startGame:${JSON.stringify(state.gameData)}`;
+            dispatcher.broadcastMessage(0, nk.stringToBinary(message), reconnectedPlayers);
+        }
+    } else if (Object.keys(state.presences).length === state.gameData.players.length) {
+        logger.info('🔔✅ All players connected 🎉');
+        const gameData = Object.assign(new LudoGameData(), state.gameData);
+        Object.values(state.presences).forEach((presence: nkruntime.Presence, idx: number) => {
+            if (state.gameData.players[idx]) {
+                state.gameData.players[idx].UserId = presence.userId;
             }
-            while (state.commends.length > 0) {
-                if ((state.delay as number) > 0) break;
-
-                const commend = state.commends.shift()!;
-                applyCommend(commend, state,dispatcher,nk);
-            }
-        state.tickCount++;
-        dispatcher.broadcastMessage(0,nk.stringToBinary("tc:"+state.tickCount+","+gameData.tickCount),Object.values(state.presences));
-
+        });
+        gameData.start(logger, nk);
         state.gameData = gameData;
     }
+
     return { state };
 };
-const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
-{
-    try {
-        // Broadcast the raw message
-        dispatcher.broadcastMessage(1, data, null, null);
-        const gameData = Object.assign(new LudoGameData(), state.gameData);
-                  gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
 
-
-        // Parse and create Signal instance
-        let signalData: any;
-        try {
-            signalData = JSON.parse(data);
-        } catch (e) {
-            throw new Error(`Invalid JSON data: ${e instanceof Error ? e.message : JSON.stringify(e)}`);
-        }
-        const signal = new Signal(
-            signalData.type ?? "tick",
-            signalData.who ?? 0,
-            signalData.value ?? ""
+// Handle players leaving the match
+const matchLeave = (ctx: nkruntime.Context,logger: nkruntime.Logger,nk: nkruntime.Nakama,dispatcher: nkruntime.MatchDispatcher,tick: number,state: MatchState,presences: nkruntime.Presence[]): nkruntime.Match => {
+    presences.forEach((presence) => {
+        const player = state.gameData.players.find(
+            (pl) => pl.UserId === presence.userId || pl.UserId === presence.userId
         );
+        if (player) {
+            player.isOffline = true;
+        }
+        delete state.presences[presence.sessionId];
+    });
 
-        if(gameData.isGameStarted){
-            const commends = state.commends as [string, any][];
-            if (signal && (signal.type === "dice" || signal.type === "pawn" || signal.type.startsWith("wordo"))) {
-    
-                if (signal.type.startsWith("wordo")) {
-                    logger.info("😂 "+signal.type+"-"+signal.value);
-                    const newCommends = gameData.GameLogic(logger,signal);
-                    while (newCommends.length > 0) {
-                        logger.info("😂 new commend "+newCommends[0][0]);
-                        applyCommend(newCommends.shift()!, state,dispatcher,nk);
-                    }
-                } else {
-                    commends.push(...gameData.GameLogic(logger,signal));
+    logger.info(`matchLeave called, players now: ${Object.keys(state.presences)}`);
+    const message = `UpdateMainPlayersData:${JSON.stringify(state.gameData.players)}`;
+    dispatcher.broadcastMessage(0, nk.stringToBinary(message), Object.values(state.presences));
+
+    return { state };
+};
+
+// Main match loop
+const matchLoop = (ctx: nkruntime.Context,logger: nkruntime.Logger,nk: nkruntime.Nakama,dispatcher: nkruntime.MatchDispatcher,tick: number,state: MatchState,messages: nkruntime.MatchMessage[]): nkruntime.Match => {
+    if (!state.gameData.isGameStarted) {
+        return { state };
+    }
+
+    if (Object.keys(state.presences).length === 0 || state.tickCount > 1800 || state.gameData.isGameComplected) {
+        return { state, cancel: true }; // Signal termination
+    }
+
+    const gameData = Object.assign(new LudoGameData(), state.gameData);
+    gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+
+    if (state.delay > 0) {
+        state.delay--;
+    } else {
+        state.commends.push(...gameData.GameLogic(logger, new Signal('tick', 0, '0')));
+    }
+
+    while (state.commends.length > 0 && state.delay === 0) {
+        const command = state.commends.shift()!;
+        applyCommand(command, state, dispatcher, nk);
+    }
+
+    state.tickCount++;
+    const message = JSON.stringify({ type: 'tc', tickCount: state.tickCount, gameTickCount: gameData.tickCount });
+    dispatcher.broadcastMessage(0, nk.stringToBinary(message), Object.values(state.presences));
+
+    state.gameData = gameData;
+    return { state };
+};
+
+// Handle match signals
+const matchSignal = (ctx: nkruntime.Context,logger: nkruntime.Logger,nk: nkruntime.Nakama,dispatcher: nkruntime.MatchDispatcher,tick: number,state: MatchState,data: string): nkruntime.Match => {
+    try {
+        const signalData = JSON.parse(data) as { type?: string; who?: number; value?: string };
+        const signal = new Signal(signalData.type ?? 'tick', signalData.who ?? 0, signalData.value ?? '');
+
+        // Broadcast raw message after parsing to ensure validity
+        dispatcher.broadcastMessage(1, nk.stringToBinary(data), null, null);
+
+        if (!state.gameData.isGameStarted) {
+            return { state };
+        }
+
+        const gameData = Object.assign(new LudoGameData(), state.gameData);
+        gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+
+        if (signal.type === 'dice' || signal.type === 'pawn' || signal.type.startsWith('wordo')) {
+            if (signal.type.startsWith('wordo')) {
+                logger.info(`😂 ${signal.type}-${signal.value}`);
+                const newCommands = gameData.GameLogic(logger, signal);
+                while (newCommands.length > 0) {
+                    logger.info(`😂 new command ${newCommands[0][0]}`);
+                    applyCommand(newCommands.shift()!, state, dispatcher, nk);
                 }
-                while (commends.length > 0) {
-                    if ((state["delay"] as number) > 0) break;
-                    applyCommend(commends.shift()!, state,dispatcher,nk);
-                }
+            } else {
+                state.commends.push(...gameData.GameLogic(logger, signal));
+            }
+
+            while (state.commends.length > 0 && state.delay === 0) {
+                applyCommand(state.commends.shift()!, state, dispatcher, nk);
             }
         }
+
         state.gameData = gameData;
-
-
-
         return { state };
     } catch (e) {
         const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
@@ -1569,28 +1587,47 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         throw new Error(`matchSignal failed: ${errMsg}`);
     }
 };
-const matchTerminate = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
-  logger.info("matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
-  return { state };
-};
-const matchmakerMatched = function (ctx: any, logger: any, nk: any, matches: any[]): string {
-  matches.forEach((match) => {
-    logger.info("Matched user '%s' with username '%s'", match.presence.userId, match.presence.username);
-  });
 
-    // Access string_properties instead of properties
-    let boardIndex = matches[0].properties.boardIndex;
-    let numberOfPlayers = matches[0].properties.numberOfPlayers;
-    let gameMode = matches[0].properties.gameMode;
-    logger.info("⭐ "+(boardIndex+"❌"+numberOfPlayers+"❌"+gameMode));
-
-  try {
-    // Create match with label
-    const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode});
-    logger.info(`Match created successfully with ID: ${matchId}`);
-    return matchId;
-  } catch (err: any) {
-    logger.error("Error creating match:", err.message);
-    throw err;
-  }
+// Handle match termination
+const matchTerminate = (
+    ctx: nkruntime.Context,
+    logger: nkruntime.Logger,
+    nk: nkruntime.Nakama,
+    dispatcher: nkruntime.MatchDispatcher,
+    tick: number,
+    state: MatchState,
+    graceSeconds: number
+): nkruntime.Match => {
+    logger.info(`matchTerminate called, tick: ${tick}, graceSeconds: ${graceSeconds}`);
+    return { state };
 };
+
+// Handle matchmaking
+const matchmakerMatched = (
+    ctx: nkruntime.Context,
+    logger: nkruntime.Logger,
+    nk: nkruntime.Nakama,
+    matches: nkruntime.MatchmakerMatch[]
+): string => {
+    matches.forEach((match) => {
+        logger.info(`Matched user '${match.presence.userId}' with username '${match.presence.username}'`);
+    });
+
+    if (!matches[0]?.properties) {
+        logger.error('No properties found in matchmaker matches');
+        throw new Error('Invalid match properties');
+    }
+
+    const { boardIndex, numberOfPlayers, gameMode } = matches[0].properties as MatchParams;
+    logger.info(`⭐ ${boardIndex}❌${numberOfPlayers}❌${gameMode}`);
+
+    try {
+        const matchId = nk.matchCreate('lobby', { boardIndex, numberOfPlayers, gameMode });
+        logger.info(`Match created successfully with ID: ${matchId}`);
+        return matchId;
+    } catch (err) {
+        logger.error(`Error creating match: ${err instanceof Error ? err.message : JSON.stringify(err)}`);
+        throw err;
+    }
+};
+//#endregion

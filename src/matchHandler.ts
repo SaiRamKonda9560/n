@@ -1347,9 +1347,7 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
         case "genrateWords":
     }
 if (commendName !== "addDelay" && commendName !== "setDelay") {
-    dispatcher.broadcastMessage(
-        0,
-        nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
+    dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
     );
 }
 }
@@ -1380,7 +1378,7 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
   if (state.gameData.isGameStarted) {
     // Broadcast updated player info to joining players
     presences.forEach(p => {
-      dispatcher.broadcastMessage('startGame:' + JSON.stringify(state.gameData), p);
+    dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`, Object.values(p)));
     });
   } 
   else {
@@ -1417,11 +1415,11 @@ const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: 
 
   logger.info("matchLeave called, players now:", Object.keys(state.presences));
   // Broadcast updated player status to all remaining players
-  dispatcher.broadcastMessage('UpdateMainLudoGameData:' + JSON.stringify(state.gameData), state.presences);
+    dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainLudoGameData:${JSON.stringify(state.gameData)}`, Object.values(state.presences)));
 
 
 
-  return { state };
+  return { state }; 
 };
 
 const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
@@ -1454,6 +1452,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
             }
         state.tickCount++;
         dispatcher.broadcastMessage(0,nk.stringToBinary("tc:"+state.tickCount+","+gameData.tickCount),Object.values(state.presences));
+
         state.gameData = gameData;
     }
     return { state };

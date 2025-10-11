@@ -32,7 +32,7 @@ class LudoGameData {
   public tickCountForPlayer: number = 0;
   public useTimeOut: boolean = false;
   public WordGameState: WordGameState | null = null;
-  public futureData: FutureData | null = null;
+  public futureData: FutureData = new FutureData();
   public isWaitingForStealData: boolean = false;
   public stealData: stealData | null = null;
   public maxTurnOverCount:number=0;
@@ -402,249 +402,319 @@ class LudoGameData {
 
     this.GenerateFutureMoves();
   }
-  public GameLogic(logger: any,signal: Signal | null): [string, any][] {
+
+
+
+
+//#region game logic
+public GameLogic(logger: any, signal: Signal | null): [string, any][] {
     const state: [string, any][] = [];
-    if (signal && this.futureData) {
-      if (this.WhosTurn < 0 || this.WhosTurn >= this.players.length) {
-        this.WhosTurn = 0;
-      }
-      let isDiceSignal = signal.type === 'dice';
-      let isPawnSignal = signal.type === 'pawn';
-      let diceSignal = isDiceSignal ? signal : null;
-      let pawnSignal = isPawnSignal ? signal : null;
-      const currentPlayer = this.players[this.WhosTurn];
-      if (signal.type.startsWith('wordo')) {
-        const json = signal.value;
-        const who = signal.who;
-        switch (signal.type) {
-          case 'wordoPlaceLetters':
-              const playerPlacement = JsonConvert.deserializeObject<number[]>(json);
-              const missing = this.WordGameState?.getMissingLettersListOfPlayer(who);
-              logger.info((missing?.size ?? 0) + "💡" + playerPlacement.length);
-              let isAnyPlacement = false;
-              // Compare lengths correctly for Map
-              if (playerPlacement.length === (missing?.size ?? 0)) {
-                logger.info("playerPlacement.length 💡");
-                let i = 0;
 
-                // Iterate through Map entries properly
-                for (const [wordIndex, value] of missing ?? new Map<number, string>()) {
-                  const collectionIndex = playerPlacement[i];
-                  logger.info("TryPlaceLetter 💡");
-
-                  const placed = this.WordGameState?.TryPlaceLetter(logger, who, collectionIndex, wordIndex);
-                  if (placed) {
-                    isAnyPlacement = true;
-                  }
-                  i++;
-                }
-              }
-
-
-            if(isAnyPlacement){
-            state.push(['updateWords', this.WordGameState]);
-
-            }
-
-            const isPlayerCompleted = this.WordGameState?.isPlayerCompleted(who) || false;
-            if (!this.players[who].isWin && isPlayerCompleted) {
-              this.PlayerWin(who);
-              state.push(['UpdateMainPlayersData', this.players]);
-            }
-            if (isPlayerCompleted) {
-              if (this.IsAllWin()) {
-                this.isGameComplected = true;
-                this.clearAllMovebelPawns();
-                state.push(['complected', this]);
-                return state;
-              } else {
-                this.isWaitingForDiceRoll = true;
-                this.NextPlayer();
-                state.push(['newFD', this.GenerateFutureMoves()]);
-              }
-            }
-            break;
-          case 'wordoUpdateSteal':
-            if (this.isWaitingForStealData) {
-              this.stealData!.stealLetters = JsonConvert.deserializeObject<number[]>(json);
-            }
-            break;
-          case 'wordoSaveSteal':
-            if (this.isWaitingForStealData) {
-              this.stealData!.stealLetters = JsonConvert.deserializeObject<number[]>(json);
-              const stealLetters = this.stealData!.stealLetters;
-              this.WordGameState?.StealLettersFromPlayer(
-                this.stealData!.whoStealingIndex,
-                this.stealData!.fromWhoIndex,
-                stealLetters
-              );
-              state.push(['updateWords', this.WordGameState]);
-              this.isWaitingForStealData = false;
-            }
-            state.push(['setDelay', 0]);
-            break;
-        }
-      }
-      if (signal.type === 'tick') {
-        if(this.tickCount===0){
-            state.push(["startGame",this]);
-            state.push(["newFD",this.futureData]);
-            if(this.gameMode==="wordo")state.push(["updateWords",this.WordGameState]);
-        }
-        this.tickCount++;
-        if (this.useTimeOut) {
-          if (this.tickCount === this.futureData.tickEnd) {
-            // last tick
-          } else if (this.tickCount > this.futureData.tickEnd) {
-            // time up
-            this.players[this.futureData.whosTurn].turnOverCount++;
-              state.push(['UpdateMainPlayersData',this.players]);
-
-            if (this.maxTurnOverCount > 0 &&this.players[this.futureData.whosTurn].turnOverCount > this.maxTurnOverCount)
-            {
-              this.players[this.futureData.whosTurn].isLost = true;
-
-            }
-            if (this.isWaitingForDiceRoll) {
-              isDiceSignal = true;
-              diceSignal = new Signal('dice',this.WhosTurn,this.futureData.diceValue.toString());
-              state.push(['roll', this.futureData.diceValue]);
-              state.push(['addDelay', 1]);
-            }
-            if (this.futureData.futureMoves.length > 0) {
-              isPawnSignal = true;
-              pawnSignal = new Signal('pawn',this.WhosTurn,this.futureData.futureMoves[this.futureData.aiMove].movablePawnId.toString());
-            }
-          }
-        }
-      }
-      if (this.isWaitingForDiceRoll && isDiceSignal && diceSignal) {
-        if (this.futureData.futureMoves.length > 0) {
-          currentPlayer.movebulPawnIds = this.futureData.futureMoves.map((c) => c.movablePawnId);
-          state.push(['UpdateMainPlayersData',[CloneUtility.deepClone<LudoPlayerData>(currentPlayer)],]);
-          this.isWaitingForDiceRoll = false;
-        } else {
-          this.NextPlayer();
-          state.push(['newFD', this.GenerateFutureMoves()]);
-        }
-      }
-      if (isPawnSignal && pawnSignal) {
-        const playerPathLength = this.PlayersWorldPositions[this.WhosTurn].length;
-        const totalPlayers = this.TilesSetData.length - 1;
-        const numberOfBlocksForPlayer = playerPathLength / totalPlayers;
-        const pawnId = parseInt(pawnSignal.value);
-        let futureMove: FutureMove | null = null;
-        for (const move of this.futureData.futureMoves) {
-          if (move && move.movablePawnId === pawnId) {
-            futureMove = move;
-            break;
-          }
-        }
-        if (!futureMove) {
-          return state;
-        }
-        const outcomeForThisMove = futureMove.playerDatas;
-        for (const updated of outcomeForThisMove) {
-          const realPlayer = this.players.find((p) => p.UserId === updated.UserId);
-          if (realPlayer) {
-            realPlayer.pawnPositions = [...updated.pawnPositions];
-            let isAllPawnsReached = true;
-            for (const pos of realPlayer.pawnPositions)
-               {
-            if (pos !== this.PlayersWorldPositions[realPlayer.PlayerTurn].length - 1) {
-                isAllPawnsReached = false;
-                break;
-            }
-          }
-            if (
-              isAllPawnsReached &&
-              !this.IsLoop
-            ) {
-              this.PlayerWin(realPlayer.PlayerTurn);
-              state.push(['UpdateMainPlayersData', this.players]);
-            }
-          }
-        }
-        if (this.IsAllWin()) {
-          this.isGameComplected = true;
-          this.clearAllMovebelPawns();
-          state.push(['complected', this]);
-          return state;
-        }
-        currentPlayer.movebulPawnIds = [];
-        this.isWaitingForDiceRoll = true;
-        const killCount = futureMove.killedPlayers ? Object.keys(futureMove.killedPlayers).length : 0;
-        const gotBonus =
-          (this.diceValue === 6 || killCount > 0 || futureMove.isWin) && !currentPlayer.isWin;
-        if (!gotBonus) {
-          this.NextPlayer();
-        }
-        let addDelay = 0;
-        if (futureMove.stepsCount > 0) {
-          addDelay = Math.ceil(futureMove.stepsCount * 0.07);
-        }
-        state.push(['UpdateMainPlayersData', outcomeForThisMove]);
-        state.push(['addDelay', addDelay]);
-        if (this.gameMode === 'wordo') {
-                state.push(['updateWords', this.WordGameState]);
-
-          const WhosTurn = this.futureData.whosTurn;
-          if (this.WordGameState?.IsValidPlayer(WhosTurn)) {
-            const localPos = LudoGameData.Wrap(outcomeForThisMove[0].pawnPositions[pawnId], playerPathLength - 1);
-            const worldPosition = LudoGameData.Wrap(
-              numberOfBlocksForPlayer * this.players[WhosTurn].PlayerBaseIndex + localPos,
-              playerPathLength - 1
-            );
-            const isLetterPresent = worldPosition in this.WordGameState.BoardLetters;
-            if (isLetterPresent) {
-              const letter = this.WordGameState.BoardLetters[worldPosition];
-              const newLetterCollected = this.WordGameState.TryCollectBoardLetter(WhosTurn, worldPosition);
-              state.push(['updateWords', this.WordGameState]);
-            }
-          }
-          if (killCount > 0) {
-            for (const [playerIndex, killedPawnsList] of Object.entries(futureMove.killedPlayers || {})) {
-              const howManyKilled = killedPawnsList.length;
-              const collectionCount = this.WordGameState?.GetPlayerCollectionCount(parseInt(playerIndex)) || 0;
-              if (collectionCount > 0) {
-                const time = 60 + howManyKilled * 5;
-                this.isWaitingForStealData = true;
-                this.stealData = {
-                  whoStealingIndex: this.WhosTurn,
-                  fromWhoIndex: parseInt(playerIndex),
-                  timeUp: time,
-                  maxLettersToPick: howManyKilled,
-                  stealLetters: [],
-                };
-                state.push(['updateWords', this.WordGameState]);
-                state.push(['stealWords', this.stealData]);
-                state.push(['addDelay', time]);
-                state.push(['endStealWords', this.WordGameState]);
-              }
-            }
-          }
-        }
-        state.push(['newFD', this.GenerateFutureMoves()]);
-      }
-      if (this.gameMode === 'wordo') {
-        if (signal.type.startsWith('w:')) {
-          const value = signal.type.slice(2).split(',');
-          if (value.length === 2) {
-            try {
-              const collectionIndex = parseInt(value[0]);
-              const wordIndex = parseInt(value[1]);
-              if (this.WordGameState?.TryPlaceLetter(logger,signal.who, collectionIndex, wordIndex)) {
-                const isPlayerComplectedGame = this.WordGameState.isPlayerCompleted(this.WhosTurn);
-              }
-            } catch {
-              // Handle parsing error
-            }
-          }
-        }
-      }
+    if (!signal || !this.futureData) {
+        return state; // Early return if prerequisites are missing
     }
+
+    // Ensure valid turn index
+    this.WhosTurn = this.normalizeTurnIndex(this.WhosTurn);
+    const currentPlayer = this.players[this.WhosTurn];
+
+    // Handle signal types
+    const isDiceSignal = signal.type === 'dice';
+    const isPawnSignal = signal.type === 'pawn';
+    const diceSignal = isDiceSignal ? signal : null;
+    const pawnSignal = isPawnSignal ? signal : null;
+
+    // Process Wordo-specific signals
+    if (signal.type.startsWith('wordo')) {
+        this.handleWordoSignal(signal, state, logger);
+    }
+
+    // Handle tick signal
+    if (signal.type === 'tick') {
+        this.handleTickSignal(state);
+    }
+
+    // Handle dice roll
+    if (this.isWaitingForDiceRoll && isDiceSignal && diceSignal) {
+        this.handleDiceSignal(currentPlayer, state);
+    }
+
+    // Handle pawn movement
+    if (isPawnSignal && pawnSignal) {
+        this.handlePawnSignal(currentPlayer, pawnSignal, state);
+    }
+
+    // Handle custom wordo signals (w: prefix)
+    if (this.gameMode === 'wordo' && signal.type.startsWith('w:')) {
+        this.handleCustomWordoSignal(signal, logger);
+    }
+
     return state;
-  }
+}
+
+// Helper method to normalize turn index
+private normalizeTurnIndex(turn: number): number {
+    if (turn < 0 || turn >= this.players.length) {
+        return 0;
+    }
+    return turn;
+}
+
+// Handle Wordo-specific signals
+private handleWordoSignal(signal: Signal, state: [string, any][], logger: any): void {
+    const { type, value, who } = signal;
+    const json = value;
+
+    switch (type) {
+        case 'wordoPlaceLetters':
+            this.handlePlaceLetters(json, who, state, logger);
+            break;
+        case 'wordoUpdateSteal':
+            if (this.isWaitingForStealData) {
+                this.stealData!.stealLetters = JsonConvert.deserializeObject<number[]>(json);
+            }
+            break;
+        case 'wordoSaveSteal':
+            this.handleSaveSteal(json, state);
+            break;
+    }
+}
+
+// Handle placing letters in Wordo mode
+private handlePlaceLetters(json: any, who: number, state: [string, any][], logger: any): void {
+    const playerPlacement = JsonConvert.deserializeObject<number[]>(json);
+    const missingLetters = this.WordGameState?.getMissingLettersListOfPlayer(who);
+    logger.info(`${missingLetters?.size ?? 0}💡${playerPlacement.length}`);
+    let isAnyPlacement = false;
+
+    if (playerPlacement.length === (missingLetters?.size ?? 0)) {
+        logger.info("playerPlacement.length 💡");
+        let i = 0;
+        for (const [wordIndex] of missingLetters ?? new Map<number, string>()) {
+            const collectionIndex = playerPlacement[i];
+            logger.info("TryPlaceLetter 💡");
+            if (this.WordGameState?.TryPlaceLetter(logger, who, collectionIndex, wordIndex)) {
+                isAnyPlacement = true;
+            }
+            i++;
+        }
+    }
+
+    if (isAnyPlacement) {
+        state.push(['updateWords', this.WordGameState]);
+    }
+
+    const isPlayerCompleted = this.WordGameState?.isPlayerCompleted(who) || false;
+    if (!this.players[who].isWin && isPlayerCompleted) {
+        this.PlayerWin(who);
+        state.push(['UpdateMainPlayersData', this.players]);
+    }
+
+    if (isPlayerCompleted) {
+        if (this.IsAllWin()) {
+            this.completeGame(state);
+        } else {
+            this.isWaitingForDiceRoll = true;
+            this.NextPlayer();
+            state.push(['newFD', this.GenerateFutureMoves()]);
+        }
+    }
+}
+
+// Handle steal save in Wordo mode
+private handleSaveSteal(json: any, state: [string, any][]): void {
+    if (this.isWaitingForStealData) {
+        this.stealData!.stealLetters = JsonConvert.deserializeObject<number[]>(json);
+        this.WordGameState?.StealLettersFromPlayer(
+            this.stealData!.whoStealingIndex,
+            this.stealData!.fromWhoIndex,
+            this.stealData!.stealLetters
+        );
+        state.push(['updateWords', this.WordGameState]);
+        this.isWaitingForStealData = false;
+    }
+    state.push(['setDelay', 0]);
+}
+
+// Handle tick signal
+private handleTickSignal(state: [string, any][]): void {
+    if (this.tickCount === 0) {
+        state.push(['startGame', this]);
+        state.push(['newFD', this.futureData]);
+        if (this.gameMode === 'wordo') {
+            state.push(['updateWords', this.WordGameState]);
+        }
+    }
+    this.tickCount++;
+
+    if (this.useTimeOut && this.tickCount > this.futureData.tickEnd) {
+        this.handleTimeout(state);
+    }
+}
+
+// Handle timeout logic
+private handleTimeout(state: [string, any][]): void {
+    const player = this.players[this.futureData.whosTurn];
+    player.turnOverCount++;
+    state.push(['UpdateMainPlayersData', this.players]);
+
+    if (this.maxTurnOverCount > 0 && player.turnOverCount > this.maxTurnOverCount) {
+        player.isLost = true;
+    }
+
+    if (this.isWaitingForDiceRoll) {
+        state.push(['roll', this.futureData.diceValue]);
+        state.push(['addDelay', 1]);
+        this.isWaitingForDiceRoll = false;
+    }
+
+    if (this.futureData.futureMoves.length > 0) {
+        const pawnSignal = new Signal('pawn', this.WhosTurn, this.futureData.futureMoves[this.futureData.aiMove].movablePawnId.toString());
+        this.handlePawnSignal(this.players[this.WhosTurn], pawnSignal, state);
+    }
+}
+
+// Handle dice signal
+private handleDiceSignal(currentPlayer: LudoPlayerData, state: [string, any][]): void {
+    if (this.futureData.futureMoves.length > 0) {
+        currentPlayer.movebulPawnIds = this.futureData.futureMoves.map((move) => move.movablePawnId);
+        state.push(['UpdateMainPlayersData', [CloneUtility.deepClone<LudoPlayerData>(currentPlayer)]]);
+        this.isWaitingForDiceRoll = false;
+    } else {
+        this.NextPlayer();
+        state.push(['newFD', this.GenerateFutureMoves()]);
+    }
+}
+
+// Handle pawn signal
+private handlePawnSignal(currentPlayer: LudoPlayerData, pawnSignal: Signal, state: [string, any][]): void {
+    const pawnId = parseInt(pawnSignal.value);
+    const futureMove = this.futureData.futureMoves.find((move) => move?.movablePawnId === pawnId);
+    if (!futureMove) {
+        return;
+    }
+
+    this.updatePlayerPositions(futureMove, state);
+    if (this.IsAllWin()) {
+        this.completeGame(state);
+        return;
+    }
+
+    currentPlayer.movebulPawnIds = [];
+    this.isWaitingForDiceRoll = true;
+
+    const killCount = futureMove.killedPlayers ? Object.keys(futureMove.killedPlayers).length : 0;
+    const gotBonus = (this.diceValue === 6 || killCount > 0 || futureMove.isWin) && !currentPlayer.isWin;
+    if (!gotBonus) {
+        this.NextPlayer();
+    }
+
+    const addDelay = futureMove.stepsCount > 0 ? Math.ceil(futureMove.stepsCount * 0.07) : 0;
+    state.push(['UpdateMainPlayersData', futureMove.playerDatas]);
+    state.push(['addDelay', addDelay]);
+
+    if (this.gameMode === 'wordo') {
+        this.handleWordoPawnMove(futureMove, pawnId, state);
+    }
+
+    state.push(['newFD', this.GenerateFutureMoves()]);
+}
+
+// Update player positions based on move
+private updatePlayerPositions(futureMove: FutureMove, state: [string, any][]): void {
+    for (const updated of futureMove.playerDatas) {
+        const realPlayer = this.players.find((p) => p.UserId === updated.UserId);
+        if (realPlayer) {
+            realPlayer.pawnPositions = [...updated.pawnPositions];
+            const isAllPawnsReached = realPlayer.pawnPositions.every(
+                (pos) => pos === this.PlayersWorldPositions[realPlayer.PlayerTurn].length - 1
+            );
+            if (isAllPawnsReached && !this.IsLoop) {
+                this.PlayerWin(realPlayer.PlayerTurn);
+                state.push(['UpdateMainPlayersData', this.players]);
+            }
+        }
+    }
+}
+
+// Handle Wordo-specific pawn movement
+private handleWordoPawnMove(futureMove: FutureMove, pawnId: number, state: [string, any][]): void {
+    state.push(['updateWords', this.WordGameState]);
+    const whosTurn = this.futureData.whosTurn;
+    if (!this.WordGameState?.IsValidPlayer(whosTurn)) {
+        return;
+    }
+
+    const playerPathLength = this.PlayersWorldPositions[whosTurn].length;
+    const totalPlayers = this.TilesSetData.length - 1;
+    const numberOfBlocksForPlayer = playerPathLength / totalPlayers;
+    const localPos = LudoGameData.Wrap(futureMove.playerDatas[0].pawnPositions[pawnId], playerPathLength - 1);
+    const worldPosition = LudoGameData.Wrap(
+        numberOfBlocksForPlayer * this.players[whosTurn].PlayerBaseIndex + localPos,
+        playerPathLength - 1
+    );
+
+    if (worldPosition in this.WordGameState.BoardLetters) {
+        this.WordGameState.TryCollectBoardLetter(whosTurn, worldPosition);
+        state.push(['updateWords', this.WordGameState]);
+    }
+
+    const killCount = futureMove.killedPlayers ? Object.keys(futureMove.killedPlayers).length : 0;
+    if (killCount > 0) {
+        this.handleStealOnKill(futureMove, state);
+    }
+}
+
+// Handle steal logic on kill
+private handleStealOnKill(futureMove: FutureMove, state: [string, any][]): void {
+    for (const [playerIndex, killedPawnsList] of Object.entries(futureMove.killedPlayers || {})) {
+        const howManyKilled = killedPawnsList.length;
+        const collectionCount = this.WordGameState?.GetPlayerCollectionCount(parseInt(playerIndex)) || 0;
+        if (collectionCount > 0) {
+            const time = 60 + howManyKilled * 5;
+            this.isWaitingForStealData = true;
+            this.stealData = {
+                whoStealingIndex: this.WhosTurn,
+                fromWhoIndex: parseInt(playerIndex),
+                timeUp: time,
+                maxLettersToPick: howManyKilled,
+                stealLetters: [],
+            };
+            state.push(['updateWords', this.WordGameState]);
+            state.push(['stealWords', this.stealData]);
+            state.push(['addDelay', time]);
+            state.push(['endStealWords', this.WordGameState]);
+        }
+    }
+}
+
+// Complete the game
+private completeGame(state: [string, any][]): void {
+    this.isGameComplected = true;
+    this.clearAllMovebelPawns();
+    state.push(['complected', this]);
+}
+
+// Handle custom Wordo signal (w: prefix)
+private handleCustomWordoSignal(signal: Signal, logger: any): void {
+    const value = signal.type.slice(2).split(',');
+    if (value.length !== 2) {
+        return;
+    }
+
+    try {
+        const collectionIndex = parseInt(value[0]);
+        const wordIndex = parseInt(value[1]);
+        if (this.WordGameState?.TryPlaceLetter(logger, signal.who, collectionIndex, wordIndex)) {
+            this.WordGameState.isPlayerCompleted(this.WhosTurn);
+        }
+    } catch {
+        // Handle parsing error silently
+    }
+}
+//#endregion
+
+
 
   public static Wrap(value: number, length: number = 360): number {
     length++;

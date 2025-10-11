@@ -1401,7 +1401,7 @@ const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: 
   });
   logger.info("matchLeave called, players now:", Object.keys(state.presences));
   // Broadcast updated player status to all remaining players   
-  dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainPlayersData:${JSON.stringify(state.gameData)}`, Object.values(state.presences)));
+  dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainPlayersData:${JSON.stringify(state.gameData.players)}`, Object.values(state.presences)));
   return { state };
 };
 const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {

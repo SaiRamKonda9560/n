@@ -1380,7 +1380,7 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
   if (state.gameData.isGameStarted) {
     // Broadcast updated player info to joining players
     presences.forEach(p => {
-      dispatcher.broadcast('startGame:' + JSON.stringify(state.gameData), p);
+      dispatcher.broadcastMessage('startGame:' + JSON.stringify(state.gameData), p);
     });
   } 
   else {
@@ -1402,14 +1402,7 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
   return { state };
 };
 
-const matchLeave = function (
-  ctx: any,
-  logger: any,
-  nk: any,
-  dispatcher: any,
-  tick: number,
-  state: any,
-  presences: any[]
+const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]
 ) {
   presences.forEach(p => {
     // Find the player in gameData and mark as offline
@@ -1423,12 +1416,9 @@ const matchLeave = function (
   });
 
   logger.info("matchLeave called, players now:", Object.keys(state.presences));
-
   // Broadcast updated player status to all remaining players
-  const remainingSessions = Object.keys(state.presences);
-  if (remainingSessions.length > 0) {
-      dispatcher.broadcast(['UpdateMainLudoGameData:', state.gameData], remainingSessions);
-  }
+  dispatcher.broadcastMessage('UpdateMainLudoGameData:' + JSON.stringify(state.gameData), state.presences);
+
 
 
   return { state };

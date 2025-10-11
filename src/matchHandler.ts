@@ -1336,15 +1336,6 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
         case "setDelay":
             state.delay = obj as number;
             break;
-        case "startGame":
-        case "endStealWords":
-        case "stealWords":
-        case "roll":
-        case "newFD":
-        case "updateWords":
-        case "UpdateMainLudoGameData":
-        case "UpdateMainPlayersData":
-        case "genrateWords":
     }
 if (commendName !== "addDelay" && commendName !== "setDelay") {
     dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
@@ -1366,7 +1357,6 @@ const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: a
     return { state, accept: true }; // allow join before game starts
   }
 };
-
 const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
   // Store new presences
   presences.forEach(p => {
@@ -1399,29 +1389,21 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
 
   return { state };
 };
-
-const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]
-) {
+const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
   presences.forEach(p => {
     // Find the player in gameData and mark as offline
     const player = state.gameData.players.find((pl: any) => pl.UserId === p.userId || pl.id === p.userId);  
     if (player) {
       player.isOffline = true;
     }
-
     // Remove from active presences
     delete state.presences[p.sessionId];
   });
-
   logger.info("matchLeave called, players now:", Object.keys(state.presences));
   // Broadcast updated player status to all remaining players
-    dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainLudoGameData:${JSON.stringify(state.gameData)}`, Object.values(state.presences)));
-
-
-
-  return { state }; 
+  dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainPlayersData:${JSON.stringify(state.gameData)}`, Object.values(state.presences)));
+  return { state };
 };
-
 const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
     const presences: nkruntime.Presence[] = [];
     for (const key in state.presences) {

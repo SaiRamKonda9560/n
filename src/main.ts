@@ -11,6 +11,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerMatchmakerMatched(matchmakerMatched);
   initializer.registerRpc("signal", signal);
   initializer.registerRpc("time", time);
+  initializer.registerRpc("create_private_room", rpcCreateRoom);
 
   try {
           const res = nk.httpRequest(

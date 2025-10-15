@@ -1,13 +1,3 @@
-/**
- * Finds a custom match in the Nakama server based on a room name.
- *
- * Expects a payload in the following format:
- * {
- *   "roomName": string   // The name of the room to search for.
- * }
- *
- * Returns the match ID if found, otherwise returns an error message.
- */
 function time(ctx: any, logger: any, nk: any, payload: string): string {
     try {
       const nowMs = Date.now();
@@ -23,7 +13,6 @@ function time(ctx: any, logger: any, nk: any, payload: string): string {
       throw new Error("Failed to retrieve server time");
     }
 }
-
 const signal = function(ctx: any, logger: any, nk: any, payload: string): string {
     try {
         // Log the raw payload and its type for debugging
@@ -68,4 +57,18 @@ const signal = function(ctx: any, logger: any, nk: any, payload: string): string
         logger.error(`RPC Error: ${errMsg}`);
         return JSON.stringify({ success: false, error: errMsg });
     }
+};
+const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string) {
+  const data = JSON.parse(payload || "{}");
+  const boardIndex = data.boardIndex ?? 0;
+  const numberOfPlayers = data.numberOfPlayers ?? 2;
+  const gameMode = data.gameMode ?? "classic";
+  try {
+    const matchId = nk.matchCreate("lobby", { boardIndex, numberOfPlayers, gameMode, isPrivate: true });
+    logger.info(`✅ Private match created: ${matchId}`);
+    return JSON.stringify({ matchId });
+  } catch (err: any) {
+    logger.error("❌ Failed to create match: " + err.message);
+    throw err;
+  }
 };

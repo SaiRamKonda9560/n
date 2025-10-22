@@ -160,6 +160,26 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
                 dailyRewards: [],
                 dayIndex: 0 // tracks which day of the first week
             };
+            // --- GIVE 5000 COINS TO NEW PLAYER ---
+            const coinCollection = "player_data";
+            const coinKey = "coins";
+
+            const writeCoins: nkruntime.StorageWriteRequest = {
+                collection: coinCollection,
+                key: coinKey,
+                userId,
+                value: { coins: 5000 },  // first-time bonus
+                permissionRead: 1,
+                permissionWrite: 1
+            };
+
+            try {
+                nk.storageWrite([writeCoins]);
+                // Optional: store coins in attendanceData for immediate response
+                attendanceData.initialCoins = 5000;
+            } catch (err) {
+                logger.error(`Failed to write initial coins for new player ${userId}: ${err}`);
+            }
         }
 
         // --- DAILY LOGIN CHECK ---

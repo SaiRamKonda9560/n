@@ -34,8 +34,6 @@ let wordsGenInstance:wordsGen;
 const getWordoInstance=function():wordsGen{
  return wordsGenInstance;
 }
-
-
 const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         logger.debug(`Received payload: ${payload}, Type: ${typeof payload}`);
@@ -126,8 +124,6 @@ const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string):
         });
     }
 };
-
-
 const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;
@@ -206,16 +202,20 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
         let firstLoginToday = false;
         if (attendanceData.lastLogin < today) {
             firstLoginToday = true;
-
             // Increment day index
             attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
 
+            let spins = [350,300,500,350,300,250,500,400,1000,2000];
+            let spinData = {
+                spins : spins,
+                spinCount : 3
+            }
+            attendanceData.spinData = spinData;
             // Check if new 9-day cycle is needed
             if (!attendanceData.dailyReward ||
                 attendanceData.dayIndex > attendanceData.dailyReward.dailyRewardDatas.length) {
                 attendanceData.dailyReward = generateDailyRewards(attendanceData.dayIndex);
             }
-
             attendanceData.dailyReward.today = attendanceData.dayIndex;
         }
 
@@ -246,7 +246,6 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
         return JSON.stringify({ success: false, error: errMsg });
     }
 };
-
 const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;
@@ -349,11 +348,6 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
         return JSON.stringify({ success: false, error: errMsg });
     }
 };
-
-
-
-
-
 function time(ctx: any, logger: any, nk: any, payload: string): string {
     try {
       const nowMs = Date.now();

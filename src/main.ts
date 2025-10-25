@@ -15,7 +15,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("coinsHandler", coinsHandler);
   initializer.registerRpc("dailyAttendance", dailyAttendance);
   initializer.registerRpc("collectDailyReward", collectDailyReward);
-
+  initializer.registerRpc("spin", spin);
 
   try {
           const res = nk.httpRequest(
@@ -369,6 +369,92 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
         return JSON.stringify({ success: false, error: errMsg });
     }
 };
+const spin = function (ctx: any, logger: any, nk: any, payload: string): string {
+    try {
+        const userId = ctx.userId;
+        if (!userId) throw new Error("User ID missing from context");
+        const collection = "player_data";
+        const attendanceKey = "daily_attendance";
+        const coinsKey = "coins";
+        // --- PARSE PAYLOAD ---
+        const request = payload ? JSON.parse(payload) : {};
+        const mode = request.mode || "read"; // "read" or "collect"
+        // --- READ ATTENDANCE DATA ---
+        const attendanceObjects = nk.storageRead([{ collection, key: attendanceKey, userId }]);
+        if (!attendanceObjects || attendanceObjects.length === 0 || !attendanceObjects[0].value) {
+            throw new Error("No attendance data found for this player");
+        }
+        const attendanceData = attendanceObjects[0].value;
+        if (!attendanceData.spinData || !attendanceData.spinData.spins || !attendanceData.spinData.spinCount) {
+            throw new Error("spinData missing or invalid");
+        }
+        // --- READ CURRENT COINS ---
+        let currentCoins = 0;
+        try {
+            const coinObjects = nk.storageRead([{ collection, key: coinsKey, userId }]);
+            if (coinObjects && coinObjects.length > 0 && coinObjects[0].value) {
+                currentCoins = coinObjects[0].value.coins || 0;
+            }
+        } catch (err) {
+            logger.warn(`Failed to read coin data for ${userId}: ${err}`);
+        }
+        // --- READ MODE ---
+        if (mode === "read") {
+            return JSON.stringify({
+                success: true,
+                message: "attendanceData",
+                coinsAdded: 0,
+                currentCoins,
+                attendanceData
+            });
+        }
+        // --- COLLECT MODE ---
+        const spinIndexes = attendanceData.spinData.spinCount;
+        const spinValues = attendanceData.spinData.spins;
+        if (!spinIndexes || spinIndexes.length === 0) {
+            return JSON.stringify({
+                success: false,
+                message: "No spins available",
+                coinsAdded: 0,
+                currentCoins,
+                attendanceData
+            });
+        }
+        // --- TAKE FIRST SPIN INDEX ---
+        const nextIndex = spinIndexes.shift(); // remove first index
+        const rewardAmount = spinValues[nextIndex] || 0;
+        const newBalance = currentCoins + rewardAmount;
+        // --- SAVE UPDATED COINS ---
+        nk.storageWrite([{
+            collection,
+            key: coinsKey,
+            userId,
+            value: { coins: newBalance },
+            permissionRead: 1,
+            permissionWrite: 1
+        }]);
+        // --- SAVE UPDATED ATTENDANCE ---
+        nk.storageWrite([{
+            collection,
+            key: attendanceKey,
+            userId,
+            value: attendanceData,
+            permissionRead: 1,
+            permissionWrite: 1
+        }]);
+        return JSON.stringify({
+            success: true,
+            message: "Reward collected successfully",
+            coinsAdded: rewardAmount,
+            currentCoins: newBalance,
+            attendanceData
+        });
+    } catch (e) {
+        const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
+        logger.error(`RPC Error in spin: ${errMsg}`);
+        return JSON.stringify({ success: false, error: errMsg });
+    }
+};
 function time(ctx: any, logger: any, nk: any, payload: string): string {
     try {
       const nowMs = Date.now();
@@ -383,7 +469,7 @@ function time(ctx: any, logger: any, nk: any, payload: string): string {
       logger.error(`Failed to get server time: ${error}`);
       throw new Error("Failed to retrieve server time");
     }
-}
+};
 const signal = function(ctx: any, logger: any, nk: any, payload: string): string {
     try {
         // Log the raw payload and its type for debugging

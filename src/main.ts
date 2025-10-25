@@ -205,12 +205,33 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
             // Increment day index
             attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
 
-            let spins = [350,300,500,350,300,250,500,400,1000,2000];
-            let spinData = {
-                spins : spins,
-                spinCount : 3
+            // Original spins array
+            let spins = [350, 300, 500, 350, 300, 250, 500, 400, 1000, 2000];
+            // Shuffle function (Fisher–Yates shuffle)
+            function shuffleArray<T>(array: T[]): T[] {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
             }
+            // Shuffle spins before assigning
+            let shuffledSpins = shuffleArray(spins);
+            // Generate random spin indexes (for example, 3 random indexes)
+            function getRandomIndexes(count: number, max: number): number[] {
+                let indexes: number[] = [];
+                while (indexes.length < count) {
+                    let rand = Math.floor(Math.random() * max);
+                    if (!indexes.includes(rand)) indexes.push(rand);
+                }
+                return indexes;
+            }
+            let spinData = {
+                spins: shuffledSpins,
+                spinCount: getRandomIndexes(3, spins.length) // returns something like [1, 7, 4]
+            };
             attendanceData.spinData = spinData;
+
             // Check if new 9-day cycle is needed
             if (!attendanceData.dailyReward ||
                 attendanceData.dayIndex > attendanceData.dailyReward.dailyRewardDatas.length) {

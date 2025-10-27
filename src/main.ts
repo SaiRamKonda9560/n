@@ -402,7 +402,7 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         }
 
         if(request.add){
-            attendanceData.spinData.spinCount = getRandomIndexes(request.add,attendanceData.spinData.spins.length);
+            attendanceData.spinData.spinCount += getRandomIndexes(request.add,attendanceData.spinData.spins.length);
         }
 
 

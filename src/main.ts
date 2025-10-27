@@ -401,9 +401,12 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
                 return indexes;
         }
 
-        if(request.add){
-            attendanceData.spinData.spinCount.push(getRandomIndexes(request.add,attendanceData.spinData.spins.length));
+        if (request.add) {
+            attendanceData.spinData.spinCount.push(
+                ...getRandomIndexes(request.add, attendanceData.spinData.spins.length)
+            );
         }
+
 
 
         // --- READ CURRENT COINS ---

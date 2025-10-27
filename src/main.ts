@@ -402,10 +402,17 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         }
 
         if (request.add) {
-            attendanceData.spinData.spinCount.push(
-                ...getRandomIndexes(request.add, attendanceData.spinData.spins.length)
-            );
+            const newIndexes = getRandomIndexes(request.add, attendanceData.spinData.spins.length);
+
+            // Ensure spinCount exists and is an array
+            if (!Array.isArray(attendanceData.spinData.spinCount)) {
+                attendanceData.spinData.spinCount = [];
+            }
+
+            // Add each number individually, not replace
+            attendanceData.spinData.spinCount.push(...newIndexes);
         }
+
 
 
 

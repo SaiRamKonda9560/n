@@ -378,12 +378,30 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         const coinsKey = "coins";
         // --- PARSE PAYLOAD ---
         const request = payload ? JSON.parse(payload) : {};
+
         const mode = request.mode || "read"; // "read" or "collect"
         // --- READ ATTENDANCE DATA ---
         const attendanceObjects = nk.storageRead([{ collection, key: attendanceKey, userId }]);
         if (!attendanceObjects || attendanceObjects.length === 0 || !attendanceObjects[0].value) {
             throw new Error("No attendance data found for this player");
         }
+
+
+        function getRandomIndexes(count: number, max: number): number[] {
+                let indexes: number[] = [];
+                while (indexes.length < count) {
+                    let rand = Math.floor(Math.random() * max);
+                    if (!indexes.includes(rand)) indexes.push(rand);
+                }
+                return indexes;
+        }
+
+        if(request.add){
+            attendanceObjects.spinData.spinCount = getRandomIndexes(request.add,attendanceObjects.spinData.count);
+        }
+
+
+
         const attendanceData = attendanceObjects[0].value;
         if (!attendanceData.spinData || !attendanceData.spinData.spins || !attendanceData.spinData.spinCount) {
             throw new Error("spinData missing or invalid");

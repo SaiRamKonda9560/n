@@ -386,6 +386,11 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
             throw new Error("No attendance data found for this player");
         }
 
+        const attendanceData = attendanceObjects[0].value;
+        if (!attendanceData.spinData || !attendanceData.spinData.spins || !attendanceData.spinData.spinCount) {
+            throw new Error("spinData missing or invalid");
+        }
+
 
         function getRandomIndexes(count: number, max: number): number[] {
                 let indexes: number[] = [];
@@ -397,15 +402,10 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         }
 
         if(request.add){
-            attendanceObjects.spinData.spinCount = getRandomIndexes(request.add,attendanceObjects.spinData.spins.length);
+            attendanceData.spinData.spinCount = getRandomIndexes(request.add,attendanceData.spinData.spins.length);
         }
 
 
-
-        const attendanceData = attendanceObjects[0].value;
-        if (!attendanceData.spinData || !attendanceData.spinData.spins || !attendanceData.spinData.spinCount) {
-            throw new Error("spinData missing or invalid");
-        }
         // --- READ CURRENT COINS ---
         let currentCoins = 0;
         try {

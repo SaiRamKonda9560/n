@@ -403,14 +403,18 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
 
         if (request.add) {
             const newIndexes = getRandomIndexes(request.add, attendanceData.spinData.spins.length);
-
-            // Ensure spinCount exists and is an array
-            if (!Array.isArray(attendanceData.spinData.spinCount)) {
-                attendanceData.spinData.spinCount = [];
-            }
-
             // Add each number individually, not replace
             attendanceData.spinData.spinCount.push(...newIndexes);
+
+            nk.storageWrite([{
+            collection,
+            key: attendanceKey,
+            userId,
+            value: attendanceData,
+            permissionRead: 1,
+            permissionWrite: 1
+        }]);
+        
         }
 
 

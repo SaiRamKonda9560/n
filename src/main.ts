@@ -72,7 +72,7 @@ const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string):
         // --- COIN REWARD RULES (SERVER-CONTROLLED) ---
         const rewardTable: Record<string, number> = {
             spin: 20,    // player spins a wheel
-            ad: 10,      // player watches an ad
+            ad: 500,      // player watches an ad
             daily: 50,   // daily login reward
             mission: 100, // completing a mission
             dublespin:0

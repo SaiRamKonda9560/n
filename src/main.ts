@@ -57,13 +57,28 @@ const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string):
             throw new Error(`Missing or invalid "action" field in payload`);
         }
 
+        // --- READ CURRENT DATA ---
+        let attendanceData: any = null;
+        try {
+            const collection = "player_data";
+            const key = "daily_attendance";
+            const objects = nk.storageRead([{ collection, key, userId }]);
+            if (objects && objects.length > 0 && objects[0].value) {
+                attendanceData = objects[0].value;
+            }
+        } catch (readError) {
+            logger.warn(`Failed to read attendance data: ${readError}`);
+        }
         // --- COIN REWARD RULES (SERVER-CONTROLLED) ---
         const rewardTable: Record<string, number> = {
             spin: 20,    // player spins a wheel
             ad: 10,      // player watches an ad
             daily: 50,   // daily login reward
-            mission: 100 // completing a mission
+            mission: 100, // completing a mission
+            DubleSpin:0
         };
+        if(attendanceData && attendanceData.DubleSpin)
+        rewardTable["DubleSpin"] = attendanceData.DubleSpin;
 
         const action = data.action.toLowerCase();
         if (!rewardTable[action] && action !== "get") {
@@ -456,6 +471,7 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         const nextIndex = spinIndexes.shift(); // remove first index
         const rewardAmount = spinValues[nextIndex] || 0;
         const newBalance = currentCoins + rewardAmount;
+        attendanceData.DubleSpin = rewardAmount;
         // --- SAVE UPDATED COINS ---
         nk.storageWrite([{
             collection,

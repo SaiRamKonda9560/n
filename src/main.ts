@@ -75,10 +75,10 @@ const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string):
             ad: 10,      // player watches an ad
             daily: 50,   // daily login reward
             mission: 100, // completing a mission
-            DubleSpin:0
+            dublespin:0
         };
         if(attendanceData && attendanceData.DubleSpin)
-        rewardTable["DubleSpin"] = attendanceData.DubleSpin;
+        rewardTable["dublespin"] = attendanceData.DubleSpin;
 
         const action = data.action.toLowerCase();
         if (!rewardTable[action] && action !== "get") {

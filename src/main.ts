@@ -162,8 +162,12 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("getLongIdRpc", getLongIdRpc);
   initializer.registerRpc("generateShortIdRpc", generateShortIdRpc);
   initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
+  initializer.registerRpc("wordo", wordo);
 
-  base64ToString(nk,logger,wordsBytesString);
+
+
+    // Write a tiny marker file (this will create it in the modules dir)
+
   try {
           const res = nk.httpRequest(
       'https://raw.githubusercontent.com/SaiRamKonda9560/words/refs/heads/main/Words.json',
@@ -659,6 +663,28 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
             currentCoins: newBalance,
             attendanceData
         });
+    } catch (e) {
+        const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
+        logger.error(`RPC Error in spin: ${errMsg}`);
+        return JSON.stringify({ success: false, error: errMsg });
+    }
+};
+const wordo = function (ctx: any, logger: any, nk: any, payload: string): string {
+    try {
+        const userId = "00000000-0000-0000-0000-000000000000";
+        if (!userId) throw new Error("User ID missing from context");
+        const collection = "player_data";
+        const key = "wordo";
+        const request = payload ? JSON.parse(payload) : {};
+        if(request.read){
+          return  nk.storageRead([{ collection, key: key, userId }]);
+        }
+        else{
+            nk.storageWrite([{collection,key: key,userId,value: request.data,permissionRead: 1,permissionWrite: 1}]);
+            return "storageWrite success";
+        }
+        return "nun";
+
     } catch (e) {
         const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
         logger.error(`RPC Error in spin: ${errMsg}`);

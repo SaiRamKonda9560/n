@@ -1,3 +1,145 @@
+const generateShortIdRpc =  function (ctx: any, logger: any, nk: any, payload: string): string {
+    // Parse incoming payload safely
+    let data: { longId: string };
+    try {
+        data = JSON.parse(payload);
+    } catch (err) {
+        logger.error("Invalid JSON payload: %v", err);
+        return JSON.stringify({ success: false, error: "Invalid JSON" });
+    }
+
+    if (!data || !data.longId) {
+        return JSON.stringify({ success: false, error: "Missing longId" });
+    }
+
+    // Create short ID (6 random characters)
+    const shortId = Math.random().toString(36).substring(2, 8);
+
+    // Prepare storage record
+    const collection = "short_ids";
+    const key = ctx.userId; // Each user has their own record
+    
+    const object= nk.StorageWrite = {
+        collection,
+        key,
+        userId: ctx.userId,
+        value: {
+            longId: data.longId,
+            shortId: shortId,
+            updatedAt: Date.now()
+        },
+        permissionRead: 1,
+        permissionWrite: 1
+    };
+
+    try {
+        nk.storageWrite([object]);
+        logger.info(`Stored shortId for user ${ctx.userId}: ${shortId}`);
+        return JSON.stringify({ success: true, shortId });
+    } catch (err) {
+        logger.error("Error writing storage: %v", err);
+        return JSON.stringify({ success: false, error: "Storage write failed" });
+    }
+};
+const getLongIdRpc = function (ctx: any, logger: any, nk: any, payload: string): string {
+    // Parse input
+    let data: { shortId: string };
+    try {
+        data = JSON.parse(payload);
+    } catch (err) {
+        logger.error("Invalid JSON payload: %v", err);
+        return JSON.stringify({ success: false, error: "Invalid JSON" });
+    }
+
+    if (!data || !data.shortId) {
+        return JSON.stringify({ success: false, error: "Missing shortId" });
+    }
+
+    const collection = "short_ids";
+    const key = "global_map"; // one global mapping key
+    const userId = "00000000-0000-0000-0000-000000000000"; // empty = system-level object
+
+    try {
+        // Read the shared mapping object
+        const result = nk.storageRead([{ collection, key, userId }]);
+
+        if (!result || result.length === 0 || !result[0].value) {
+            return JSON.stringify({ success: false, error: "No mapping data available." });
+        }
+
+        const map = result[0].value as Record<string, string>;
+        const longId = map[data.shortId];
+
+        if (!longId) {
+            return JSON.stringify({ success: false, error: "Short ID not found." });
+        }
+
+        return JSON.stringify({ success: true, longId });
+    } catch (err) {
+        logger.error("Error reading storage: %v", err);
+        return JSON.stringify({ success: false, error: "Storage read failed" });
+    }
+};
+
+// --- Utility: generate unique short referral code ---
+function generateReferralCode(length = 6): string {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+// --- RPC: generate or retrieve referral code ---
+const generateReferralCodeRpc = function (ctx: any, logger: any, nk: any, payload: string): string {
+    const collection = "referral_codes";
+    const userId = ctx.userId;
+    const key = userId; // One record per user
+
+    try {
+        // Step 1 — Check if user already has a referral code
+        const existing = nk.storageRead([{ collection, key, userId }]);
+        if (existing && existing.length > 0 && existing[0].value && existing[0].value.code) {
+            logger.info(`Referral code already exists for ${userId}: ${existing[0].value.code}`);
+            return JSON.stringify({ success: true, referralCode: existing[0].value.code });
+        }
+
+        // Step 2 — Generate unique referral code (check for duplicates)
+        let referralCode: string="";
+        let isUnique = false;
+
+        while (!isUnique) {
+            referralCode = generateReferralCode(8);
+            const result = nk.storageList(collection, 100, "");
+            isUnique = !result.objects.some((obj: nkruntime.StorageObject) => {
+                return obj.value && obj.value.code === referralCode;
+            });
+        }
+
+
+        // Step 3 — Store permanently for this user
+        const record = {
+            collection,
+            key,
+            userId,
+            value: {
+                code: referralCode,
+                createdAt: Date.now()
+            },
+            permissionRead: 2, // Public read (optional)
+            permissionWrite: 0 // No client write
+        };
+
+        nk.storageWrite([record]);
+
+        logger.info(`✅ Created referral code for ${userId}: ${referralCode}`);
+        return JSON.stringify({ success: true, referralCode });
+    } catch (err) {
+        logger.error("Error in referral code generation: %v", err);
+        return JSON.stringify({ success: false, error: "Internal server error" });
+    }
+};
+
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
   initializer.registerMatch('lobby', {
     matchInit,
@@ -16,7 +158,12 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("dailyAttendance", dailyAttendance);
   initializer.registerRpc("collectDailyReward", collectDailyReward);
   initializer.registerRpc("spin", spin);
+  initializer.registerRpc("rpc", rpc);
+  initializer.registerRpc("getLongIdRpc", getLongIdRpc);
+  initializer.registerRpc("generateShortIdRpc", generateShortIdRpc);
+  initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
 
+  base64ToString(nk,logger,wordsBytesString);
   try {
           const res = nk.httpRequest(
       'https://raw.githubusercontent.com/SaiRamKonda9560/words/refs/heads/main/Words.json',
@@ -33,6 +180,21 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
 let wordsGenInstance:wordsGen;
 const getWordoInstance=function():wordsGen{
  return wordsGenInstance;
+}
+const rpc = function (ctx: any, logger: any, nk: any, payload: string): string {
+  try {
+    const res = nk.httpRequest(
+      "http://127.0.0.1:8000/ping",
+      "get",
+      { "Accept": "application/json" }
+    )
+
+    logger.info("Ping server response: " + res.body);
+    return res.body; // returns {"reply":"pong"}
+  } catch (error) {
+    logger.error("Ping RPC error: " + error);
+    throw new Error("Ping failed");
+  }
 }
 const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
@@ -578,4 +740,40 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
     logger.error("❌ Failed to create match: " + err.message);
     throw err;
   }
+};
+const base64ToString = function (nk:any, logger: any,base64: string): string {
+    // Use Nakama's built-in base64 decoder (recommended & fastest)
+    try {
+        return nk.base64Decode(base64);
+    } catch (e) {
+        logger.info("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
+        // Fallback: manual decoder (rarely needed)
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+        let str = base64.replace(/=+$/, '');
+        let output = '';
+
+        for (let i = 0, buffer = 0, len = str.length, charIndex = 0; i < len;) {
+            // Read 4 base64 chars → 3 bytes
+            buffer = 0;
+            for (let j = 0; j < 4 && i + j < len; j++) {
+                const char = str[i + j];
+                if (char !== '=') {
+                    buffer = (buffer << 6) | chars.indexOf(char);
+                }
+            }
+            i += 4;
+
+            // Extract 3 bytes
+            output += String.fromCharCode((buffer >> 16) & 0xFF);
+            if (charIndex + 1 < str.length * 0.75) {
+                output += String.fromCharCode((buffer >> 8) & 0xFF);
+            }
+            if (charIndex + 2 < str.length * 0.75) {
+                output += String.fromCharCode(buffer & 0xFF);
+            }
+            charIndex += 3;
+        }
+        return output;
+    }
 };

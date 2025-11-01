@@ -164,22 +164,6 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
   initializer.registerRpc("wordo", wordo);
 
-
-
-    // Write a tiny marker file (this will create it in the modules dir)
-
-  try {
-          const res = nk.httpRequest(
-      'https://raw.githubusercontent.com/SaiRamKonda9560/words/refs/heads/main/Words.json',
-      'get',
-      { 'Accept': 'application/json' }
-      );
-     wordsGenInstance = new wordsGen(res.body);
-
-    logger.info("✅ Words cached to storage");
-  } catch (err) {
-    logger.error("❌ Failed to fetch words: %s", String(err));
-  }
 }
 let wordsGenInstance:wordsGen;
 const getWordoInstance=function():wordsGen{
@@ -767,39 +751,4 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
     throw err;
   }
 };
-const base64ToString = function (nk:any, logger: any,base64: string): string {
-    // Use Nakama's built-in base64 decoder (recommended & fastest)
-    try {
-        return nk.base64Decode(base64);
-    } catch (e) {
-        logger.info("❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌");
-        // Fallback: manual decoder (rarely needed)
 
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-        let str = base64.replace(/=+$/, '');
-        let output = '';
-
-        for (let i = 0, buffer = 0, len = str.length, charIndex = 0; i < len;) {
-            // Read 4 base64 chars → 3 bytes
-            buffer = 0;
-            for (let j = 0; j < 4 && i + j < len; j++) {
-                const char = str[i + j];
-                if (char !== '=') {
-                    buffer = (buffer << 6) | chars.indexOf(char);
-                }
-            }
-            i += 4;
-
-            // Extract 3 bytes
-            output += String.fromCharCode((buffer >> 16) & 0xFF);
-            if (charIndex + 1 < str.length * 0.75) {
-                output += String.fromCharCode((buffer >> 8) & 0xFF);
-            }
-            if (charIndex + 2 < str.length * 0.75) {
-                output += String.fromCharCode(buffer & 0xFF);
-            }
-            charIndex += 3;
-        }
-        return output;
-    }
-};

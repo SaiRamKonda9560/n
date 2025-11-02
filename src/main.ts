@@ -163,7 +163,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("generateShortIdRpc", generateShortIdRpc);
   initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
   initializer.registerRpc("wordo", wordo);
-
+  initializer.registerRpc("getPlayerCoins", getPlayerCoins);
 }
 let wordsGenInstance:wordsGen;
 const getWordoInstance=function():wordsGen{
@@ -289,6 +289,66 @@ const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string):
         });
     }
 };
+const getPlayerCoins = function (ctx: any, logger: any, nk: any, payload: string): string {
+    try {
+        logger.debug(`📩 Received payload: ${payload}`);
+
+        if (typeof payload !== "string") {
+            throw new Error(`Invalid payload type: ${typeof payload}. Expected a string.`);
+        }
+
+        // Parse payload
+        let data: { userId?: string };
+        try {
+            data = JSON.parse(payload);
+        } catch (err) {
+            throw new Error(`Failed to parse payload JSON: ${(err as Error).message}`);
+        }
+
+        if (!data.userId) {
+            throw new Error("Missing required field: userId");
+        }
+
+        const userId = data.userId;
+        const collection = "player_data";
+        const key = "coins";
+
+        let currentCoins = 0;
+
+        // Read from Nakama storage
+        try {
+            const objects = nk.storageRead([{ collection, key, userId }]);
+
+            if (objects && objects.length > 0) {
+                const value = objects[0].value;
+                if (value && typeof value.coins === "number") {
+                    currentCoins = value.coins;
+                } else {
+                    logger.debug(`No valid 'coins' field found for user ${userId}. Defaulting to 0.`);
+                }
+            } else {
+                logger.debug(`No storage object found for user ${userId}.`);
+            }
+
+        } catch (readError) {
+            logger.warn(`⚠️ Failed to read coin data for user ${userId}: ${(readError as Error).message}`);
+        }
+
+        return JSON.stringify({
+            success: true,
+            coins: currentCoins
+        });
+
+    } catch (e) {
+        const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
+        logger.error(`❌ RPC Error in getPlayerCoins: ${errMsg}`);
+        return JSON.stringify({
+            success: false,
+            error: errMsg
+        });
+    }
+};
+
 const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;

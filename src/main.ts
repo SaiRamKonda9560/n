@@ -139,7 +139,6 @@ const generateReferralCodeRpc = function (ctx: any, logger: any, nk: any, payloa
         return JSON.stringify({ success: false, error: "Internal server error" });
     }
 };
-
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
   initializer.registerMatch('lobby', {
     matchInit,
@@ -348,7 +347,6 @@ const getPlayerCoins = function (ctx: any, logger: any, nk: any, payload: string
         });
     }
 };
-
 const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;
@@ -379,7 +377,11 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
                 firstLogin: now.getTime(),
                 lastLogin: 0,
                 dayIndex: 0,
-                dailyReward: null
+                dailyReward: null,
+                killCount:0,
+                wins:0,
+                losses:0,
+                houseOfWords:[]
             };
 
             // --- GIVE 5000 COINS TO NEW PLAYER ---

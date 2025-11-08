@@ -815,28 +815,42 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
     throw err;
   }
 };
-const addWord = function (nk: any,userId: string,word: string) {
-
+const addWord = function (nk: any, userId: string, word: string) {
   const collection = "player_data";
   const key = "daily_attendance";
-  // --- READ EXISTING PLAYER DATA ---
-  let attendanceData: any = null;
+
+  let attendanceData: any = { houseOfWords: [] };
+
   try {
     const objects = nk.storageRead([{ collection, key, userId }]);
     if (objects && objects.length > 0 && objects[0].value) {
       attendanceData = objects[0].value;
+      if (!Array.isArray(attendanceData.houseOfWords)) {
+        attendanceData.houseOfWords = [];
+      }
     }
   } catch (readError) {
+    nk.logger.error("Error reading storage: " + readError);
   }
 
-  attendanceData.houseOfWords = attendanceData.houseOfWords ?? [];
-  // --- UPDATE STATS ---
+  // Add the new word
   attendanceData.houseOfWords.push(word);
-  attendanceData.houseOfWords.push(word);
-  // --- SAVE UPDATED DATA BACK TO STORAGE ---
+
+  // Save updated data
   try {
-    nk.storageWrite([{collection,key,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
+    nk.storageWrite([
+      {
+        collection,
+        key,
+        userId,
+        value: attendanceData,
+        permissionRead: 1,
+        permissionWrite: 1,
+      },
+    ]);
   } catch (writeError) {
+    nk.logger.error("Error writing storage: " + writeError);
   }
 };
+
 

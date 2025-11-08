@@ -828,13 +828,7 @@ const addWord = function (nk: any,userId: string,word: string) {
     }
   } catch (readError) {
   }
-  // --- IF DATA DOESN’T EXIST, CREATE A DEFAULT STRUCTURE ---
-  if (!attendanceData) {
-    attendanceData = {
-      houseOfWords: []
-    };
-  }
-  // --- ENSURE ALL REQUIRED FIELDS EXIST ---
+
   attendanceData.houseOfWords = attendanceData.houseOfWords ?? [];
   // --- UPDATE STATS ---
   attendanceData.houseOfWords.push(word);

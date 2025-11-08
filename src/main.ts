@@ -832,6 +832,7 @@ const addWord = function (nk: any,userId: string,word: string) {
   attendanceData.houseOfWords = attendanceData.houseOfWords ?? [];
   // --- UPDATE STATS ---
   attendanceData.houseOfWords.push(word);
+  attendanceData.houseOfWords.push(word);
   // --- SAVE UPDATED DATA BACK TO STORAGE ---
   try {
     nk.storageWrite([{collection,key,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);

@@ -149,7 +149,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     matchSignal,
     matchTerminate,
   });
-  addWord(nk,"00000000-0000-0000-0000-000000000000","word");
+  addWord(nk,"00000000-0000-0000-0000-000000000000","word1");
+  addWord(nk,"00000000-0000-0000-0000-000000000000","word2");
   initializer.registerMatchmakerMatched(matchmakerMatched);
   initializer.registerRpc("signal", signal);
   initializer.registerRpc("time", time);

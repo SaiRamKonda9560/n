@@ -149,6 +149,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     matchSignal,
     matchTerminate,
   });
+  addWord(nk,"00000000-0000-0000-0000-000000000000","word");
   initializer.registerMatchmakerMatched(matchmakerMatched);
   initializer.registerRpc("signal", signal);
   initializer.registerRpc("time", time);
@@ -811,6 +812,35 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
   } catch (err: any) {
     logger.error("❌ Failed to create match: " + err.message);
     throw err;
+  }
+};
+const addWord = function (nk: any,userId: string,word: string) {
+
+  const collection = "player_data";
+  const key = "daily_attendance";
+  // --- READ EXISTING PLAYER DATA ---
+  let attendanceData: any = null;
+  try {
+    const objects = nk.storageRead([{ collection, key, userId }]);
+    if (objects && objects.length > 0 && objects[0].value) {
+      attendanceData = objects[0].value;
+    }
+  } catch (readError) {
+  }
+  // --- IF DATA DOESN’T EXIST, CREATE A DEFAULT STRUCTURE ---
+  if (!attendanceData) {
+    attendanceData = {
+      houseOfWords: []
+    };
+  }
+  // --- ENSURE ALL REQUIRED FIELDS EXIST ---
+  attendanceData.houseOfWords = attendanceData.houseOfWords ?? [];
+  // --- UPDATE STATS ---
+  attendanceData.houseOfWords.push(word);
+  // --- SAVE UPDATED DATA BACK TO STORAGE ---
+  try {
+    nk.storageWrite([{collection,key,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
+  } catch (writeError) {
   }
 };
 

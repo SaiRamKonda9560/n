@@ -485,6 +485,7 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
             success: true,
             isNewPlayer,
             firstLoginToday,
+            data:attendanceData,
             dayIndex: attendanceData.dayIndex,
             dailyReward: attendanceData.dailyReward,
             todayReward: attendanceData.dailyRewards?.[0] || null

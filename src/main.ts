@@ -854,4 +854,43 @@ const addWord = function (nk: any, userId: string, word: string) {
   }
 };
 
+const leaderboardCoinsId = "leaderboard_coins";
+const leaderboardWinsId = "leaderboard_wins";
+
+// RPC function to initialize both leaderboards
+const initLeaderBoards = function (ctx: any,logger: any,nk: any,payload: string): string {
+  try {
+    // Create "coins" leaderboard (set = replaces score)
+    nk.leaderboardCreate(leaderboardCoinsId,false,"desc","set","0 0 * * 0",{ type: "coins" },true);
+    // Create "wins" leaderboard (incr = adds score)
+    nk.leaderboardCreate(leaderboardWinsId,false,"desc","set","0 0 * * 0",{ type: "wins" },true);
+    logger.info("Leaderboards initialized successfully.");
+    return JSON.stringify({ success: true, message: "Leaderboards created." });
+  } catch (error) {
+    logger.error("Leaderboard init failed: " + error);
+    return JSON.stringify({ success: false, message: error });
+  }
+};
+function UpdateCoinsAndWins(ctx: any,logger: any,nk: any,coins: number,wins: number) {
+  const userId = ctx.userId;
+  const username = ctx.username;
+  try {
+    // Update coins leaderboard (SET total)
+    nk.leaderboardRecordWrite(leaderboardCoinsId,userId,username,coins,0,{ note: "updated coins" });
+    // Update wins leaderboard (INCR only if player won)
+    nk.leaderboardRecordWrite(leaderboardWinsId,userId,username,wins,0,{ note: "player wins" });
+    logger.debug("Updated leaderboards for player: " + username);
+  } catch (error) {
+    logger.error("Failed to update leaderboard: " + error);
+  }
+}
+function GetTopPlayers(ctx: any,logger: any,nk: any,leaderboardId: string,limit: number): nkruntime.LeaderboardRecordList {
+  try {
+    return nk.leaderboardRecordsList(leaderboardId, [], limit, "", 0);
+  } catch (error) {
+    logger.error("Error getting leaderboard: " + error);
+    return { records: [] } as nkruntime.LeaderboardRecordList;
+  }
+}
+
 

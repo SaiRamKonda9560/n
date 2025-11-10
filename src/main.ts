@@ -151,6 +151,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   });
   addWord(nk,"00000000-0000-0000-0000-000000000000","word1");
   addWord(nk,"00000000-0000-0000-0000-000000000000","word2");
+  initLeaderBoards(logger,nk,'');
+
   initializer.registerMatchmakerMatched(matchmakerMatched);
   initializer.registerRpc("signal", signal);
   initializer.registerRpc("time", time);
@@ -165,6 +167,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
   initializer.registerRpc("wordo", wordo);
   initializer.registerRpc("getPlayerCoins", getPlayerCoins);
+
 }
 let wordsGenInstance:wordsGen;
 const getWordoInstance=function():wordsGen{
@@ -858,7 +861,7 @@ const leaderboardCoinsId = "leaderboard_coins";
 const leaderboardWinsId = "leaderboard_wins";
 
 // RPC function to initialize both leaderboards
-const initLeaderBoards = function (ctx: any,logger: any,nk: any,payload: string): string {
+const initLeaderBoards = function (logger: any,nk: any,payload: string): string {
   try {
     // Create "coins" leaderboard (set = replaces score)
     nk.leaderboardCreate(leaderboardCoinsId,false,"desc","set","0 0 * * 0",{ type: "coins" },true);

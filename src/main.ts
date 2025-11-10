@@ -151,8 +151,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   });
 
   initLeaderBoards(logger,nk,'');
-  UpdateCoinsAndWins("000000000","hi",nk,200,20);
-  
+  UpdateCoinsAndWins("00000000-0000-0000-0000-000000000000","hi",nk,200,20);
+
   initializer.registerMatchmakerMatched(matchmakerMatched);
   initializer.registerRpc("signal", signal);
   initializer.registerRpc("time", time);

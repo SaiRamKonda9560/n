@@ -149,10 +149,10 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     matchSignal,
     matchTerminate,
   });
-  addWord(nk,"00000000-0000-0000-0000-000000000000","word1");
-  addWord(nk,"00000000-0000-0000-0000-000000000000","word2");
-  initLeaderBoards(logger,nk,'');
 
+  initLeaderBoards(logger,nk,'');
+  UpdateCoinsAndWins("000000000","hi",nk,200,20);
+  
   initializer.registerMatchmakerMatched(matchmakerMatched);
   initializer.registerRpc("signal", signal);
   initializer.registerRpc("time", time);
@@ -874,17 +874,13 @@ const initLeaderBoards = function (logger: any,nk: any,payload: string): string 
     return JSON.stringify({ success: false, message: error });
   }
 };
-function UpdateCoinsAndWins(ctx: any,logger: any,nk: any,coins: number,wins: number) {
-  const userId = ctx.userId;
-  const username = ctx.username;
+function UpdateCoinsAndWins(userId: string,username: string,nk: any,coins: number,wins: number) {
   try {
     // Update coins leaderboard (SET total)
     nk.leaderboardRecordWrite(leaderboardCoinsId,userId,username,coins,0,{ note: "updated coins" });
     // Update wins leaderboard (INCR only if player won)
     nk.leaderboardRecordWrite(leaderboardWinsId,userId,username,wins,0,{ note: "player wins" });
-    logger.debug("Updated leaderboards for player: " + username);
   } catch (error) {
-    logger.error("Failed to update leaderboard: " + error);
   }
 }
 function GetTopPlayers(ctx: any,logger: any,nk: any,leaderboardId: string,limit: number): nkruntime.LeaderboardRecordList {

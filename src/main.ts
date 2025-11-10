@@ -542,7 +542,6 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
         } catch (err) {
             logger.warn(`Failed to read coin data for ${userId}: ${err}`);
         }
-
         // --- IF MODE IS "read" ---
         if (mode === "read") {
             return JSON.stringify({
@@ -553,7 +552,6 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
                 attendanceData
             });
         }
-
         // --- IF MODE IS "collect" ---
         if (todayReward.isCollected) {
             return JSON.stringify({
@@ -564,23 +562,11 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
                 attendanceData
             });
         }
-
         const rewardAmount = todayReward.amount;
-        const newBalance = currentCoins + rewardAmount;
-
         // --- UPDATE COINS ---
-        nk.storageWrite([{
-            collection,
-            key: coinsKey,
-            userId,
-            value: { coins: newBalance },
-            permissionRead: 1,
-            permissionWrite: 1
-        }]);
-
+        const newBalance = playerCoins(logger,nk,userId,rewardAmount);
         // --- MARK REWARD AS COLLECTED ---
         todayReward.isCollected = true;
-
         nk.storageWrite([{
             collection,
             key: attendanceKey,
@@ -589,7 +575,6 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
             permissionRead: 1,
             permissionWrite: 1
         }]);
-
         logger.debug(`User ${userId} collected ${rewardAmount} coins for day ${today}. New total: ${newBalance}`);
 
         return JSON.stringify({
@@ -692,17 +677,9 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         // --- TAKE FIRST SPIN INDEX ---
         const nextIndex = spinIndexes.shift(); // remove first index
         const rewardAmount = spinValues[nextIndex] || 0;
-        const newBalance = currentCoins + rewardAmount;
         attendanceData.DubleSpin = rewardAmount;
         // --- SAVE UPDATED COINS ---
-        nk.storageWrite([{
-            collection,
-            key: coinsKey,
-            userId,
-            value: { coins: newBalance },
-            permissionRead: 1,
-            permissionWrite: 1
-        }]);
+        const newBalance = playerCoins(logger,nk,userId,rewardAmount);
         // --- SAVE UPDATED ATTENDANCE ---
         nk.storageWrite([{
             collection,
@@ -884,6 +861,20 @@ function UpdateCoinsAndWins(userId: string,username: string,nk: any,coins: numbe
     nk.leaderboardRecordWrite(leaderboardCoinsId,userId,username,coins,0,{ note: "updated coins" });
     // Update wins leaderboard (INCR only if player won)
     nk.leaderboardRecordWrite(leaderboardWinsId,userId,username,wins,0,{ note: "player wins" });
+  } catch (error) {
+  }
+}
+function UpdateWins(userId: string,username: string,nk: any,wins: number) {
+  try {
+    // Update wins leaderboard (INCR only if player won)
+    nk.leaderboardRecordWrite(leaderboardWinsId,userId,username,wins,0,{ note: "player wins" });
+  } catch (error) {
+  }
+}
+function UpdateCoins(userId: string,username: string,nk: any,coins: number) {
+  try {
+    // Update coins leaderboard (SET total)
+    nk.leaderboardRecordWrite(leaderboardCoinsId,userId,username,coins,0,{ note: "updated coins" });
   } catch (error) {
   }
 }

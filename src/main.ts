@@ -566,7 +566,7 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
         }
         const rewardAmount = todayReward.amount;
         // --- UPDATE COINS ---
-        const newBalance = playerCoins(logger,nk,userId,rewardAmount);
+        const newBalance = playerCoins(nk,userId,username,rewardAmount);
         // --- MARK REWARD AS COLLECTED ---
         todayReward.isCollected = true;
         nk.storageWrite([{
@@ -683,7 +683,7 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         const rewardAmount = spinValues[nextIndex] || 0;
         attendanceData.DubleSpin = rewardAmount;
         // --- SAVE UPDATED COINS ---
-        const newBalance = playerCoins(logger,nk,userId,rewardAmount);
+        const newBalance = playerCoins(nk,userId,username,rewardAmount);
         // --- SAVE UPDATED ATTENDANCE ---
         nk.storageWrite([{
             collection,

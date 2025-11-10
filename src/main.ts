@@ -507,6 +507,8 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
 const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;
+        const username = ctx.username;
+
         if (!userId) throw new Error("User ID missing from context");
 
         const collection = "player_data";
@@ -594,6 +596,8 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
 const spin = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;
+        const username = ctx.username;
+
         if (!userId) throw new Error("User ID missing from context");
         const collection = "player_data";
         const attendanceKey = "daily_attendance";

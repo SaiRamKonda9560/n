@@ -794,7 +794,7 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
   const numberOfPlayers = data.numberOfPlayers ?? 2;
   const gameMode = data.gameMode ?? "classic";
   const fee = data.fee ?? 0;
-  const usingBots = data.usingBots;
+  const usingBots = true;
   try {
     logger.info(`✅ `+payload);
 

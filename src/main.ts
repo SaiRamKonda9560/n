@@ -794,13 +794,8 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
   const numberOfPlayers = data.numberOfPlayers ?? 2;
   const gameMode = data.gameMode ?? "classic";
   const fee = data.fee ?? 0;
-  const usingBots = true;
   try {
-    logger.info(`✅ `+payload);
-
-    logger.info(`✅ `+usingBots);
-
-    const matchId = nk.matchCreate("lobby", { boardIndex, numberOfPlayers, gameMode,fee, isPrivate: true,usingBots });
+    const matchId = nk.matchCreate("lobby", { boardIndex, numberOfPlayers, gameMode,fee, isPrivate: true,bots: true });
     logger.info(`✅ Private match created: ${matchId}`);
     return JSON.stringify({ matchId });
   } catch (err: any) {

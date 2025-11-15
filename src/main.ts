@@ -794,9 +794,9 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
   const numberOfPlayers = data.numberOfPlayers ?? 2;
   const gameMode = data.gameMode ?? "classic";
   const fee = data.fee ?? 0;
-
+  const usingBots = data.usingBots??false;
   try {
-    const matchId = nk.matchCreate("lobby", { boardIndex, numberOfPlayers, gameMode,fee, isPrivate: true });
+    const matchId = nk.matchCreate("lobby", { boardIndex, numberOfPlayers, gameMode,fee, isPrivate: true,usingBots:usingBots });
     logger.info(`✅ Private match created: ${matchId}`);
     return JSON.stringify({ matchId });
   } catch (err: any) {
@@ -870,6 +870,9 @@ function UpdateCoinsAndWins(userId: string,username: string,nk: any,coins: numbe
 }
 function UpdateWins(userId: string,username: string,nk: any,wins: number) {
   try {
+        if(userId===""||username === ""){
+          return;
+        }
     // Update wins leaderboard (INCR only if player won)
     nk.leaderboardRecordWrite(leaderboardWinsId,userId,username,wins,0,{ note: "player wins" });
   } catch (error) {
@@ -877,8 +880,12 @@ function UpdateWins(userId: string,username: string,nk: any,wins: number) {
 }
 function UpdateCoins(userId: string,username: string,nk: any,coins: number) {
   try {
-    // Update coins leaderboard (SET total)
+        // Update coins leaderboard (SET total)
+        if(userId===""||username === ""){
+          return;
+        }
     nk.leaderboardRecordWrite(leaderboardCoinsId,userId,username,coins,0,{ note: "updated coins" });
+
   } catch (error) {
   }
 }

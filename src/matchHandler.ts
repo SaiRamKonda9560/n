@@ -1735,6 +1735,10 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
         }
         else{
           state.gameData.players[idx].isBot = true;
+          let userId = "00000000-0000-0000-0000-000000000000";
+          let username = "bot";
+          state.gameData.players[idx].UserId = userId;
+          state.gameData.players[idx].UserName = username;
         }
       }
       GameData.start(logger, nk);

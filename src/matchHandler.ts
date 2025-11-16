@@ -1721,22 +1721,44 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
   } 
   else {
     // Start game when all players are connected
-    if (Object.keys(state.presences).length === state.gameData.players.length && !state.isPrivate) {
+    if (state.bots) {
       const GameData = Object.assign(new LudoGameData(), state.gameData);
-      logger.info("🔔✅ All players connected 🎉");
-      Object.values(state.presences).forEach((p: any, idx: number) => {
-        if (state.gameData.players[idx]) 
-        {
-          state.gameData.players[idx].UserId = p.userId;
-          state.gameData.players[idx].UserName = p.username;
+      logger.info("🔔✅ player connected 🎉");
+      for (let idx = 0; idx < state.numberOfPlayers; idx++) {
+        if(idx==0){
+          let userId = state.presences[0].userId;
+          let username = state.presences[0].username;
+          state.gameData.players[idx].UserId = userId;
+          state.gameData.players[idx].UserName = username;
           if(state.fee)
-          playerCoins(nk,p.userId,p.username,-state.fee);
+          playerCoins(nk,userId,username,-state.fee);
         }
-        
-      });
+        else{
+          state.gameData.players[idx].isBot = true;
+        }
+      }
       GameData.start(logger, nk);
       state.gameData = GameData;
     }
+    else{
+      if (Object.keys(state.presences).length === state.gameData.players.length && !state.isPrivate) {
+        const GameData = Object.assign(new LudoGameData(), state.gameData);
+        logger.info("🔔✅ All players connected 🎉");
+        Object.values(state.presences).forEach((p: any, idx: number) => {
+          if (state.gameData.players[idx]) 
+          {
+            state.gameData.players[idx].UserId = p.userId;
+            state.gameData.players[idx].UserName = p.username;
+            if(state.fee)
+            playerCoins(nk,p.userId,p.username,-state.fee);
+          }
+          
+        });
+        GameData.start(logger, nk);
+        state.gameData = GameData;
+      }
+    }
+
   }
 
   return { state };

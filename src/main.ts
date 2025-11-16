@@ -161,6 +161,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("signal", signal);
   initializer.registerRpc("time", time);
   initializer.registerRpc("create_private_room", rpcCreateRoom);
+  initializer.registerRpc("create_private_roomWithBots", rpcCreateRoomWithBots);
+
   initializer.registerRpc("coinsHandler", coinsHandler);
   initializer.registerRpc("dailyAttendance", dailyAttendance);
   initializer.registerRpc("collectDailyReward", collectDailyReward);
@@ -789,6 +791,21 @@ const signal = function(ctx: any, logger: any, nk: any, payload: string): string
     }
 };
 const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string) {
+  const data = JSON.parse(payload || "{}");
+  const boardIndex = data.boardIndex ?? 0;
+  const numberOfPlayers = data.numberOfPlayers ?? 2;
+  const gameMode = data.gameMode ?? "classic";
+  const fee = data.fee ?? 0;
+  try {
+    const matchId = nk.matchCreate("lobby", { boardIndex, numberOfPlayers, gameMode,fee, isPrivate: true,bots: false });
+    logger.info(`✅ Private match created: ${matchId}`);
+    return JSON.stringify({ matchId });
+  } catch (err: any) {
+    logger.error("❌ Failed to create match: " + err.message);
+    throw err;
+  }
+};
+const rpcCreateRoomWithBots = function (ctx: any, logger: any, nk: any, payload: string) {
   const data = JSON.parse(payload || "{}");
   const boardIndex = data.boardIndex ?? 0;
   const numberOfPlayers = data.numberOfPlayers ?? 2;

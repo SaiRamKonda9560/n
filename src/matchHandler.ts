@@ -1722,23 +1722,36 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
   else {
     // Start game when all players are connected
     if (state.bots) {
-      const GameData = Object.assign(new LudoGameData(), state.gameData);
-      logger.info("🔔✅ player connected 🎉");
-      for (let idx = 0; idx < state.numberOfPlayers; idx++) {
-        if(idx==0){
-          let userId = state.presences[0].userId;
-          let username = state.presences[0].username;
-          state.gameData.players[idx].UserId = userId;
-          state.gameData.players[idx].UserName = username;
-          if(state.fee)
-          playerCoins(nk,userId,username,-state.fee);
-        }
-        else{
-          state.gameData.players[idx].isBot = true;
-        }
-      }
-      GameData.start(logger, nk);
-      state.gameData = GameData;
+                      // Create game data
+                      state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+                      // Start when enough players are connected
+                      if (state.numberOfPlayers === state.gameData.players.length) {
+                          logger.info("🔔✅ All players connected, starting private match...");
+                          const GameData = Object.assign(new LudoGameData(), state.gameData);
+                          // Assign user info to players
+                          for(let i =0;i<state.numberOfPlayers;i++){
+                                  if (GameData.players[i]) {
+                                    if(i===0){
+                                      let p :any= Object.values(state.presences)[0];
+                                      let userId = p.userId;
+                                      let username = p.username;
+                                      GameData.players[i].UserId = userId;
+                                      GameData.players[i].UserName = username;
+                                      //GameData.players[idx].isBot = state.bots;
+                                      if(state.fee)
+                                        playerCoins(nk,userId,username,-state.fee);
+                                    }
+                                    else{
+                                      GameData.players[i].isBot = true;
+
+                                    }
+                              }
+                          }
+                          GameData.start(logger, nk);
+                          state.gameData = GameData;
+                          applyCommend(["roomStarted", state.gameData], state, dispatcher, nk);
+                      } else {
+                      }
     }
     else{
       if (Object.keys(state.presences).length === state.gameData.players.length && !state.isPrivate) {

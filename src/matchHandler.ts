@@ -1735,10 +1735,6 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
         }
         else{
           state.gameData.players[idx].isBot = true;
-          let userId = "00000000-0000-0000-0000-000000000000";
-          let username = "bot";
-          state.gameData.players[idx].UserId = userId;
-          state.gameData.players[idx].UserName = username;
         }
       }
       GameData.start(logger, nk);
@@ -1792,7 +1788,10 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
     if (state.gameData.isGameStarted) {
           let gameData = Object.assign(new LudoGameData(), state.gameData);
           if (Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0) {
+            logger.info("⭐⭐matchTerminate Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0");
+
             ctx.matchTerminate();
+
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
             if ((state.delay as number) > 0) {
@@ -1817,6 +1816,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
     }
     if (state.isPrivate && !state.gameData.isGameStarted) {
       if(Object.keys(state.presences).length===0){
+          logger.info("⭐⭐matchTerminate Object.keys(state.presences).length===0");
           nk.matchTerminate();
       }
       const roomInfo = {
@@ -1826,7 +1826,6 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
         gameMode: state.gameMode,
         fee : state.fee
       };
-
       applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
     }
     return { state };
@@ -1948,6 +1947,48 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                           logger.info(`Waiting for more players... (${playerCount}/${state.gameData.players.length})`);
                       }
               }
+              else{
+                      const values = signal.value.split(",");
+                      if (values.length === 3) {
+                          state.boardIndex = parseInt(values[0]);
+                          state.gameMode = values[1];
+                          state.fee = values[2];
+                          logger.info(`🛠 Room updated → boardIndex=${state.boardIndex}, gameMode=${state.gameMode}`);
+                      }
+                      logger.info(`🎮 StartRoom signal received. Connected players: ${playerCount}`);
+                      //state.numberOfPlayers = 3;
+                      // Create game data
+                      state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+                      // Start when enough players are connected
+                      if (state.numberOfPlayers === state.gameData.players.length) {
+                          logger.info("🔔✅ All players connected, starting private match...");
+                          const GameData = Object.assign(new LudoGameData(), state.gameData);
+                          // Assign user info to players
+                          for(let i =0;i<state.numberOfPlayers;i++){
+                                  if (GameData.players[i]) {
+                                    if(i===0){
+                                      let p :any= Object.values(state.presences)[0];
+                                      let userId = p.userId;
+                                      let username = p.username;
+                                      GameData.players[i].UserId = userId;
+                                      GameData.players[i].UserName = username;
+                                      //GameData.players[idx].isBot = state.bots;
+                                      if(state.fee)
+                                        playerCoins(nk,userId,username,-state.fee);
+                                    }
+                                    else{
+                                      GameData.players[i].isBot = true;
+
+                                    }
+                              }
+                          }
+                          GameData.start(logger, nk);
+                          gameData = GameData;
+                          applyCommend(["roomStarted", gameData], state, dispatcher, nk);
+                      } else {
+                          logger.info(`Waiting for more players... (${playerCount}/${state.gameData.players.length})`);
+                      }
+              }
 
             }
         }
@@ -1963,7 +2004,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     }
 };
 const matchTerminate = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
-  logger.info("matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
+  logger.info("⭐⭐matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
   return { state };
 };
 const matchmakerMatched = function (ctx: any, logger: any, nk: any, matches: any[]): string {

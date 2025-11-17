@@ -885,7 +885,7 @@ class LudoGameData {
               const howManyKilled = killedPawnsList.length;
               const collectionCount = this.WordGameState?.GetPlayerCollectionCount(parseInt(playerIndex)) || 0;
               if (collectionCount > 0) {
-                  const time = 60 + howManyKilled * 5;
+                  const time = 25 + howManyKilled * 5;
                   this.isWaitingForStealData = true;
                   this.stealData = {
                       whoStealingIndex: this.WhosTurn,

@@ -1819,6 +1819,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                     let missingLetters = gameData.WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
                     let collection = gameData.WordGameState?.PlayerLetterCollections[fromWhoIndex];
                     let stealLetters : number[] = [];
+                    if(collection&&collection.length>0)
                     stealLetters.push(0);
                     if(collection&&missingLetters&&false){
                         let letters : string[] = Object.values(missingLetters);

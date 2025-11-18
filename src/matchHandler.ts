@@ -1808,7 +1808,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
             if ((state.delay as number) > 0) {
-                if(gameData.isWaitingForStealData){
+                if(gameData.isWaitingForStealData && false){
                   //isWaitingForStealData
                   let stealData =  gameData.stealData;
                   let fromWhoIndex :number = stealData?.fromWhoIndex||0;

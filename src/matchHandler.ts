@@ -1836,7 +1836,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                         }
                     }
                     var signal = new Signal("wordoSaveSteal", whoStealingIndex, JSON.stringify(stealLetters));
-                    gameData.handleWordoSignal(signal,state);
+                    matchSignal(null,logger,nk,dispatcher,tick,state,JSON.stringify(signal));
                   }
                 } 
                 state.delay = (state.delay as number) - 1;

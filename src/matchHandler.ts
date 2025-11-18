@@ -631,33 +631,7 @@ class LudoGameData {
             if(currentPlayer.isOffline||currentPlayer.isBot){
               //bot
               this.autoMove(state,0);
-              if(this.isWaitingForStealData){
-                //isWaitingForStealData
-                let stealData =  this.stealData;
-                let fromWhoIndex :number = stealData?.fromWhoIndex||0;
-                let maxLettersToPick = stealData?.maxLettersToPick;
-                let stealLetters = stealData?.stealLetters;
-                let whoStealingIndex = stealData?.whoStealingIndex;
-
-                if(whoStealingIndex == this.WhosTurn){
-                  let missingLetters = this.WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
-                  let collection = this.WordGameState?.PlayerLetterCollections[fromWhoIndex];
-                  let stealLetters : number[] = [];
-                  if(collection&&missingLetters){
-                      let letters : string[] = Object.values(missingLetters);
-                      for(let collectionIndex = 0 ; collectionIndex<collection?.length;collectionIndex++){
-                          for(let Index = 0 ; Index<letters.length;Index++){
-                            if(letters[Index]===collection[collectionIndex]){
-                                stealLetters.push(collectionIndex);
-                                break;
-                            }
-                        }
-                      }
-                  }
-                  var signal = new Signal("wordoSaveSteal", whoStealingIndex, JSON.stringify(stealLetters));
-                  this.handleWordoSignal(signal,state);
-                }
-              }  
+ 
             }
           }
       }
@@ -1834,6 +1808,37 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
             if ((state.delay as number) > 0) {
+                if(gameData.isWaitingForStealData){
+                  //isWaitingForStealData
+                  let stealData =  gameData.stealData;
+                  let fromWhoIndex :number = stealData?.fromWhoIndex||0;
+                  let maxLettersToPick :number = stealData?.maxLettersToPick;
+                  let whoStealingIndex = stealData?.whoStealingIndex;
+
+                  if(whoStealingIndex == gameData.WhosTurn){
+                    let missingLetters = gameData.WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
+                    let collection = gameData.WordGameState?.PlayerLetterCollections[fromWhoIndex];
+                    let stealLetters : number[] = [];
+                    if(collection&&missingLetters){
+                        let letters : string[] = Object.values(missingLetters);
+                        for(let collectionIndex = 0 ; collectionIndex<collection?.length;collectionIndex++){
+                            for(let Index = 0 ; Index<letters.length;Index++){
+                              if(letters[Index]===collection[collectionIndex]){
+                                  stealLetters.push(collectionIndex);
+                                  maxLettersToPick--;
+                                  break;
+                              }
+                              
+                          }
+                          if(maxLettersToPick===0){
+                            break;
+                          }
+                        }
+                    }
+                    var signal = new Signal("wordoSaveSteal", whoStealingIndex, JSON.stringify(stealLetters));
+                    gameData.handleWordoSignal(signal,state);
+                  }
+                } 
                 state.delay = (state.delay as number) - 1;
             }
             else{

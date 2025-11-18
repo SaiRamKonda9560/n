@@ -431,7 +431,7 @@ class LudoGameData {
           const pawnSignal = isPawnSignal ? signal : null;
           // Process Wordo-specific signals
           if (signal.type.startsWith('wordo')) {
-              this.handleWordoSignal(signal, state, logger);
+              this.handleWordoSignal(signal, state);
           }
           // Handle tick signal
           if (signal.type === 'tick') {
@@ -459,13 +459,13 @@ class LudoGameData {
           return turn;
       }
       // Handle Wordo-specific signals
-      private handleWordoSignal(signal: Signal, state: [string, any][], logger: any): void {
+      private handleWordoSignal(signal: Signal, state: [string, any][]): void {
           const { type, value, who } = signal;
           const json = value;
 
           switch (type) {
               case 'wordoPlaceLetters':
-                  this.handlePlaceLetters(json, who, state, logger);
+                  this.handlePlaceLetters(json, who, state);
                   break;
               case 'wordoUpdateSteal':
                   if (this.isWaitingForStealData) {
@@ -478,18 +478,15 @@ class LudoGameData {
           }
       }
       // Handle placing letters in Wordo mode
-      private handlePlaceLetters(json: any, who: number, state: [string, any][], logger: any): void {
+      private handlePlaceLetters(json: any, who: number, state: [string, any][]): void {
           const playerPlacement = JsonConvert.deserializeObject<number[]>(json);
           const missingLetters = this.WordGameState?.getMissingLettersListOfPlayer(who);
-          logger.info(`${missingLetters?.size ?? 0}💡${playerPlacement.length}`);
           let isAnyPlacement = false;
           if (playerPlacement.length === (missingLetters?.size ?? 0)) {
-              logger.info("playerPlacement.length 💡");
               let i = 0;
               for (const [wordIndex] of missingLetters ?? new Map<number, string>()) {
                   const collectionIndex = playerPlacement[i];
-                  logger.info("TryPlaceLetter 💡");
-                  if (this.WordGameState?.TryPlaceLetter(logger, who, collectionIndex, wordIndex)) {
+                  if (this.WordGameState?.TryPlaceLetter(who, collectionIndex, wordIndex)) {
                       isAnyPlacement = true;
                   }
                   i++;
@@ -626,12 +623,41 @@ class LudoGameData {
           this.tickCount++;
 
           if (this.useTimeOut && this.tickCount >= this.futureData.tickEnd) {
+            //time out
               this.autoMove(state,1);
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
             if(currentPlayer.isOffline||currentPlayer.isBot){
+              //bot
               this.autoMove(state,0);
+              if(this.isWaitingForStealData){
+                //isWaitingForStealData
+                let stealData =  this.stealData;
+                let fromWhoIndex :number = stealData?.fromWhoIndex||0;
+                let maxLettersToPick = stealData?.maxLettersToPick;
+                let stealLetters = stealData?.stealLetters;
+                let whoStealingIndex = stealData?.whoStealingIndex;
+
+                if(whoStealingIndex == this.WhosTurn){
+                  let missingLetters = this.WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
+                  let collection = this.WordGameState?.PlayerLetterCollections[fromWhoIndex];
+                  let stealLetters : number[] = [];
+                  if(collection&&missingLetters){
+                      let letters : string[] = Object.values(missingLetters);
+                      for(let collectionIndex = 0 ; collectionIndex<collection?.length;collectionIndex++){
+                          for(let Index = 0 ; Index<letters.length;Index++){
+                            if(letters[Index]===collection[collectionIndex]){
+                                stealLetters.push(collectionIndex);
+                                break;
+                            }
+                        }
+                      }
+                  }
+                  var signal = new Signal("wordoSaveSteal", whoStealingIndex, JSON.stringify(stealLetters));
+                  this.handleWordoSignal(signal,state);
+                }
+              }  
             }
           }
       }
@@ -641,6 +667,7 @@ class LudoGameData {
           player.turnOverCount+=addTurnOverCount;
           let nextPlayer = false;
           if (this.maxTurnOverCount > 0 && player.turnOverCount > this.maxTurnOverCount) {
+              //player lost
               player.isLost = true;
               nextPlayer = true;
               for(let i = 0;i<player.pawnPositions.length;i++){
@@ -723,7 +750,7 @@ class LudoGameData {
               state.push(['updateWords', this.WordGameState]);
 
           }
-          if (this.isWaitingForDiceRoll) {
+          if (this.isWaitingForDiceRoll){
               state.push(['roll', this.futureData.diceValue]);
               state.push(['addDelay', 1]);
               this.isWaitingForDiceRoll = false;
@@ -917,7 +944,7 @@ class LudoGameData {
           try {
               const collectionIndex = parseInt(value[0]);
               const wordIndex = parseInt(value[1]);
-              if (this.WordGameState?.TryPlaceLetter(logger, signal.who, collectionIndex, wordIndex)) {
+              if (this.WordGameState?.TryPlaceLetter(signal.who, collectionIndex, wordIndex)) {
                   this.WordGameState.isPlayerCompleted(this.WhosTurn);
               }
           } catch {
@@ -1377,7 +1404,7 @@ class WordGameState {
     }
   }
 
-  TryPlaceLetter(logger: any,playerIndex: number, collectionIndex: number, wordIndex: number): boolean {
+  TryPlaceLetter(playerIndex: number, collectionIndex: number, wordIndex: number): boolean {
     if (!this.IsValidPlayer(playerIndex)) return false;
     const collection = this.PlayerLetterCollections[playerIndex];
     const missingDic = this.getMissingLettersListOfPlayer(playerIndex);
@@ -1391,7 +1418,6 @@ class WordGameState {
     if (collection[collectionIndex].toLowerCase() === missingDic.get(wordIndex)!.toLowerCase())
      {
       this.PlayerLetterPlacement[playerIndex][missingIndex] = collectionIndex;
-      logger.info("placed ✅");
       return true;
      }
     return false;

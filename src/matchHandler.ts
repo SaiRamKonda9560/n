@@ -1804,7 +1804,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
 
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
-          if (state.bots &&gameData.gameMode === "wordo" &&!gameData.isWaitingForStealData &&state.tickCount % 5 === 0 &&!gameData.isGameComplected) {
+          if (state.bots &&gameData.gameMode === "wordo" &&state.tickCount % 5 === 0 &&!gameData.isGameComplected) {
               applyCommend(["message","bot"],state,dispatcher,nk);
               const players = gameData.players;
               if (players) {

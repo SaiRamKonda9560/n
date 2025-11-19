@@ -1819,8 +1819,9 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                             let whoStealingIndex = stealData.whoStealingIndex;
                             // Only if it's this bot's steal turn
                             if (whoStealingIndex === WhosTurn) {
-                                let missingLetters =gameData.WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
-                                let collection =gameData.WordGameState?.PlayerLetterCollections[fromWhoIndex];
+                                let WordGameState:WordGameState=gameData.WordGameState;
+                                let missingLetters = WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
+                                let collection =WordGameState?.PlayerLetterCollections[fromWhoIndex];
                                 if (missingLetters && collection && collection.length > 0) {
                                     let stealLetters: number[] = [];
                                     let neededLetters: string[] = Object.values(missingLetters);
@@ -1836,7 +1837,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                         }
                                     }
                                     let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                    applyCommend(["message",{signal,missingLetters,collection}],state,dispatcher,nk);
+                                    applyCommend(["message",{signal,missingLetters,collection,WordGameState,whoStealingIndex,fromWhoIndex}],state,dispatcher,nk);
                                     matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
                                 }
                             }

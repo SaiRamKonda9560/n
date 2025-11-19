@@ -1820,14 +1820,22 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                             // Only if it's this bot's steal turn
                             if (whoStealingIndex === WhosTurn) {
                                 let WordGameState:WordGameState=gameData.WordGameState;
-                                let missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
+                                let missingLetters : string[] = [];
+
+                                const fullWord = WordGameState.PlayersFullWordsData[whoStealingIndex].EnglishWord;
+                                const missingWord = WordGameState.PlayersMissingWords[whoStealingIndex];
+                                for (let i = 0; i < missingWord.length; i++) {
+                                  if (missingWord[i] === '*' || missingWord[i] === '_') {
+                                      missingLetters.push(fullWord[i]);
+                                  }
+                                }
+                                
                                 let collection =WordGameState?.PlayerLetterCollections[fromWhoIndex];
                                 if (missingLetters && collection && collection.length > 0) {
                                     let stealLetters: number[] = [];
-                                    let neededLetters: string[] = Object.values(missingLetters);
                                     for (let i = 0; i < collection.length; i++) {
-                                        for (let j = 0; j < neededLetters.length; j++) {
-                                            if (neededLetters[j] === collection[i]) {
+                                        for (let j = 0; j < missingLetters.length; j++) {
+                                            if (missingLetters[j] === collection[i]) {
                                                 stealLetters.push(i);
                                                 break;
                                             }

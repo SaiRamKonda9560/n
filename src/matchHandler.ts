@@ -1807,38 +1807,69 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
             if ((state.delay as number) > 0) {
                 let WhosTurn = gameData.WhosTurn;
                 let currentPlayer = gameData.players[WhosTurn];
-                if(currentPlayer){
-                  if(currentPlayer.bot){
-                    if(gameData.isWaitingForStealData){
-                      let stealData =  gameData.stealData;
-                      let fromWhoIndex :number = stealData?.fromWhoIndex||0;
-                      let maxLettersToPick :number = stealData?.maxLettersToPick;
-                      let whoStealingIndex = stealData?.whoStealingIndex;
-                      if(whoStealingIndex == WhosTurn){
-                        let missingLetters = gameData.WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
-                        let collection = gameData.WordGameState?.PlayerLetterCollections[fromWhoIndex];
-                        let stealLetters : number[] = [];
-                        if(collection)
-                        if(collection.length>0&&missingLetters){
-                            let letters : string[] = Object.values(missingLetters);
-                            for(let collectionIndex = 0 ; collectionIndex<collection?.length;collectionIndex++){
-                                for(let Index = 0 ; Index<letters.length;Index++){
-                                  if(letters[Index]===collection[collectionIndex]){
-                                      stealLetters.push(collectionIndex);
-                                      break;
-                                  } 
-                              }
-                              if(maxLettersToPick===stealLetters.length){
-                                break;
-                              }
+
+                if (currentPlayer && currentPlayer.bot) {
+
+                    if (gameData.isWaitingForStealData) {
+
+                        let stealData = gameData.stealData;
+
+                        if (stealData) {
+
+                            let fromWhoIndex = stealData.fromWhoIndex ?? 0;
+                            let maxLettersToPick = stealData.maxLettersToPick;
+                            let whoStealingIndex = stealData.whoStealingIndex;
+
+                            // Only if it's this bot's steal turn
+                            if (whoStealingIndex === WhosTurn) {
+
+                                let missingLetters =
+                                    gameData.WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
+
+                                let collection =
+                                    gameData.WordGameState?.PlayerLetterCollections[fromWhoIndex];
+
+                                if (missingLetters && collection && collection.length > 0) {
+
+                                    let stealLetters: number[] = [];
+                                    let neededLetters: string[] = Object.values(missingLetters);
+
+                                    for (let i = 0; i < collection.length; i++) {
+
+                                        for (let j = 0; j < neededLetters.length; j++) {
+
+                                            if (neededLetters[j] === collection[i]) {
+                                                stealLetters.push(i);
+                                                break;
+                                            }
+                                        }
+
+                                        if (stealLetters.length === maxLettersToPick) {
+                                            break;
+                                        }
+                                    }
+
+                                    let signal = new Signal(
+                                        "wordoSaveSteal",
+                                        whoStealingIndex,
+                                        JSON.stringify(stealLetters)
+                                    );
+
+                                    matchSignal(
+                                        "",
+                                        logger,
+                                        nk,
+                                        dispatcher,
+                                        tick,
+                                        state,
+                                        JSON.stringify(signal)
+                                    );
+                                }
                             }
                         }
-                        var signal = new Signal("wordoSaveSteal", whoStealingIndex, JSON.stringify(stealLetters));
-                        matchSignal(null,logger,nk,dispatcher,tick,state,JSON.stringify(signal));
-                      }
                     }
-                  }
                 }
+
                 state.delay = (state.delay as number) - 1;
             }
             else{

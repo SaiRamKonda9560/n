@@ -1810,35 +1810,34 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
               if (players) {
                   players.forEach((player, index) => {
                       if (player.isBot) {
-
                           const WordGameSt: WordGameState | null = gameData.WordGameState;
-                          if (!WordGameSt) return;
-
+                          if(WordGameSt){
                           const fullWord = WordGameSt.PlayersFullWordsData[index].EnglishWord;
                           const missingWord = WordGameSt.PlayersMissingWords[index];
                           const collection = WordGameSt.PlayerLetterCollections[index];
                           const placement = WordGameSt.PlayerLetterPlacement[index];
-
-                          // Flag to stop after placing ONE letter
-                          let placed = false;
-                          for (let i = 0; i < missingWord.length && !placed; i++) {
-                              let mLetterIndex = 0;
+                          for (let i = 0; i < missingWord.length ; i++) {
+                              let count = 0;
                               if (missingWord[i] === '*' || missingWord[i] === '_') {
-                                  if(placement[mLetterIndex]<0){
-                                    const neededLetter = fullWord[i];
-                                    for (let c = 0; c < collection.length && !placed; c++) {
-                                        if (collection[c] === neededLetter) {
-                                            placement[mLetterIndex]=c;
-                                            const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));
-                                            matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
-                                            placed = true; // stop both loops
-                                            break;
-                                        }
+                                  if(placement[count]>=0){
+                                    //letter placed
+                                    count++;
+                                  }else{
+                                    var missingLetter = fullWord[i];
+                                    //check in collection
+                                    for(let col=0;col<collection.length;col++){
+                                      if(collection[col]===missingLetter){
+                                        //found
+                                        placement[count] = col;
+                                        const signal = new Signal("wordoPlaceLetters",index,JSON.stringify([placement]));
+                                        matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                      }
                                     }
+                                    count++;
                                   }
-                                  mLetterIndex++;
                               }
                           }
+                        }
                       }
                   });
               }

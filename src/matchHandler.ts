@@ -1820,7 +1820,6 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           for (const [key, value] of missingLetters) {
                               if((placement[loopIndex])<0)
                               {
-                                
                                 applyCommend(["message",collection.includes(value)+" "+value],state,dispatcher,nk);
                                 if(collection.includes(value)){
                                   applyCommend(["message","included "+value],state,dispatcher,nk);
@@ -1841,7 +1840,6 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
             if ((state.delay as number) > 0) {
                 let WhosTurn = gameData.WhosTurn;
                 let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
-
                 if (currentPlayer && currentPlayer.isBot && (state.delay === 25||state.delay === 28)) {
 
                     if (gameData.isWaitingForStealData){
@@ -1853,33 +1851,30 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                             // Only if it's this bot's steal turn
                             if (whoStealingIndex === WhosTurn) {
                                 let WordGameState:WordGameState=gameData.WordGameState;
-                                let missingLetters : string[] = [];
-                                const fullWord = WordGameState.PlayersFullWordsData[whoStealingIndex].EnglishWord;
-                                const missingWord = WordGameState.PlayersMissingWords[whoStealingIndex];
-                                for (let i = 0; i < missingWord.length; i++) {
-                                  if (missingWord[i] === '*' || missingWord[i] === '_') {
-                                      missingLetters.push(fullWord[i]);
-                                  }
-                                }
+                                //const fullWord = WordGameState.PlayersFullWordsData[whoStealingIndex].EnglishWord;
+                                //const missingWord = WordGameState.PlayersMissingWords[whoStealingIndex];
                                 let collection:string[] =WordGameState?.PlayerLetterCollections[fromWhoIndex];
-                                if (missingLetters && collection && collection.length > 0) {
-                                    let stealLetters: number[] = [];
-                                    for (let i = 0; i < collection.length && stealLetters.length < maxLettersToPick; i++) {
-                                        if (missingLetters.includes(collection[i])) {
-                                            stealLetters.push(i);
-                                        }
+                                const missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
+                                let loopIndex = 0;
+                                let stealLetters: number[] = [];
+                                for (const [missingLetterIndex, missingLetter] of missingLetters) {
+                                    if(collection.includes(missingLetter))
+                                    {
+                                       stealLetters.push(missingLetterIndex);
+                                       if(stealLetters.length===maxLettersToPick)
+                                       {
+                                          break;
+                                       }
                                     }
-                                    let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
-                                    let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                    applyCommend(["message",{signal,stealData}],state,dispatcher,nk);
-                                    if(state.delay === 28){
-                                      matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
-
-                                    }
-                                    else if(state.delay === 25){
-                                      matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
-
-                                    }
+                                    loopIndex++;
+                                }
+                                let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
+                                let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
+                                if(state.delay === 28){
+                                  matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
+                                }
+                                else if(state.delay === 25){
+                                  matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
                                 }
                             }
                             else{

@@ -1821,7 +1821,6 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                             if (whoStealingIndex === WhosTurn) {
                                 let WordGameState:WordGameState=gameData.WordGameState;
                                 let missingLetters : string[] = [];
-
                                 const fullWord = WordGameState.PlayersFullWordsData[whoStealingIndex].EnglishWord;
                                 const missingWord = WordGameState.PlayersMissingWords[whoStealingIndex];
                                 for (let i = 0; i < missingWord.length; i++) {
@@ -1829,19 +1828,12 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                       missingLetters.push(fullWord[i]);
                                   }
                                 }
-                                
-                                let collection =WordGameState?.PlayerLetterCollections[fromWhoIndex];
+                                let collection:string[] =WordGameState?.PlayerLetterCollections[fromWhoIndex];
                                 if (missingLetters && collection && collection.length > 0) {
                                     let stealLetters: number[] = [];
-                                    for (let i = 0; i < collection.length; i++) {
-                                        for (let j = 0; j < missingLetters.length; j++) {
-                                            if (missingLetters[j] === collection[i]) {
-                                                stealLetters.push(i);
-                                                break;
-                                            }
-                                        }
-                                        if (stealLetters.length === maxLettersToPick) {
-                                            break;
+                                    for (let i = 0; i < collection.length && stealLetters.length < maxLettersToPick; i++) {
+                                        if (missingLetters.includes(collection[i])) {
+                                            stealLetters.push(i);
                                         }
                                     }
                                     let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));

@@ -1815,7 +1815,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           const placement = WordGameSt.PlayerLetterPlacement[index];
                           const missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
                           let c=Array.from(missingLetters);
-                          applyCommend(["message",{c}],state,dispatcher,nk);
+                          applyCommend(["message",{c,placement}],state,dispatcher,nk);
                           let loopIndex = 0;
                           for (const [key, value] of missingLetters) {
                               applyCommend(["message",loopIndex+"placement[loopIndex]"],state,dispatcher,nk);

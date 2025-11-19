@@ -1821,7 +1821,8 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                               missingLetters.set(i, fullWord[i]);
                             }
                           }
-                          applyCommend(["message",{missingWord,fullWord,missingLetters}],state,dispatcher,nk);
+                          let c=Array.from(missingLetters);
+                          applyCommend(["message",{c,fullWord,missingLetters}],state,dispatcher,nk);
                           let loopIndex = 0;
                           for (const [key, value] of missingLetters) {
                               if(placement[loopIndex]<0){

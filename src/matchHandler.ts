@@ -1836,7 +1836,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                           const signal = new Signal(
                                               "wordoPlaceLetters",
                                               index,
-                                              JSON.stringify([placement])
+                                              JSON.stringify(placement)
                                           );
 
                                           matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));

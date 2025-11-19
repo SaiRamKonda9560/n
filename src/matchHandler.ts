@@ -1808,7 +1808,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                 let WhosTurn = gameData.WhosTurn;
                 let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
 
-                if (currentPlayer && currentPlayer.isBot && state.delay === 25) {
+                if (currentPlayer && currentPlayer.isBot && (state.delay === 25||state.delay === 28)) {
 
                     if (gameData.isWaitingForStealData){
                         let stealData:stealData = gameData.stealData;
@@ -1835,10 +1835,17 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                             stealLetters.push(i);
                                         }
                                     }
-                                    //let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
+                                    let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
                                     let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
                                     applyCommend(["message",{signal,stealData}],state,dispatcher,nk);
-                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
+                                    if(state.delay === 28){
+                                      matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
+
+                                    }
+                                    else if(state.delay === 25){
+                                      matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
+
+                                    }
                                 }
                             }
                             else{

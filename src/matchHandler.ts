@@ -1820,7 +1820,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                             // Only if it's this bot's steal turn
                             if (whoStealingIndex === WhosTurn) {
                                 let WordGameState:WordGameState=gameData.WordGameState;
-                                let missingLetters = WordGameState?.getMissingLettersListOfPlayer(whoStealingIndex);
+                                let missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
                                 let collection =WordGameState?.PlayerLetterCollections[fromWhoIndex];
                                 if (missingLetters && collection && collection.length > 0) {
                                     let stealLetters: number[] = [];

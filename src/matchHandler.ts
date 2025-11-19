@@ -1808,10 +1808,9 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                 let WhosTurn = gameData.WhosTurn;
                 let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
 
-                if (currentPlayer && currentPlayer.isBot) {
+                if (currentPlayer && currentPlayer.isBot && state.delay === 25) {
 
-                    if (gameData.isWaitingForStealData) {
-
+                    if (gameData.isWaitingForStealData){
                         let stealData:stealData = gameData.stealData;
                         if (stealData) {
                             let fromWhoIndex = stealData.fromWhoIndex ?? 0;

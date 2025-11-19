@@ -1813,16 +1813,9 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           if(WordGameSt){
                           const collection = WordGameSt.PlayerLetterCollections[index];
                           const placement = WordGameSt.PlayerLetterPlacement[index];
-                          const missingLetters = new Map<number, string>();
-                          const fullWord = WordGameSt.PlayersFullWordsData[index].EnglishWord;
-                          const missingWord = WordGameSt.PlayersMissingWords[index];
-                          for (let i = 0; i < missingWord.length; i++) {
-                            if (missingWord[i] === '*' || missingWord[i] === '_') {
-                              missingLetters.set(i, fullWord[i]);
-                            }
-                          }
+                          const missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
                           let c=Array.from(missingLetters);
-                          applyCommend(["message",{c,fullWord,missingLetters}],state,dispatcher,nk);
+                          applyCommend(["message",{c}],state,dispatcher,nk);
                           let loopIndex = 0;
                           for (const [key, value] of missingLetters) {
                               if(placement[loopIndex]<0){

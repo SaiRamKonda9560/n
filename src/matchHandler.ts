@@ -1812,7 +1812,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
 
                     if (gameData.isWaitingForStealData) {
 
-                        let stealData = gameData.stealData;
+                        let stealData:stealData = gameData.stealData;
                         if (stealData) {
                             let fromWhoIndex = stealData.fromWhoIndex ?? 0;
                             let maxLettersToPick = stealData.maxLettersToPick;
@@ -1836,6 +1836,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                             stealLetters.push(i);
                                         }
                                     }
+                                    //let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
                                     let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
                                     applyCommend(["message",{signal,missingLetters,collection,WordGameState,whoStealingIndex,fromWhoIndex}],state,dispatcher,nk);
                                     matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
@@ -1887,7 +1888,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     try {
         // Broadcast the raw message
         dispatcher.broadcastMessage(1, data, null, null);
-        let gameData = Object.assign(new LudoGameData(), state.gameData);
+        let gameData:LudoGameData = Object.assign(new LudoGameData(), state.gameData);
         gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
         // Parse and create Signal instance
         let signalData: any;

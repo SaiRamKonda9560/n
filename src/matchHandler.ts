@@ -1813,7 +1813,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           if(WordGameSt){
                           const collection = WordGameSt.PlayerLetterCollections[index];
                           const placement = WordGameSt.PlayerLetterPlacement[index];
-                          const missingLetters:Map<number,string> = WordGameSt.getMissingLettersListOfPlayer(index);
+                          const missingLetters:Map<number,string> = getMissingLettersListOfPlayer(index,WordGameSt);
                           applyCommend(["message",missingLetters],state,dispatcher,nk);
                           let loopIndex = 0;
                           for (const [key, value] of missingLetters) {
@@ -1918,6 +1918,17 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
     }
     return { state };
 };
+  const getMissingLettersListOfPlayer = function(playerIndex: number,WordGameState :WordGameState): Map<number, string> {
+    const dic = new Map<number, string>();
+    const fullWord = WordGameState.PlayersFullWordsData[playerIndex].EnglishWord;
+    const missingWord = WordGameState.PlayersMissingWords[playerIndex];
+    for (let i = 0; i < missingWord.length; i++) {
+      if (missingWord[i] === '*' || missingWord[i] === '_') {
+        dic.set(i, fullWord[i]);
+      }
+    }
+    return dic;
+  }
 const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
     try {

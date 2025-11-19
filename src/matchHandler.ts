@@ -1918,10 +1918,10 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
     }
     return { state };
 };
-  const getMissingLettersListOfPlayer = function(playerIndex: number,WordGameState :WordGameState): Map<number, string> {
+  const getMissingLettersListOfPlayer = function(playerIndex: number,w :WordGameState): Map<number, string> {
     const dic = new Map<number, string>();
-    const fullWord = WordGameState.PlayersFullWordsData[playerIndex].EnglishWord;
-    const missingWord = WordGameState.PlayersMissingWords[playerIndex];
+    const fullWord = w.PlayersFullWordsData[playerIndex].EnglishWord;
+    const missingWord = w.PlayersMissingWords[playerIndex];
     for (let i = 0; i < missingWord.length; i++) {
       if (missingWord[i] === '*' || missingWord[i] === '_') {
         dic.set(i, fullWord[i]);

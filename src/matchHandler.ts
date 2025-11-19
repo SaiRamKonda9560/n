@@ -1836,13 +1836,11 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                         }
                                     }
                                     let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                    applyCommend(["message",signal],state,dispatcher,nk);
-
+                                    applyCommend(["message",{signal,missingLetters,collection}],state,dispatcher,nk);
                                     matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
                                 }
                             }
                             else{
-                              applyCommend(["message",{message:"whoStealingIndex === WhosTurn"}],state,dispatcher,nk);
                             }
                         }
                     }

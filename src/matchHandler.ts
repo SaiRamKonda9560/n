@@ -1838,7 +1838,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                     }
                                     //let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
                                     let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                    applyCommend(["message",{signal,missingLetters,collection,WordGameState,whoStealingIndex,fromWhoIndex}],state,dispatcher,nk);
+                                    applyCommend(["message",{signal,stealData}],state,dispatcher,nk);
                                     matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
                                 }
                             }

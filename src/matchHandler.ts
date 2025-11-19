@@ -1806,9 +1806,9 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
             if ((state.delay as number) > 0) {
                 let WhosTurn = gameData.WhosTurn;
-                let currentPlayer = gameData.players[WhosTurn];
+                let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
 
-                if (currentPlayer && currentPlayer.bot) {
+                if (currentPlayer && currentPlayer.isBot) {
 
                     if (gameData.isWaitingForStealData) {
 

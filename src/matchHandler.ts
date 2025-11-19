@@ -1805,7 +1805,6 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
           if (state.bots &&gameData.gameMode === "wordo" &&state.tickCount % 5 === 0 &&!gameData.isGameComplected) {
-              applyCommend(["message","bot"],state,dispatcher,nk);
               const players = gameData.players;
               if (players) {
                   players.forEach((player, index) => {
@@ -1815,6 +1814,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           const collection = WordGameSt.PlayerLetterCollections[index];
                           const placement = WordGameSt.PlayerLetterPlacement[index];
                           const missingLetters:Map<number,string> = WordGameSt.getMissingLettersListOfPlayer(index);
+                          applyCommend(["message",missingLetters],state,dispatcher,nk);
                           let loopIndex = 0;
                           for (const [key, value] of missingLetters) {
                               if(placement[loopIndex]<0){

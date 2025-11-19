@@ -1821,30 +1821,22 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
 
                           // Flag to stop after placing ONE letter
                           let placed = false;
-
                           for (let i = 0; i < missingWord.length && !placed; i++) {
-
+                              let mLetterIndex = 0;
                               if (missingWord[i] === '*' || missingWord[i] === '_') {
-
-                                  const neededLetter = fullWord[i];
-
-                                  for (let c = 0; c < collection.length && !placed; c++) {
-
-                                      if (collection[c] === neededLetter && !placement.includes(c)) {
-
-                                          placement.push(c);
-
-                                          const signal = new Signal(
-                                              "wordoPlaceLetters",
-                                              index,
-                                              JSON.stringify(placement)
-                                          );
-
-                                          matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
-
-                                          placed = true; // stop both loops
-                                      }
+                                  if(placement[mLetterIndex]<0){
+                                    const neededLetter = fullWord[i];
+                                    for (let c = 0; c < collection.length && !placed; c++) {
+                                        if (collection[c] === neededLetter) {
+                                            placement[mLetterIndex]=c;
+                                            const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));
+                                            matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                            placed = true; // stop both loops
+                                            break;
+                                        }
+                                    }
                                   }
+                                  mLetterIndex++;
                               }
                           }
                       }

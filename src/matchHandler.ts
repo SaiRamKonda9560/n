@@ -1818,10 +1818,9 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           applyCommend(["message",{c,placement}],state,dispatcher,nk);
                           let loopIndex = 0;
                           for (const [key, value] of missingLetters) {
-                              applyCommend(["message",loopIndex+" "+(((placement[loopIndex])<0))],state,dispatcher,nk);
-
                               if((placement[loopIndex])<0){
                                 if(collection.includes(value)){
+                                  applyCommend(["message","included "+value],state,dispatcher,nk);
                                   let colectionIndex = collection.indexOf(value);
                                   placement[loopIndex] = colectionIndex;
                                   const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));

@@ -1796,7 +1796,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
         }
     }
     if (state.gameData.isGameStarted) {
-          let gameData = Object.assign(new LudoGameData(), state.gameData);
+          let gameData :LudoGameData= Object.assign(new LudoGameData(), state.gameData);
           if (Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0) {
             logger.info("⭐⭐matchTerminate Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0");
 
@@ -1804,6 +1804,52 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
 
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+          if (state.bots &&gameData.gameMode === "wordo" &&!gameData.isWaitingForStealData &&state.tickCount % 5 === 0 &&!gameData.isGameComplected) {
+              const players = gameData.players;
+              if (players) {
+                  players.forEach((player, index) => {
+                      if (player.isBot) {
+
+                          const WordGameSt: WordGameState | null = gameData.WordGameState;
+                          if (!WordGameSt) return;
+
+                          const fullWord = WordGameSt.PlayersFullWordsData[index].EnglishWord;
+                          const missingWord = WordGameSt.PlayersMissingWords[index];
+                          const collection = WordGameSt.PlayerLetterCollections[index];
+                          const placement = WordGameSt.PlayerLetterPlacement[index];
+
+                          // Flag to stop after placing ONE letter
+                          let placed = false;
+
+                          for (let i = 0; i < missingWord.length && !placed; i++) {
+
+                              if (missingWord[i] === '*' || missingWord[i] === '_') {
+
+                                  const neededLetter = fullWord[i];
+
+                                  for (let c = 0; c < collection.length && !placed; c++) {
+
+                                      if (collection[c] === neededLetter && !placement.includes(c)) {
+
+                                          placement.push(c);
+
+                                          const signal = new Signal(
+                                              "wordoPlaceLetters",
+                                              index,
+                                              JSON.stringify([placement])
+                                          );
+
+                                          matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+
+                                          placed = true; // stop both loops
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  });
+              }
+          }
             if ((state.delay as number) > 0) {
                 let WhosTurn = gameData.WhosTurn;
                 let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
@@ -1811,7 +1857,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                 if (currentPlayer && currentPlayer.isBot && (state.delay === 25||state.delay === 28)) {
 
                     if (gameData.isWaitingForStealData){
-                        let stealData:stealData = gameData.stealData;
+                        let stealData:stealData|null = gameData.stealData;
                         if (stealData) {
                             let fromWhoIndex = stealData.fromWhoIndex ?? 0;
                             let maxLettersToPick = stealData.maxLettersToPick;

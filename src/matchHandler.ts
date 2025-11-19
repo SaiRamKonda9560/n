@@ -1812,30 +1812,21 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                       if (player.isBot) {
                           const WordGameSt: WordGameState | null = gameData.WordGameState;
                           if(WordGameSt){
-                          const fullWord = WordGameSt.PlayersFullWordsData[index].EnglishWord;
-                          const missingWord = WordGameSt.PlayersMissingWords[index];
                           const collection = WordGameSt.PlayerLetterCollections[index];
                           const placement = WordGameSt.PlayerLetterPlacement[index];
-                          for (let i = 0; i < missingWord.length ; i++) {
-                              let count = 0;
-                              if (missingWord[i] === '*' || missingWord[i] === '_') {
-                                  if(placement[count]>=0){
-                                    //letter placed
-                                    count++;
-                                  }else{
-                                    var missingLetter = fullWord[i];
-                                    //check in collection
-                                    for(let col=0;col<collection.length;col++){
-                                      if(collection[col]===missingLetter){
-                                        //found
-                                        placement[count] = col;
-                                        const signal = new Signal("wordoPlaceLetters",index,JSON.stringify([placement]));
-                                        matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
-                                      }
-                                    }
-                                    count++;
-                                  }
+                          const missingLetters:Map<number,string> = WordGameSt.getMissingLettersListOfPlayer(index);
+                          let loopIndex = 0;
+                          for (const [key, value] of missingLetters) {
+                              if(placement[loopIndex]<0){
+                                if(collection.includes(value)){
+                                  let colectionIndex = collection.indexOf(value);
+                                  placement[loopIndex] = colectionIndex;
+                                  const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));
+                                  matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                  break;
+                                }
                               }
+                              loopIndex++;
                           }
                         }
                       }

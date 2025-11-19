@@ -1818,7 +1818,10 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           applyCommend(["message",{c,placement}],state,dispatcher,nk);
                           let loopIndex = 0;
                           for (const [key, value] of missingLetters) {
-                              if((placement[loopIndex])<0){
+                              if((placement[loopIndex])<0)
+                              {
+                                
+                                applyCommend(["message",collection.includes(value)+" "+value],state,dispatcher,nk);
                                 if(collection.includes(value)){
                                   applyCommend(["message","included "+value],state,dispatcher,nk);
                                   let colectionIndex = collection.indexOf(value);

@@ -1856,7 +1856,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                            break; 
                                     } 
                                 }
-                                if(stealLetters.length>0){
+                                if(stealLetters.length>0||state.delay === 25){
                                   let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
                                   let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
                                   if(state.delay === 28){

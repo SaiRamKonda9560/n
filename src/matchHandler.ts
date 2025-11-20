@@ -1853,7 +1853,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                     if (indexInCollection !== -1) {
                                         stealLetters.push(indexInCollection);
                                         if (stealLetters.length === maxLettersToPick)
-                                           break;
+                                           break; 
                                     } 
                                 }
                                 if(stealLetters.length>0){

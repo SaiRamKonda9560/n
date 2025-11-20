@@ -462,7 +462,6 @@ class LudoGameData {
       private handleWordoSignal(signal: Signal, state: [string, any][]): void {
           const { type, value, who } = signal;
           const json = value;
-
           switch (type) {
               case 'wordoPlaceLetters':
                   this.handlePlaceLetters(json, who, state);
@@ -1498,7 +1497,7 @@ class WordGameState {
 
     for (let i = 0; i < missingWord.length; i++) {
       if (missingWord[i] === '*' || missingWord[i] === '_') {
-        dic.set(i, fullWord[i]);
+        dic.set(i, (fullWord[i].toLowerCase()));
       }
     }
     return dic;
@@ -1813,17 +1812,14 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                           if(WordGameSt){
                           const collection = WordGameSt.PlayerLetterCollections[index];
                           const placement = WordGameSt.PlayerLetterPlacement[index];
-                          const missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
-                          let c=Array.from(missingLetters);
-                          applyCommend(["message",{c,placement}],state,dispatcher,nk);
+                          let missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
                           let loopIndex = 0;
-                          for (const [key, value] of missingLetters) {
+                          for (let missingLetter of missingLetters.values()) {
                               if((placement[loopIndex])<0)
                               {
-                                applyCommend(["message",collection.includes(value)+" "+value],state,dispatcher,nk);
-                                if(collection.includes(value)){
-                                  applyCommend(["message","included "+value],state,dispatcher,nk);
-                                  let colectionIndex = collection.indexOf(value);
+                                let indexInCollection = collection.findIndex(c => c.toLowerCase() === missingLetter.toLowerCase());
+                                if(indexInCollection !== -1){
+                                  let colectionIndex = indexInCollection;
                                   placement[loopIndex] = colectionIndex;
                                   const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));
                                   matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
@@ -1841,40 +1837,34 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                 let WhosTurn = gameData.WhosTurn;
                 let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
                 if (currentPlayer && currentPlayer.isBot && (state.delay === 25||state.delay === 28)) {
-
                     if (gameData.isWaitingForStealData){
                         let stealData:stealData|null = gameData.stealData;
                         if (stealData) {
                             let fromWhoIndex = stealData.fromWhoIndex ?? 0;
                             let maxLettersToPick = stealData.maxLettersToPick;
                             let whoStealingIndex = stealData.whoStealingIndex;
-                            // Only if it's this bot's steal turn
                             if (whoStealingIndex === WhosTurn) {
                                 let WordGameState:WordGameState=gameData.WordGameState;
-                                //const fullWord = WordGameState.PlayersFullWordsData[whoStealingIndex].EnglishWord;
-                                //const missingWord = WordGameState.PlayersMissingWords[whoStealingIndex];
                                 let collection:string[] =WordGameState?.PlayerLetterCollections[fromWhoIndex];
-                                const missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
-                                let loopIndex = 0;
+                                let missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
                                 let stealLetters: number[] = [];
-                                for (const [missingLetterIndex, missingLetter] of missingLetters) {
-                                    if(collection.includes(missingLetter))
-                                    {
-                                       stealLetters.push(missingLetterIndex);
-                                       if(stealLetters.length===maxLettersToPick)
-                                       {
-                                          break;
-                                       }
+                                for (let missingLetter of missingLetters.values()) {
+                                    let indexInCollection = collection.findIndex(c => c.toLowerCase() === missingLetter.toLowerCase());
+                                    if (indexInCollection !== -1) {
+                                        stealLetters.push(indexInCollection);
+                                        if (stealLetters.length === maxLettersToPick)
+                                           break;
                                     }
-                                    loopIndex++;
                                 }
-                                let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
-                                let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                if(state.delay === 28){
-                                  matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
-                                }
-                                else if(state.delay === 25){
-                                  matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
+                                if(stealLetters.length>0){
+                                  let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
+                                  let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
+                                  if(state.delay === 28){
+                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
+                                  }
+                                  else if(state.delay === 25){
+                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
+                                  }
                                 }
                             }
                             else{
@@ -1918,7 +1908,6 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
     }
     return { state };
 };
-
 const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
     try {
@@ -2081,9 +2070,6 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
 
             }
         }
-
-
-
         state.gameData = gameData;
         return { state };
     } catch (e) {

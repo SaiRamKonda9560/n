@@ -1854,7 +1854,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                         stealLetters.push(indexInCollection);
                                         if (stealLetters.length === maxLettersToPick)
                                            break;
-                                    }
+                                    } 
                                 }
                                 if(stealLetters.length>0){
                                   let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));

@@ -357,22 +357,19 @@ class LudoGameData {
             }
           }
         }
-
+        let letter ="";
         if (this.gameMode === 'wordo') {
           if (this.WordGameState?.IsValidPlayer(this.WhosTurn)) {
             const localPos = LudoGameData.Wrap(newPos, playerPathLength - 1);
-            const worldPosition = LudoGameData.Wrap(
-              numberOfBlocksForPlayer * this.players[this.WhosTurn].PlayerBaseIndex + localPos,
-              playerPathLength - 1
-            );
+            const worldPosition = LudoGameData.Wrap(numberOfBlocksForPlayer * this.players[this.WhosTurn].PlayerBaseIndex + localPos,playerPathLength - 1);
             const isLetterPresent = worldPosition in this.WordGameState!.BoardLetters;
             if (isLetterPresent) {
-              const letter = this.WordGameState!.BoardLetters[worldPosition];
+               letter = this.WordGameState!.BoardLetters[worldPosition];
             }
           }
         }
         this.futureData.futureMoves.push(
-          new FutureMove(pawnId, myStepsCount + deadPawnsStepsCount, killedPlayers, isSafe, isPawnWin, movedPlayers)
+          new FutureMove(pawnId, myStepsCount + deadPawnsStepsCount, killedPlayers, isSafe, isPawnWin, movedPlayers,letter)
         );
       }
     }
@@ -411,9 +408,6 @@ class LudoGameData {
 
     this.GenerateFutureMoves();
   }
-
-
-
 
 //#region game logic
       public GameLogic(logger: any, signal: Signal | null): [string, any][] {
@@ -737,36 +731,46 @@ class LudoGameData {
 
                 if (this.futureData.futureMoves.length !== 1) {
 
+                  let letterMoves: FutureMove[] = [];
                   let killMoves: FutureMove[] = [];
                   let winsMoves: FutureMove[] = [];
                   let safeMoves: FutureMove[] = [];
                   // ✔ One loop for everything
                   for (let p of this.futureData.futureMoves) {
-
+                    if(p.letter!==""){
+                      let missingLetters = this.WordGameState?.getMissingLettersListOfPlayer(this.WhosTurn);
+                      if(missingLetters)
+                      for (let missingLetter of missingLetters.values()) {
+                         if(missingLetter.toLowerCase()===p.letter.toLowerCase()){
+                            letterMoves.push(p);
+                         }
+                      }                     
+                    }
                     // killed players?
                     if (Object.keys(p.killedPlayers).length > 0) {
                       killMoves.push(p);
                       continue;
                     }
-
                     // win move?
                     if (p.isWin) {
                       winsMoves.push(p);
                       
                       continue;
                     }
-
-                  // safe move?
-                  if (p.isSafe) {
-                      const currentPos = player.movebulPawnIds[p.movablePawnId];
-                      const isInSafe = this.safeTiles.includes(currentPos);
-                      if (!isInSafe) {
-                          safeMoves.push(p);
-                      }
-                  }
+                    // safe move?
+                    if (p.isSafe) {
+                        const currentPos = player.movebulPawnIds[p.movablePawnId];
+                        const isInSafe = this.safeTiles.includes(currentPos);
+                        if (!isInSafe) {
+                            safeMoves.push(p);
+                        }
+                    }
                   }
                   // priority: kill → win → safe
-                  if (killMoves.length > 0) {
+                  if (letterMoves.length > 0) {
+                    pawnSignal.value = letterMoves[0].movablePawnId.toString();
+                  } 
+                  else if (killMoves.length > 0) {
                     pawnSignal.value = killMoves[0].movablePawnId.toString();
                   } 
                   else if (winsMoves.length > 0) {
@@ -1338,21 +1342,15 @@ class FutureMove {
   public isWin: boolean;
   public killedPlayers: { [key: number]: number[] };
   public playerDatas: LudoPlayerData[];
-
-  constructor(
-    movablePawnId: number,
-    stepsCount: number,
-    killedPlayers: { [key: number]: number[] },
-    isSafe: boolean,
-    isWin: boolean,
-    playerDatas: LudoPlayerData[]
-  ) {
+  public letter:string="";
+  constructor(movablePawnId: number,stepsCount: number,killedPlayers: { [key: number]: number[] },isSafe: boolean,isWin: boolean,playerDatas: LudoPlayerData[],letter : string) {
     this.movablePawnId = movablePawnId;
     this.stepsCount = stepsCount;
     this.killedPlayers = killedPlayers;
     this.isSafe = isSafe;
     this.isWin = isWin;
     this.playerDatas = playerDatas;
+    this.letter = letter
   }
 }
 class WordGameState {

@@ -1078,8 +1078,6 @@ class LudoPlayerData {
   public movebulPawnIds: number[] = [];
   public isLost : boolean = false;
   public isBot : boolean = false;
-  public lockMeaning : boolean = false;
-  public lockAudio : boolean = false;
 
   public turnOverCount : number =0;
   public killCount : number = 0;
@@ -1590,9 +1588,6 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
     player.UserName = `player ${i}`;
     player.isWin = false;
     player.isOffline = false;
-    player.lockAudio = true;
-    player.lockMeaning = true;
-
     player.rank = 0;
     player.movebulPawnIds = [];
     gameData.players.push(player);
@@ -1950,23 +1945,6 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     applyCommend(commends.shift()!, state,dispatcher,nk);
                 }
             }
-            if (signal && (signal.type === "lock")){
-               let player = gameData.players[signal.who];
-               let lockAudio = (signal.value==="audio");
-               let meaningAudio = (signal.value==="meaning");
-               let coins: number = playerCoins(nk,player.UserId,player.UserId,0);
-               if(coins>100){
-                  if(lockAudio&&gameData.players[signal.who].lockAudio){
-                    let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
-                    gameData.players[signal.who].lockMeaning = false;
-                  }
-                  if(meaningAudio&&gameData.players[signal.who].lockMeaning){
-                    let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
-                    gameData.players[signal.who].lockMeaning = false;   
-                  }
-               }
-            }
-
         }
 
         if (state.isPrivate && !gameData.isGameStarted) {

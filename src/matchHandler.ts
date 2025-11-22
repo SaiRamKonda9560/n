@@ -1962,7 +1962,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                   }
                   if(meaningAudio&&gameData.players[signal.who].lockMeaning){
                     let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
-                    gameData.players[signal.who].lockMeaning = false; 
+                    gameData.players[signal.who].lockMeaning = false;   
                   }
                }
             }

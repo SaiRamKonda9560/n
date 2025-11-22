@@ -1958,7 +1958,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                if(coins>100){
                   if(lockAudio&&gameData.players[signal.who].lockAudio){
                     let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
-                    gameData.players[signal.who].lockMeaning = false;
+                    gameData.players[signal.who].lockAudio = false;
                   }
                   if(meaningAudio&&gameData.players[signal.who].lockMeaning){
                     let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);

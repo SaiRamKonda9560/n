@@ -1078,8 +1078,8 @@ class LudoPlayerData {
   public movebulPawnIds: number[] = [];
   public isLost : boolean = false;
   public isBot : boolean = false;
-  public lockMeaning : boolean = true;
-  public lockAudio : boolean = true;
+  public lockMeaning : boolean = false;
+  public lockAudio : boolean = false;
 
   public turnOverCount : number =0;
   public killCount : number = 0;
@@ -1590,6 +1590,9 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
     player.UserName = `player ${i}`;
     player.isWin = false;
     player.isOffline = false;
+    player.lockAudio = true;
+    player.lockMeaning = true;
+
     player.rank = 0;
     player.movebulPawnIds = [];
     gameData.players.push(player);
@@ -1951,7 +1954,6 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                let player = gameData.players[signal.who];
                let lockAudio = (signal.value==="audio");
                let meaningAudio = (signal.value==="meaning");
-
                let coins: number = playerCoins(nk,player.UserId,player.UserId,0);
                if(coins>100){
                   if(lockAudio&&gameData.players[signal.who].lockAudio){

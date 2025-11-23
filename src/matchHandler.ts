@@ -1953,16 +1953,18 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
             if (signal && (signal.type === "lock")){
                let player = gameData.players[signal.who];
                let lockAudio = (signal.value==="audio");
-               let meaningAudio = (signal.value==="meaning");
+               let lockMeaning = (signal.value==="meaning");
                let coins: number = playerCoins(nk,player.UserId,player.UserId,0);
                if(coins>100){
                   if(lockAudio&&gameData.players[signal.who].lockAudio){
                     let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
                     gameData.players[signal.who].lockAudio = false;
+                    applyCommend(["unLock", {who:signal.who,type:"audio"}], state, dispatcher, nk);
                   }
-                  if(meaningAudio&&gameData.players[signal.who].lockMeaning){
+                  if(lockMeaning&&gameData.players[signal.who].lockMeaning){
                     let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
-                    gameData.players[signal.who].lockMeaning = false;   
+                    gameData.players[signal.who].lockMeaning = false;
+                    applyCommend(["unLock", {who:signal.who,type:"meaning"}], state, dispatcher, nk);
                   }
                }
             }

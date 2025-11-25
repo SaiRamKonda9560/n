@@ -1952,10 +1952,24 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
             }
             if (signal && (signal.type === "lock")){
                let player = gameData.players[signal.who];
-               let lockAudio = (signal.value==="audio");
-               let lockMeaning = (signal.value==="meaning");
-               let coins: number = playerCoins(nk,player.UserId,player.UserId,0);
-               if(coins>100){
+               let data = JSON.parse(signal.value);
+               let lockAudio = (data.type==="audio");
+               let lockMeaning = (data.type==="meaning");
+               if(data.ad){
+
+                  if(lockAudio&&gameData.players[signal.who].lockAudio){
+                    gameData.players[signal.who].lockAudio = false;
+                    applyCommend(["unLock", {who:signal.who,type:"audio"}], state, dispatcher, nk);
+                  }
+                  if(lockMeaning&&gameData.players[signal.who].lockMeaning){
+                    gameData.players[signal.who].lockMeaning = false;
+                    applyCommend(["unLock", {who:signal.who,type:"meaning"}], state, dispatcher, nk);
+                  }
+                  
+               }
+               else{
+                  let coins: number = playerCoins(nk,player.UserId,player.UserId,0);
+                  if(coins>100 || data.ad){
                   if(lockAudio&&gameData.players[signal.who].lockAudio){
                     let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
                     gameData.players[signal.who].lockAudio = false;
@@ -1966,7 +1980,9 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     gameData.players[signal.who].lockMeaning = false;
                     applyCommend(["unLock", {who:signal.who,type:"meaning"}], state, dispatcher, nk);
                   }
+                  }
                }
+
             }
 
         }

@@ -621,7 +621,7 @@ class LudoGameData {
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
-            if((currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >((this.tickCountForPlayer -3)-this.futureData.tickEnd)) ){
+            if((currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -5))) ){
               //bot
               this.autoMove(state,0);
             }

@@ -1582,7 +1582,7 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
       0,
       0,
       false,
-      getInitialPawnPositions((gameData.BoardId === 0 ? 9 : 13),2,3)
+      getInitialPawnPositions((gameData.BoardId === 0 ? 9 : 13),2,2)
     );
     player.PlayerBaseIndex = baseIndexes[i];
     player.PlayerTurn = i;

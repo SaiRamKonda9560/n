@@ -621,10 +621,9 @@ class LudoGameData {
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
-            if(currentPlayer.isOffline||currentPlayer.isBot){
+            if((currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >((this.tickCountForPlayer -3)-this.futureData.tickEnd)) ){
               //bot
               this.autoMove(state,0);
- 
             }
           }
       }
@@ -1827,11 +1826,10 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
           let gameData :LudoGameData= Object.assign(new LudoGameData(), state.gameData);
           if (Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0) {
             logger.info("⭐⭐matchTerminate Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0");
-
             ctx.matchTerminate();
-
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+          //bot
           if (state.bots &&gameData.gameMode === "wordo" &&state.tickCount % 5 === 0 &&!gameData.isGameComplected) {
               const players = gameData.players;
               if (players) {
@@ -1862,7 +1860,9 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                   });
               }
           }
+          ///bot
             if ((state.delay as number) > 0) {
+                //bot
                 let WhosTurn = gameData.WhosTurn;
                 let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
                 if (currentPlayer && currentPlayer.isBot && (state.delay === 25||state.delay === 28)) {
@@ -1901,7 +1901,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                         }
                     }
                 }
-
+                //bot
                 state.delay = (state.delay as number) - 1;
             }
             else{

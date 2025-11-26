@@ -1582,7 +1582,7 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
       0,
       0,
       false,
-      gameMode === 'wordo' || gameMode === 'quick' ? [0, 0, -1, -1] : [-1, -1, -1, -1] // all pawns in base
+      getInitialPawnPositions((gameData.BoardId === 0 ? 9 : 13),2,3)
     );
     player.PlayerBaseIndex = baseIndexes[i];
     player.PlayerTurn = i;
@@ -1600,6 +1600,32 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
 
   return gameData;
 }
+function getInitialPawnPositions(lengthForEachPlayer: number,numberOfPlayers:number,positionMode:number): number[] {
+    // 0 = your home
+    // 1 = next player
+    // 2 = diagonal
+    // 3 = previous player
+
+    switch (positionMode) {
+
+        case 0:
+          //all in
+          return [-1,-1,-1,-1];
+        case 1:
+            // old behaviour
+            return [0, 0, -1, -1];
+        case 2:  
+            // 2 at your home, 2 at diagonal
+            var p = (lengthForEachPlayer*2);
+            return [0,0,p,p];
+        case 3:
+            // one pawn in each player's home
+            return [0,lengthForEachPlayer,(lengthForEachPlayer*2),(lengthForEachPlayer*3)];
+    }
+    return [-1,-1,-1,-1];
+
+}
+
 const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
     const state = {
         presences: {} as Record<string, any>,

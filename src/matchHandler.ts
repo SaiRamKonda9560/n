@@ -69,7 +69,7 @@ class LudoGameData {
     if (playerIndex >= 0 && playerIndex < this.players.length) {
       this.players[playerIndex].isWin = true;
       this.players[playerIndex].rank = this.rankCount;
-      this.rankCount=(this.rankCount+1);
+      this.rankCount++;
     }
     this.checkPlayers();
 
@@ -572,6 +572,11 @@ class LudoGameData {
                 this.WordGameState.PlayerLetterCollections[player.PlayerTurn].length = 0;
               }
               state.push(['updateWords', this.WordGameState]);
+
+
+
+
+
               this.PlayerWin(who);
               state.push(['UpdateMainPlayersData', this.players]);
           }
@@ -616,7 +621,7 @@ class LudoGameData {
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
-            if((currentPlayer.isOffline||currentPlayer.isBot ) && ((this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -3))) ||true)){
+            if((currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -3))) ){
               //bot
               this.autoMove(state,0);
             }
@@ -1825,7 +1830,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
           }
           gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
           //bot
-          if (state.bots &&gameData.gameMode === "wordo" &&state.tickCount % 5 === 0 &&!gameData.isGameComplected && !gameData.isWaitingForStealData) {
+          if (state.bots &&gameData.gameMode === "wordo" &&state.tickCount % 5 === 0 &&!gameData.isGameComplected) {
               const players = gameData.players;
               if (players) {
                   players.forEach((player, index) => {
@@ -1845,7 +1850,6 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                   placement[loopIndex] = colectionIndex;
                                   const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));
                                   matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
-                                  gameData= Object.assign(new LudoGameData(), state.gameData);
                                   break;
                                 }
                               }

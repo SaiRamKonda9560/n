@@ -69,7 +69,7 @@ class LudoGameData {
     if (playerIndex >= 0 && playerIndex < this.players.length) {
       this.players[playerIndex].isWin = true;
       this.players[playerIndex].rank = this.rankCount;
-      this.rankCount++;
+      this.rankCount=(this.rankCount+1);
     }
     this.checkPlayers();
 
@@ -621,7 +621,7 @@ class LudoGameData {
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
-            if((currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -3))) ){
+            if((currentPlayer.isOffline||currentPlayer.isBot ) && ((this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -3))) ||true)){
               //bot
               this.autoMove(state,0);
             }

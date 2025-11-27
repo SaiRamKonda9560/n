@@ -1884,9 +1884,12 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                 if(stealLetters.length>0||state.delay === 25){
                                   let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
                                   let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                  matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify((state.delay === 28)?updateSignal:signal) );
-                                  gameData= Object.assign(new LudoGameData(), state.gameData);
-
+                                  if(state.delay === 28){
+                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
+                                  }
+                                  else if(state.delay === 25){
+                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
+                                  }
                                 }
                             }
                             else{

@@ -1849,112 +1849,118 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
         // ============================
         // 🤖 WORDO BOT LOGIC (every 5 ticks)
         // ============================
-        if (
-            state.bots &&
-            gameData.gameMode === "wordo" &&
-            state.tickCount % 5 === 0 &&
-            !gameData.isGameComplected
-        ) {
-            const players = gameData.players;
-            if (players) {
-                players.forEach((player, index) => {
+        try{
+            if (state.bots &&gameData.gameMode === "wordo" && state.tickCount % 5 === 0 && !gameData.isGameComplected)
+            {
+                const players = gameData.players;
+                if (players) {
+                    players.forEach((player, index) => {
 
-                    // Skip non-bot players
-                    if (!player.isBot) return;
+                        // Skip non-bot players
+                        if (!player.isBot) return;
 
-                    const WordGameSt: WordGameState | null = gameData.WordGameState;
-                    if (!WordGameSt) return;
+                        const WordGameSt: WordGameState | null = gameData.WordGameState;
+                        if (!WordGameSt) return;
 
-                    const collection = WordGameSt.PlayerLetterCollections[index];
-                    const placement = WordGameSt.PlayerLetterPlacement[index];
+                        const collection = WordGameSt.PlayerLetterCollections[index];
+                        const placement = WordGameSt.PlayerLetterPlacement[index];
 
-                    // Get missing letters to fill
-                    let missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
+                        // Get missing letters to fill
+                        let missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
 
-                    let loopIndex = 0;
-                    for (let missingLetter of missingLetters.values()) {
+                        let loopIndex = 0;
+                        for (let missingLetter of missingLetters.values()) {
 
-                        // If this placement spot is empty
-                        if ((placement[loopIndex]) < 0) {
+                            // If this placement spot is empty
+                            if ((placement[loopIndex]) < 0) {
 
-                            // Find letter in collection
-                            let indexInCollection = collection.findIndex(
-                                c => c.toLowerCase() === missingLetter.toLowerCase()
-                            );
+                                // Find letter in collection
+                                let indexInCollection = collection.findIndex(
+                                    c => c.toLowerCase() === missingLetter.toLowerCase()
+                                );
 
-                            if (indexInCollection !== -1) {
+                                if (indexInCollection !== -1) {
 
-                                // Fill the placement
-                                placement[loopIndex] = indexInCollection;
+                                    // Fill the placement
+                                    placement[loopIndex] = indexInCollection;
 
-                                // Send update signal
-                                const signal = new Signal("wordoPlaceLetters", index, JSON.stringify(placement));
-                                matchSignal("", logger, nk, dispatcher, tick,state, JSON.stringify(signal));
-                                gameData = Object.assign(new LudoGameData(), state.gameData);
-                                gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+                                    // Send update signal
+                                    const signal = new Signal("wordoPlaceLetters", index, JSON.stringify(placement));
+                                    matchSignal("", logger, nk, dispatcher, tick,state, JSON.stringify(signal));
+                                    gameData = Object.assign(new LudoGameData(), state.gameData);
+                                    gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
 
-                                break;
+                                    break;
+                                }
                             }
+                            loopIndex++;
                         }
-                        loopIndex++;
-                    }
-                });
+                    });
+                }
             }
         }
+          catch (error){
+              logger.info( "WORDO BOT "+error);
+        }
+
 
         // ============================
         // 🕒 BOT ACTION DELAY SYSTEM
         // ============================
         if ((state.delay as number) > 0) {
 
-            let WhosTurn = gameData.WhosTurn;
-            let currentPlayer: LudoPlayerData = gameData.players[WhosTurn];
-
             // Bot only triggers on specific delay values
-            if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28) && !gameData.isGameComplected) {
+            try{
+                let WhosTurn = gameData.WhosTurn;
+                let currentPlayer: LudoPlayerData = gameData.players[WhosTurn];
+                if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28) && !gameData.isGameComplected) {
 
-                // If bot is stealing letters
-                if (gameData.isWaitingForStealData) {
+                    // If bot is stealing letters
+                    if (gameData.isWaitingForStealData) {
 
-                    let stealData: stealData | null = gameData.stealData;
-                    if (stealData) {
+                        let stealData: stealData | null = gameData.stealData;
+                        if (stealData) {
 
-                        let fromWhoIndex = stealData.fromWhoIndex ?? 0;
-                        let maxLettersToPick = stealData.maxLettersToPick;
-                        let whoStealingIndex = stealData.whoStealingIndex;
+                            let fromWhoIndex = stealData.fromWhoIndex ?? 0;
+                            let maxLettersToPick = stealData.maxLettersToPick;
+                            let whoStealingIndex = stealData.whoStealingIndex;
 
-                        // Only steal on bot's turn
-                        if (whoStealingIndex === WhosTurn) {
+                            // Only steal on bot's turn
+                            if (whoStealingIndex === WhosTurn) {
 
-                            let WordState: WordGameState = gameData.WordGameState;
-                            let collection: string[] = WordState.PlayerLetterCollections[fromWhoIndex];
-                            let missingLetters = WordState.getMissingLettersListOfPlayer(whoStealingIndex);
+                                let WordState: WordGameState = gameData.WordGameState;
+                                let collection: string[] = WordState.PlayerLetterCollections[fromWhoIndex];
+                                let missingLetters = WordState.getMissingLettersListOfPlayer(whoStealingIndex);
 
-                            let stealLetters: number[] = [];
+                                let stealLetters: number[] = [];
 
-                            // Try to steal missing letters
-                            for (let missingLetter of missingLetters.values()) {
-                                let indexInCollection = collection.findIndex(
-                                    c => c.toLowerCase() === missingLetter.toLowerCase()
-                                );
+                                // Try to steal missing letters
+                                for (let missingLetter of missingLetters.values()) {
+                                    let indexInCollection = collection.findIndex(
+                                        c => c.toLowerCase() === missingLetter.toLowerCase()
+                                    );
 
-                                if (indexInCollection !== -1) {
-                                    stealLetters.push(indexInCollection);
-                                    if (stealLetters.length === maxLettersToPick) break;
+                                    if (indexInCollection !== -1) {
+                                        stealLetters.push(indexInCollection);
+                                        if (stealLetters.length === maxLettersToPick) break;
+                                    }
                                 }
-                            }
 
-                            // If bot found letters OR it's forced by delay
-                            if (stealLetters.length > 0 || state.delay === 25) {
-                               let isUpdate = (state.delay === 28) ;
-                                let signal = new Signal((isUpdate?"wordoUpdateSteal":"wordoSaveSteal"), WhosTurn, JSON.stringify(stealLetters));
-                                matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
-                                gameData = Object.assign(new LudoGameData(), state.gameData);
-                                gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+                                // If bot found letters OR it's forced by delay
+                                if (stealLetters.length > 0 || state.delay === 25) {
+                                  let isUpdate = (state.delay === 28) ;
+                                    let signal = new Signal((isUpdate?"wordoUpdateSteal":"wordoSaveSteal"), WhosTurn, JSON.stringify(stealLetters));
+                                    matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                    gameData = Object.assign(new LudoGameData(), state.gameData);
+                                    gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+                                }
                             }
                         }
                     }
                 }
+            }
+            catch (error){
+              logger.info( "BOT ACTION "+error);
             }
 
             // decrease delay each tick

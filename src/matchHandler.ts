@@ -572,11 +572,6 @@ class LudoGameData {
                 this.WordGameState.PlayerLetterCollections[player.PlayerTurn].length = 0;
               }
               state.push(['updateWords', this.WordGameState]);
-
-
-
-
-
               this.PlayerWin(who);
               state.push(['UpdateMainPlayersData', this.players]);
           }
@@ -1850,6 +1845,7 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                   placement[loopIndex] = colectionIndex;
                                   const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));
                                   matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                  gameData= Object.assign(new LudoGameData(), state.gameData);
                                   break;
                                 }
                               }
@@ -1888,12 +1884,9 @@ const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: n
                                 if(stealLetters.length>0||state.delay === 25){
                                   let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
                                   let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                  if(state.delay === 28){
-                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
-                                  }
-                                  else if(state.delay === 25){
-                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
-                                  }
+                                  matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify((state.delay === 28)?updateSignal:signal) );
+                                  gameData= Object.assign(new LudoGameData(), state.gameData);
+
                                 }
                             }
                             else{

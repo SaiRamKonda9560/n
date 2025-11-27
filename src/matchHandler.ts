@@ -1815,333 +1815,455 @@ const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: 
   dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainPlayersData:${JSON.stringify(state.gameData.players)}`), Object.values(state.presences));
   return { state };
 };
-const matchLoop = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
+// Main match loop – runs every tick.
+const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
+
+    // Convert presences dictionary → array
     const presences: nkruntime.Presence[] = [];
     for (const key in state.presences) {
         if (state.presences.hasOwnProperty(key)) {
             presences.push(state.presences[key]);
         }
     }
+
+    // ============================
+    // 🔵 GAME RUNNING SECTION
+    // ============================
     if (state.gameData.isGameStarted) {
-          let gameData :LudoGameData= Object.assign(new LudoGameData(), state.gameData);
-          if (Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0) {
+
+        // Reconstruct class instance (required because Nakama serializes objects)
+        let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);
+        // Reconstruct WordGameState instance
+        gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+
+        // Auto terminate match if:
+        // 1. No players
+        // 2. Tick too high
+        // 3. End-game timeout finished
+        if (Object.keys(state.presences).length === 0 || state.tickCount > 3600 || state.endGameTimeOut <= 0) {
             logger.info("⭐⭐matchTerminate Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0");
             ctx.matchTerminate();
-          }
-          gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
-          //bot
-          if (state.bots &&gameData.gameMode === "wordo" &&state.tickCount % 5 === 0 &&!gameData.isGameComplected) {
-              const players = gameData.players;
-              if (players) {
-                  players.forEach((player, index) => {
-                      if (player.isBot) {
-                          const WordGameSt: WordGameState | null = gameData.WordGameState;
-                          if(WordGameSt){
-                          const collection = WordGameSt.PlayerLetterCollections[index];
-                          const placement = WordGameSt.PlayerLetterPlacement[index];
-                          let missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
-                          let loopIndex = 0;
-                          for (let missingLetter of missingLetters.values()) {
-                              if((placement[loopIndex])<0)
-                              {
-                                let indexInCollection = collection.findIndex(c => c.toLowerCase() === missingLetter.toLowerCase());
-                                if(indexInCollection !== -1){
-                                  let colectionIndex = indexInCollection;
-                                  placement[loopIndex] = colectionIndex;
-                                  const signal = new Signal("wordoPlaceLetters",index,JSON.stringify(placement));
-                                  matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
-                                  break;
-                                }
-                              }
-                              loopIndex++;
-                          }
+        }
+
+        // ============================
+        // 🤖 WORDO BOT LOGIC (every 5 ticks)
+        // ============================
+        if (
+            state.bots &&
+            gameData.gameMode === "wordo" &&
+            state.tickCount % 5 === 0 &&
+            !gameData.isGameComplected
+        ) {
+            const players = gameData.players;
+            if (players) {
+                players.forEach((player, index) => {
+
+                    // Skip non-bot players
+                    if (!player.isBot) return;
+
+                    const WordGameSt: WordGameState | null = gameData.WordGameState;
+                    if (!WordGameSt) return;
+
+                    const collection = WordGameSt.PlayerLetterCollections[index];
+                    const placement = WordGameSt.PlayerLetterPlacement[index];
+
+                    // Get missing letters to fill
+                    let missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
+
+                    let loopIndex = 0;
+                    for (let missingLetter of missingLetters.values()) {
+
+                        // If this placement spot is empty
+                        if ((placement[loopIndex]) < 0) {
+
+                            // Find letter in collection
+                            let indexInCollection = collection.findIndex(
+                                c => c.toLowerCase() === missingLetter.toLowerCase()
+                            );
+
+                            if (indexInCollection !== -1) {
+
+                                // Fill the placement
+                                placement[loopIndex] = indexInCollection;
+
+                                // Send update signal
+                                const signal = new Signal("wordoPlaceLetters", index, JSON.stringify(placement));
+                                matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+
+                                break;
+                            }
                         }
-                      }
-                  });
-              }
-          }
-          ///bot
-            if ((state.delay as number) > 0) {
-                //bot
-                let WhosTurn = gameData.WhosTurn;
-                let currentPlayer:LudoPlayerData = gameData.players[WhosTurn];
-                if (currentPlayer && currentPlayer.isBot && (state.delay === 25||state.delay === 28)) {
-                    if (gameData.isWaitingForStealData){
-                        let stealData:stealData|null = gameData.stealData;
-                        if (stealData) {
-                            let fromWhoIndex = stealData.fromWhoIndex ?? 0;
-                            let maxLettersToPick = stealData.maxLettersToPick;
-                            let whoStealingIndex = stealData.whoStealingIndex;
-                            if (whoStealingIndex === WhosTurn) {
-                                let WordGameState:WordGameState=gameData.WordGameState;
-                                let collection:string[] =WordGameState?.PlayerLetterCollections[fromWhoIndex];
-                                let missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
-                                let stealLetters: number[] = [];
-                                for (let missingLetter of missingLetters.values()) {
-                                    let indexInCollection = collection.findIndex(c => c.toLowerCase() === missingLetter.toLowerCase());
-                                    if (indexInCollection !== -1) {
-                                        stealLetters.push(indexInCollection);
-                                        if (stealLetters.length === maxLettersToPick)
-                                           break; 
-                                    } 
-                                }
-                                if(stealLetters.length>0||state.delay === 25){
-                                  let updateSignal = new Signal("wordoUpdateSteal",WhosTurn,JSON.stringify(stealLetters));
-                                  let signal = new Signal("wordoSaveSteal",WhosTurn,JSON.stringify(stealLetters));
-                                  if(state.delay === 28){
-                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(updateSignal) );
-                                  }
-                                  else if(state.delay === 25){
-                                    matchSignal("",logger,nk,dispatcher,tick,state,JSON.stringify(signal) );
-                                  }
+                        loopIndex++;
+                    }
+                });
+            }
+        }
+
+        // ============================
+        // 🕒 BOT ACTION DELAY SYSTEM
+        // ============================
+        if ((state.delay as number) > 0) {
+
+            let WhosTurn = gameData.WhosTurn;
+            let currentPlayer: LudoPlayerData = gameData.players[WhosTurn];
+
+            // Bot only triggers on specific delay values
+            if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28)) {
+
+                // If bot is stealing letters
+                if (gameData.isWaitingForStealData) {
+
+                    let stealData: stealData | null = gameData.stealData;
+                    if (stealData) {
+
+                        let fromWhoIndex = stealData.fromWhoIndex ?? 0;
+                        let maxLettersToPick = stealData.maxLettersToPick;
+                        let whoStealingIndex = stealData.whoStealingIndex;
+
+                        // Only steal on bot's turn
+                        if (whoStealingIndex === WhosTurn) {
+
+                            let WordGameState: WordGameState = gameData.WordGameState;
+                            let collection: string[] = WordGameState.PlayerLetterCollections[fromWhoIndex];
+                            let missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
+
+                            let stealLetters: number[] = [];
+
+                            // Try to steal missing letters
+                            for (let missingLetter of missingLetters.values()) {
+                                let indexInCollection = collection.findIndex(
+                                    c => c.toLowerCase() === missingLetter.toLowerCase()
+                                );
+
+                                if (indexInCollection !== -1) {
+                                    stealLetters.push(indexInCollection);
+                                    if (stealLetters.length === maxLettersToPick) break;
                                 }
                             }
-                            else{
+
+                            // If bot found letters OR it's forced by delay
+                            if (stealLetters.length > 0 || state.delay === 25) {
+
+                                let updateSignal = new Signal("wordoUpdateSteal", WhosTurn, JSON.stringify(stealLetters));
+                                let signal = new Signal("wordoSaveSteal", WhosTurn, JSON.stringify(stealLetters));
+
+                                if (state.delay === 28) {
+                                    matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(updateSignal));
+                                }
+                                else if (state.delay === 25) {
+                                    matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                }
                             }
                         }
                     }
                 }
-                //bot
-                state.delay = (state.delay as number) - 1;
             }
-            else{
-                state.commends.push(...gameData.GameLogic(logger,new Signal("tick", 0, "0")));
-            }
-            while (state.commends.length > 0) {
-                if ((state.delay as number) > 0) break;
-                const commend = state.commends.shift()!;
-                applyCommend(commend, state,dispatcher,nk);
-            }
-            state.tickCount++;
-            dispatcher.broadcastMessage(0,nk.stringToBinary("tc:"+state.tickCount+","+gameData.tickCount),Object.values(state.presences));
-            state.gameData = gameData;
-            if(gameData.isGameComplected)
-            {
-                  state.endGameTimeOut--;
-                  return { state };
-            }
+
+            // decrease delay each tick
+            state.delay = (state.delay as number) - 1;
+        }
+
+        // ============================
+        // 🧠 GAME LOGIC EXECUTION
+        // ============================
+        else {
+            state.commends.push(
+                ...gameData.GameLogic(logger, new Signal("tick", 0, "0"))
+            );
+        }
+
+        // Execute commands from queue
+        while (state.commends.length > 0) {
+            if ((state.delay as number) > 0) break;
+
+            const commend = state.commends.shift()!;
+            applyCommend(commend, state, dispatcher, nk);
+        }
+
+        // Update tick count
+        state.tickCount++;
+
+        // Send tick counter to players
+        dispatcher.broadcastMessage(
+            0,
+            nk.stringToBinary("tc:" + state.tickCount + "," + gameData.tickCount),
+            Object.values(state.presences)
+        );
+
+        // Save updated game state
+        state.gameData = gameData;
+
+        // If game finished → decrease end timer
+        if (gameData.isGameComplected) {
+            state.endGameTimeOut--;
+            return { state };
+        }
     }
+
+    // ============================
+    // 🔒 PRIVATE ROOM BEFORE GAME START
+    // ============================
     if (state.isPrivate && !state.gameData.isGameStarted) {
-      if(Object.keys(state.presences).length===0){
-          logger.info("⭐⭐matchTerminate Object.keys(state.presences).length===0");
-          nk.matchTerminate();
-      }
-      const roomInfo = {
-        playerIds: Object.keys(state.presences).map(pid => state.presences[pid].userId),
-        playerUserNames: Object.keys(state.presences).map(pid => state.presences[pid].username),
-        boardIndex: state.boardIndex,
-        gameMode: state.gameMode,
-        fee : state.fee
-      };
-      applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
+
+        if (Object.keys(state.presences).length === 0) {
+            logger.info("⭐⭐matchTerminate Object.keys(state.presences).length===0");
+            nk.matchTerminate();
+        }
+
+        // Send room info to players
+        const roomInfo = {
+            playerIds: Object.keys(state.presences).map(pid => state.presences[pid].userId),
+            playerUserNames: Object.keys(state.presences).map(pid => state.presences[pid].username),
+            boardIndex: state.boardIndex,
+            gameMode: state.gameMode,
+            fee: state.fee
+        };
+
+        applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
     }
+
     return { state };
 };
+
+// Handles any signal coming from players/bots and updates game state.
 const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
     try {
-        // Broadcast the raw message
+
+        // 🔹 Send the raw JSON signal to all connected players
         dispatcher.broadcastMessage(1, data, null, null);
-        let gameData:LudoGameData = Object.assign(new LudoGameData(), state.gameData);
+
+        // 🔹 Re-create gameData and WordGameState classes (important for class methods)
+        let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);
         gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
-        // Parse and create Signal instance
+
+        // -------------------------------------------------------
+        // 1️⃣ Parse incoming JSON → create a Signal instance
+        // -------------------------------------------------------
         let signalData: any;
+
         try {
             signalData = JSON.parse(data);
         } catch (e) {
-            throw new Error(`Invalid JSON data: ${e instanceof Error ? e.message : JSON.stringify(e)}`);
+            throw new Error("Invalid JSON in matchSignal: " + e);
         }
+
         const signal = new Signal(
             signalData.type ?? "tick",
             signalData.who ?? 0,
             signalData.value ?? ""
         );
 
-        if(gameData.isGameStarted){
+        // -------------------------------------------------------
+        // 2️⃣ GAME STARTED → process dice, pawn, and wordo signals
+        // -------------------------------------------------------
+        if (gameData.isGameStarted) {
+
             const commends = state.commends as [string, any][];
+
+            // Handle dice/pawn/wordo signals
             if (signal && (signal.type === "dice" || signal.type === "pawn" || signal.type.startsWith("wordo"))) {
-    
+
+                // 🔹 wordo commands are applied immediately
                 if (signal.type.startsWith("wordo")) {
-                    logger.info("😂 "+signal.type+"-"+signal.value);
-                    const newCommends = gameData.GameLogic(logger,signal);
+                    logger.info("😂 " + signal.type + " - " + signal.value);
+
+                    const newCommends = gameData.GameLogic(logger, signal);
+
                     while (newCommends.length > 0) {
-                        logger.info("😂 new commend "+newCommends[0][0]);
-                        applyCommend(newCommends.shift()!, state,dispatcher,nk);
+                        logger.info("😂 new commend: " + newCommends[0][0]);
+                        applyCommend(newCommends.shift()!, state, dispatcher, nk);
                     }
-                } else {
-                    commends.push(...gameData.GameLogic(logger,signal));
                 }
+                // 🔹 dice and pawn commands go to state.commends queue
+                else {
+                    commends.push(...gameData.GameLogic(logger, signal));
+                }
+
+                // 🔹 Apply queued commends unless delay is active
                 while (commends.length > 0) {
-                    if ((state["delay"] as number) > 0) break;
-                    applyCommend(commends.shift()!, state,dispatcher,nk);
+                    if (state.delay > 0) break;
+                    applyCommend(commends.shift()!, state, dispatcher, nk);
                 }
             }
-            if (signal && (signal.type === "lock")){
-               let player = gameData.players[signal.who];
-               let data = JSON.parse(signal.value);
-               let lockAudio = (data.type==="audio");
-               let lockMeaning = (data.type==="meaning");
-               if(data.ad){
 
-                  if(lockAudio&&gameData.players[signal.who].lockAudio){
-                    gameData.players[signal.who].lockAudio = false;
-                    applyCommend(["unLock", {who:signal.who,type:"audio"}], state, dispatcher, nk);
-                  }
-                  if(lockMeaning&&gameData.players[signal.who].lockMeaning){
-                    gameData.players[signal.who].lockMeaning = false;
-                    applyCommend(["unLock", {who:signal.who,type:"meaning"}], state, dispatcher, nk);
-                  }
-                  
-               }
-               else{
-                  let coins: number = playerCoins(nk,player.UserId,player.UserId,0);
-                  if(coins>100 || data.ad){
-                  if(lockAudio&&gameData.players[signal.who].lockAudio){
-                    let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
-                    gameData.players[signal.who].lockAudio = false;
-                    applyCommend(["unLock", {who:signal.who,type:"audio"}], state, dispatcher, nk);
-                  }
-                  if(lockMeaning&&gameData.players[signal.who].lockMeaning){
-                    let newCoins : number = playerCoins(nk,player.UserId,player.UserId,-100);
-                    gameData.players[signal.who].lockMeaning = false;
-                    applyCommend(["unLock", {who:signal.who,type:"meaning"}], state, dispatcher, nk);
-                  }
-                  }
-               }
+            // -------------------------------------------------------
+            // 3️⃣ Handle lock / unlock requests for Audio + Meaning
+            // -------------------------------------------------------
+            if (signal && signal.type === "lock") {
 
-            }
+                let player = gameData.players[signal.who];
+                let data = JSON.parse(signal.value);
 
-        }
+                const lockAudio = (data.type === "audio");
+                const lockMeaning = (data.type === "meaning");
 
-        if (state.isPrivate && !gameData.isGameStarted) {
-            if (signal.type === "updateRoom") {
-                const values = signal.value.split(",");
-                if (values.length === 3){
-                    state.boardIndex = parseInt(values[0]);
-                    state.gameMode = values[1];
-                    state.fee = values[2];
+                // Player used AD → unlock for free
+                if (data.ad) {
 
-                    logger.info(`🛠 Room updated → boardIndex=${state.boardIndex}, gameMode=${state.gameMode}`);
-                    // Loop through all players and remove any with fewer coins than the room fee
-                for (const pid of Object.keys(state.presences)) {
-                    const player = state.presences[pid];
-                    const coins = playerCoins(nk, player.userId,player.username, 0);
+                    if (lockAudio && player.lockAudio) {
+                        player.lockAudio = false;
+                        applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
+                    }
 
-                    if (coins < state.fee) {
-                        logger.info(`💸 Removing player ${player.username} (coins=${coins}) — not enough for fee ${state.fee}`);
+                    if (lockMeaning && player.lockMeaning) {
+                        player.lockMeaning = false;
+                        applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
+                    }
+                }
+                else {
+                    // Normal unlock: deduct 100 coins
+                    const coins = playerCoins(nk, player.UserId, player.UserId, 0);
 
-                        const result = dispatcher.matchKick([player]); // ✅ pass presence object, not sessionId
+                    if (coins > 100) {
 
-                        if (result) {
-                            logger.error(`⚠️ matchKick failed: ${result}`);
-                        } else {
-                            logger.info(`✅ Player ${player.username} kicked successfully`);
-                            delete state.presences[pid];
+                        if (lockAudio && player.lockAudio) {
+                            playerCoins(nk, player.UserId, player.UserId, -100);
+                            player.lockAudio = false;
+                            applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
+                        }
+
+                        if (lockMeaning && player.lockMeaning) {
+                            playerCoins(nk, player.UserId, player.UserId, -100);
+                            player.lockMeaning = false;
+                            applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
                         }
                     }
                 }
-                }
-                // here loop through all players and remove and player with less coins then state.fee 
-                // call this method to get user coins const playerCoins =function(logger: any, nk: any,userId:any,addMoney:any):number{
-                const roomInfo = {
-                playerIds: Object.keys(state.presences).map(pid => state.presences[pid].userId),
-                playerUserNames: Object.keys(state.presences).map(pid => state.presences[pid].username),
-                boardIndex: state.boardIndex,
-                gameMode: state.gameMode,
-                fee : state.fee
-
-                };
-                applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
-            }
-            if (signal.type === "startRoom") {
-                const playerCount = Object.keys(state.presences).length;
-                if(playerCount>1){
-                      const values = signal.value.split(",");
-                      if (values.length === 3) {
-                          state.boardIndex = parseInt(values[0]);
-                          state.gameMode = values[1];
-                          state.fee = values[2];
-
-                          logger.info(`🛠 Room updated → boardIndex=${state.boardIndex}, gameMode=${state.gameMode}`);
-                      }
-                      logger.info(`🎮 StartRoom signal received. Connected players: ${playerCount}`);
-                      // Create game data
-                      state.gameData = genLudoGameData(state.boardIndex, playerCount, state.gameMode, 30);
-                      // Start when enough players are connected
-                      if (playerCount === state.gameData.players.length) {
-                          logger.info("🔔✅ All players connected, starting private match...");
-                          const GameData = Object.assign(new LudoGameData(), state.gameData);
-                          // Assign user info to players
-                          Object.values(state.presences).forEach((p: any, idx: number) => {
-                              if (GameData.players[idx]) {
-                                  GameData.players[idx].UserId = p.userId;
-                                  GameData.players[idx].UserName = p.username;
-                                  //GameData.players[idx].isBot = state.bots;
-
-                                  if(state.fee)
-                                    playerCoins(nk,p.userId,p.username,-state.fee);
-                              }
-                          });
-                          GameData.start(logger, nk);
-                          gameData = GameData;
-                          applyCommend(["roomStarted", gameData], state, dispatcher, nk);
-                      } else {
-                          logger.info(`Waiting for more players... (${playerCount}/${state.gameData.players.length})`);
-                      }
-              }
-              else{
-                      const values = signal.value.split(",");
-                      if (values.length === 3) {
-                          state.boardIndex = parseInt(values[0]);
-                          state.gameMode = values[1];
-                          state.fee = values[2];
-                          logger.info(`🛠 Room updated → boardIndex=${state.boardIndex}, gameMode=${state.gameMode}`);
-                      }
-                      logger.info(`🎮 StartRoom signal received. Connected players: ${playerCount}`);
-                      //state.numberOfPlayers = 3;
-                      // Create game data
-                      state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
-                      // Start when enough players are connected
-                      if (state.numberOfPlayers === state.gameData.players.length) {
-                          logger.info("🔔✅ All players connected, starting private match...");
-                          const GameData = Object.assign(new LudoGameData(), state.gameData);
-                          // Assign user info to players
-                          for(let i =0;i<state.numberOfPlayers;i++){
-                                  if (GameData.players[i]) {
-                                    if(i===0){
-                                      let p :any= Object.values(state.presences)[0];
-                                      let userId = p.userId;
-                                      let username = p.username;
-                                      GameData.players[i].UserId = userId;
-                                      GameData.players[i].UserName = username;
-                                      //GameData.players[idx].isBot = state.bots;
-                                      if(state.fee)
-                                        playerCoins(nk,userId,username,-state.fee);
-                                    }
-                                    else{
-                                      GameData.players[i].isBot = true;
-
-                                    }
-                              }
-                          }
-                          GameData.start(logger, nk);
-                          gameData = GameData;
-                          applyCommend(["roomStarted", gameData], state, dispatcher, nk);
-                      } else {
-                          logger.info(`Waiting for more players... (${playerCount}/${state.gameData.players.length})`);
-                      }
-              }
-
             }
         }
+
+        // -------------------------------------------------------
+        // 4️⃣ PRIVATE ROOM → handle updateRoom and startRoom
+        // -------------------------------------------------------
+        if (state.isPrivate && !gameData.isGameStarted) {
+
+            // -------- updateRoom --------
+            if (signal.type === "updateRoom") {
+
+                const values = signal.value.split(",");
+                if (values.length === 3) {
+                    state.boardIndex = parseInt(values[0]);
+                    state.gameMode = values[1];
+                    state.fee = values[2];
+                }
+
+                logger.info(`🛠 Room updated: boardIndex=${state.boardIndex}, gameMode=${state.gameMode}`);
+
+                // 🔥 Kick players with low coins
+                for (const pid of Object.keys(state.presences)) {
+
+                    const player = state.presences[pid];
+                    const coins = playerCoins(nk, player.userId, player.username, 0);
+
+                    if (coins < state.fee) {
+                        logger.info(`💸 Kicking ${player.username}, coins=${coins}`);
+                        
+                        const result = dispatcher.matchKick([player]);
+                        if (!result) delete state.presences[pid];
+                    }
+                }
+
+                // Broadcast updated room info
+                const roomInfo = {
+                    playerIds: Object.keys(state.presences).map(pid => state.presences[pid].userId),
+                    playerUserNames: Object.keys(state.presences).map(pid => state.presences[pid].username),
+                    boardIndex: state.boardIndex,
+                    gameMode: state.gameMode,
+                    fee: state.fee
+                };
+
+                applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
+            }
+
+            // -------- startRoom --------
+            if (signal.type === "startRoom") {
+
+                const playerCount = Object.keys(state.presences).length;
+
+                const values = signal.value.split(",");
+                if (values.length === 3) {
+                    state.boardIndex = parseInt(values[0]);
+                    state.gameMode = values[1];
+                    state.fee = values[2];
+                }
+
+                logger.info(`🎮 StartRoom: players=${playerCount}`);
+
+                // AUTO MODE (all real players)
+                if (playerCount > 1) {
+
+                    state.gameData = genLudoGameData(state.boardIndex, playerCount, state.gameMode, 30);
+
+                    // Start when full
+                    if (playerCount === state.gameData.players.length) {
+
+                        logger.info("🔔 All players connected → starting match");
+
+                        const GameData = Object.assign(new LudoGameData(), state.gameData);
+
+                        Object.values(state.presences).forEach((p: any, idx: number) => {
+                            if (GameData.players[idx]) {
+                                GameData.players[idx].UserId = p.userId;
+                                GameData.players[idx].UserName = p.username;
+
+                                if (state.fee)
+                                    playerCoins(nk, p.userId, p.username, -state.fee);
+                            }
+                        });
+
+                        GameData.start(logger, nk);
+                        gameData = GameData;
+
+                        applyCommend(["roomStarted", gameData], state, dispatcher, nk);
+                    }
+                }
+                // BOT MODE
+                else {
+
+                    state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+
+                    if (state.numberOfPlayers === state.gameData.players.length) {
+
+                        logger.info("🔔 Starting bot match");
+
+                        const GameData = Object.assign(new LudoGameData(), state.gameData);
+
+                        for (let i = 0; i < state.numberOfPlayers; i++) {
+
+                            if (i === 0) {
+                                const p: any = Object.values(state.presences)[0];
+                                GameData.players[i].UserId = p.userId;
+                                GameData.players[i].UserName = p.username;
+
+                                if (state.fee)
+                                    playerCoins(nk, p.userId, p.username, -state.fee);
+                            } else {
+                                GameData.players[i].isBot = true;
+                            }
+                        }
+
+                        GameData.start(logger, nk);
+                        gameData = GameData;
+
+                        applyCommend(["roomStarted", gameData], state, dispatcher, nk);
+                    }
+                }
+            }
+        }
+
+        // Save updated gameData
         state.gameData = gameData;
+
         return { state };
-    } catch (e) {
-        const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
-        logger.error(`MatchSignal Error: tick=${tick}, data=${data}, error=${errMsg}`);
-        throw new Error(`matchSignal failed: ${errMsg}`);
+    }
+    catch (e) {
+        logger.error("matchSignal error: " + e);
+        throw e;
     }
 };
+
+
 const matchTerminate = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
   logger.info("⭐⭐matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
   return { state };

@@ -621,7 +621,8 @@ class LudoGameData {
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
-            if((currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -3))) ){
+            const move =(currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -1)));
+            if(move){
               //bot
               this.autoMove(state,0);
             }
@@ -1888,7 +1889,9 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
 
                                 // Send update signal
                                 const signal = new Signal("wordoPlaceLetters", index, JSON.stringify(placement));
-                                matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                matchSignal("", logger, nk, dispatcher, tick,state, JSON.stringify(signal));
+                                gameData = Object.assign(new LudoGameData(), state.gameData);
+                                gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
 
                                 break;
                             }
@@ -1908,7 +1911,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             let currentPlayer: LudoPlayerData = gameData.players[WhosTurn];
 
             // Bot only triggers on specific delay values
-            if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28)) {
+            if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28) && gameData.isGameComplected) {
 
                 // If bot is stealing letters
                 if (gameData.isWaitingForStealData) {
@@ -1923,9 +1926,9 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
                         // Only steal on bot's turn
                         if (whoStealingIndex === WhosTurn) {
 
-                            let WordGameState: WordGameState = gameData.WordGameState;
-                            let collection: string[] = WordGameState.PlayerLetterCollections[fromWhoIndex];
-                            let missingLetters = WordGameState.getMissingLettersListOfPlayer(whoStealingIndex);
+                            let WordState: WordGameState = gameData.WordGameState;
+                            let collection: string[] = WordState.PlayerLetterCollections[fromWhoIndex];
+                            let missingLetters = WordState.getMissingLettersListOfPlayer(whoStealingIndex);
 
                             let stealLetters: number[] = [];
 
@@ -1943,16 +1946,11 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
 
                             // If bot found letters OR it's forced by delay
                             if (stealLetters.length > 0 || state.delay === 25) {
-
-                                let updateSignal = new Signal("wordoUpdateSteal", WhosTurn, JSON.stringify(stealLetters));
-                                let signal = new Signal("wordoSaveSteal", WhosTurn, JSON.stringify(stealLetters));
-
-                                if (state.delay === 28) {
-                                    matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(updateSignal));
-                                }
-                                else if (state.delay === 25) {
-                                    matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
-                                }
+                               let isUpdate = (state.delay === 28) ;
+                                let signal = new Signal((isUpdate?"wordoUpdateSteal":"wordoSaveSteal"), WhosTurn, JSON.stringify(stealLetters));
+                                matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                gameData = Object.assign(new LudoGameData(), state.gameData);
+                                gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
                             }
                         }
                     }

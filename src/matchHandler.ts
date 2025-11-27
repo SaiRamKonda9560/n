@@ -578,7 +578,7 @@ class LudoGameData {
 
 
               this.PlayerWin(who);
-              //state.push(['UpdateMainPlayersData', this.players]);
+              state.push(['UpdateMainPlayersData', this.players]);
           }
           if (isPlayerCompleted) {
               if (this.IsAllWin()) {

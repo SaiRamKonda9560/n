@@ -1900,7 +1900,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             }
         }
           catch (error){
-              logger.info( "WORDO BOT "+error);
+              logger.info( "WORDO BOT 🙊🙊🙊"+error);
         }
 
 
@@ -1960,7 +1960,8 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
                 }
             }
             catch (error){
-              logger.info( "BOT ACTION "+error);
+              logger.info( "BOT ACTION 🙊🙊🙊"+error);
+
             }
 
             // decrease delay each tick

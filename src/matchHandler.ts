@@ -1911,7 +1911,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             let currentPlayer: LudoPlayerData = gameData.players[WhosTurn];
 
             // Bot only triggers on specific delay values
-            if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28) && gameData.isGameComplected) {
+            if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28) && !gameData.isGameComplected) {
 
                 // If bot is stealing letters
                 if (gameData.isWaitingForStealData) {

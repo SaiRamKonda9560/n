@@ -1658,55 +1658,65 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             break;
         case "complected":
             break;
-        case "playerWin":
-            let fee = state.fee;
-            let gameData = Object.assign(new LudoGameData(), state.gameData);
-            // The player we are rewarding
-            let p = obj as LudoPlayerData;
-            if (p.isBot) {return;}
-            // Update this player's rank
-            playerWin(nk, p, gameData);
-            // Total players in match (we use only this)
-            let playerCount = gameData.players.length;
-            // If this player has no rank, stop
-            if (p.rank <= 0) {return;}
-            // Deduction logic
-            let deduction = 0;
-            if (fee >= 50000) deduction = 5000;
-            else if (fee >= 10000) deduction = 1000;
-            else if (fee >= 5000) deduction = 500;
-            else if (fee >= 2000) deduction = 200;
-            else if (fee >= 1000) deduction = 100;
-            else if (fee >= 500) deduction = 50;
-            let totalPrize = fee * playerCount - deduction;
-            // ------------------------------
-            // REWARD ONLY THIS PLAYER (p)
-            // ------------------------------
-            let reward = 0;
-            if (playerCount === 2)
-            {
-                // Only rank 1 gets reward
-                if (p.rank === 1)
-                    reward = Math.floor(totalPrize * 0.70);
-            }
-            else if (playerCount === 4)
-            {
-                // Rank 1 and Rank 2 get reward
-                if (p.rank === 1)
-                    reward = Math.floor(totalPrize * 0.70);
-                else if (p.rank === 2)
-                    reward = Math.floor(totalPrize * 0.30);
-            }
-            else
-            {
-                // Default: only rank 1 gets reward
-                if (p.rank === 1)
-                    reward = Math.floor(totalPrize * 0.70);
-            }
-            if (reward > 0)
-                playerCoins(nk, p.UserId, p.UserName, reward);
-        
-        break;
+    case "playerWin":
+    {
+        let fee = state.fee;
+        let gameData = Object.assign(new LudoGameData(), state.gameData);
+
+        // The player we are rewarding
+        let p = obj as LudoPlayerData;
+        if (p.isBot) return;
+
+        // Update this player's rank
+        playerWin(nk, p, gameData);
+
+        // Total players in match (we use only this)
+        let playerCount = gameData.players.length;
+
+        // If this player has no rank, stop
+        if (p.rank <= 0) return;
+
+        // Deduction logic
+        let deduction = 0;
+        if (fee >= 50000) deduction = 5000;
+        else if (fee >= 10000) deduction = 1000;
+        else if (fee >= 5000) deduction = 500;
+        else if (fee >= 2000) deduction = 200;
+        else if (fee >= 1000) deduction = 100;
+        else if (fee >= 500) deduction = 50;
+
+        let totalPrize = fee * playerCount - deduction;
+
+        // ------------------------------
+        // REWARD ONLY THIS PLAYER (p)
+        // ------------------------------
+        let reward = 0;
+
+        if (playerCount === 2)
+        {
+            // Only rank 1 gets reward
+            if (p.rank === 1)
+                reward = Math.floor(totalPrize * 0.70);
+        }
+        else if (playerCount === 4)
+        {
+            // Rank 1 and Rank 2 get reward
+            if (p.rank === 1)
+                reward = Math.floor(totalPrize * 0.70);
+            else if (p.rank === 2)
+                reward = Math.floor(totalPrize * 0.30);
+        }
+        else
+        {
+            // Default: only rank 1 gets reward
+            if (p.rank === 1)
+                reward = Math.floor(totalPrize * 0.70);
+        }
+
+        if (reward > 0)
+            playerCoins(nk, p.UserId, p.UserName, reward);
+    }
+    break;
 
     }
 

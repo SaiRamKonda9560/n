@@ -2046,18 +2046,6 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     }
 };
 const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
-    let mode = params.gameMode;
-    switch(params.gameMode){
-      case "m1":
-      mode = "wordo";
-      break;
-      case "m2":
-      mode = "wordo";
-      break;
-      case "m3":
-      mode = "wordo";
-      break;
-    }
     const state = {
         presences: {} as Record<string, any>,
         delay: 0,
@@ -2067,7 +2055,7 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
         boardIndex:params.boardIndex,
         bots:params.bots??false,
         numberOfPlayers:params.numberOfPlayers,
-        gameMode:mode,
+        gameMode:params.gameMode,
         fee:params.fee,
         gameData: genLudoGameData(params.boardIndex, params.numberOfPlayers, params.gameMode,30),
         isPrivate:params.isPrivate

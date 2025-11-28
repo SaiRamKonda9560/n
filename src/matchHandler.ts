@@ -1661,47 +1661,53 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
         case "playerWin":
             let fee = state.fee;
             let gameData = Object.assign(new LudoGameData(), state.gameData);
-            let p :LudoPlayerData = obj;
-            if(p.isBot){return;}
-            let players: LudoPlayerData[]=[];
-            players.push(p);
+            // The player we are rewarding
+            let p = obj as LudoPlayerData;
+            if (p.isBot) {return;}
+            // Update this player's rank
+            playerWin(nk, p, gameData);
+            // Total players in match (we use only this)
             let playerCount = gameData.players.length;
-            for (let player of players) {
-              playerWin(nk,player,gameData);
-            }
-            // Filter valid players (skip lost or rank 0)
-            let filterPlayers: LudoPlayerData[] = gameData.players
-                .filter((p: LudoPlayerData) => !p.isLost && p.rank > 0)
-                .sort((a: LudoPlayerData, b: LudoPlayerData) => a.rank - b.rank);
-
-            if (filterPlayers.length === 0) {return;}
+            // If this player has no rank, stop
+            if (p.rank <= 0) {return;}
+            // Deduction logic
             let deduction = 0;
-            if (fee >= 50000) {deduction = 5000;}
-            else if (fee >= 10000) {deduction = 1000;}
-            else if (fee >= 5000) {deduction = 500;}
-            else if (fee >= 2000) {deduction = 200;}
-            else if (fee >= 1000) {deduction = 100;}
-            else if (fee >= 500) {deduction = 50;}
+            if (fee >= 50000) deduction = 5000;
+            else if (fee >= 10000) deduction = 1000;
+            else if (fee >= 5000) deduction = 500;
+            else if (fee >= 2000) deduction = 200;
+            else if (fee >= 1000) deduction = 100;
+            else if (fee >= 500) deduction = 50;
             let totalPrize = fee * playerCount - deduction;
-            let winnersCount = filterPlayers.length > 1 ? filterPlayers.length - 1 : 1;
-            let weights: number[] = [];
-            for (let i = 0; i < winnersCount; i++) {
-                weights.push(winnersCount - i);
+            // ------------------------------
+            // REWARD ONLY THIS PLAYER (p)
+            // ------------------------------
+            let reward = 0;
+            if (playerCount === 2)
+            {
+                // Only rank 1 gets reward
+                if (p.rank === 1)
+                    reward = Math.floor(totalPrize * 0.70);
             }
-            let totalWeight = weights.reduce((a, b) => a + b, 0);
-            let allocated = 0;
-            for (let i = 0; i < winnersCount; i++) {
-                let player = filterPlayers[i];
-                let reward = Math.floor((totalPrize * weights[i]) / totalWeight);
-                allocated += reward;
-                playerCoins( nk, player.UserId,player.UserName, reward);
+            else if (playerCount === 4)
+            {
+                // Rank 1 and Rank 2 get reward
+                if (p.rank === 1)
+                    reward = Math.floor(totalPrize * 0.70);
+                else if (p.rank === 2)
+                    reward = Math.floor(totalPrize * 0.30);
             }
-            let remainder = totalPrize - allocated;
-            if (remainder > 0) {
-                let topPlayer = filterPlayers[0];
-                playerCoins(nk, topPlayer.UserId,topPlayer.UserName, remainder);
+            else
+            {
+                // Default: only rank 1 gets reward
+                if (p.rank === 1)
+                    reward = Math.floor(totalPrize * 0.70);
             }
-            break;
+            if (reward > 0)
+                playerCoins(nk, p.UserId, p.UserName, reward);
+        
+        break;
+
     }
 
 }

@@ -573,11 +573,9 @@ class LudoGameData {
               }
               state.push(['updateWords', this.WordGameState]);
 
-
-
-
-
               this.PlayerWin(who);
+              state.push(['playerWin', player]);
+
               state.push(['UpdateMainPlayersData', this.players]);
           }
           if (isPlayerCompleted) {
@@ -851,6 +849,8 @@ class LudoGameData {
                   if (isAllPawnsReached && !this.IsLoop) {
                       this.PlayerWin(realPlayer.PlayerTurn);
                       state.push(['UpdateMainPlayersData', this.players]);
+                      state.push(['playerWin', realPlayer]);
+
                   }
               }
           }

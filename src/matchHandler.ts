@@ -1653,9 +1653,12 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             state.delay = obj as number;
             break;
         case "complected":
+            break;
+        case "playerWin":
             let fee = state.fee;
             let gameData = Object.assign(new LudoGameData(), state.gameData);
-            let players: LudoPlayerData[] = gameData.players;
+            let players: LudoPlayerData[]=[];
+            players.push(obj);
             let playerCount = gameData.players.length;
             for (let player of players) {
               playerWin(nk,player,gameData);

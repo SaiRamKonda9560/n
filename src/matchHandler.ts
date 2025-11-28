@@ -439,10 +439,6 @@ class LudoGameData {
           if (isPawnSignal && pawnSignal) {
               this.handlePawnSignal(currentPlayer, pawnSignal, state);
           }
-          // Handle custom wordo signals (w: prefix)
-          if (this.gameMode === 'wordo' && signal.type.startsWith('w:')) {
-              this.handleCustomWordoSignal(signal, logger);
-          }
           return state;
       }
       // Helper method to normalize turn index
@@ -910,23 +906,7 @@ class LudoGameData {
           this.clearAllMovebelPawns();
           state.push(['complected', this]);
       }
-      // Handle custom Wordo signal (w: prefix)
-      private handleCustomWordoSignal(signal: Signal, logger: any): void {
-          const value = signal.type.slice(2).split(',');
-          if (value.length !== 2) {
-              return;
-          }
 
-          try {
-              const collectionIndex = parseInt(value[0]);
-              const wordIndex = parseInt(value[1]);
-              if (this.WordGameState?.TryPlaceLetter(signal.who, collectionIndex, wordIndex)) {
-                  this.WordGameState.isPlayerCompleted(this.WhosTurn);
-              }
-          } catch {
-              // Handle parsing error silently
-          }
-      }
 //#endregion
 
   public static Wrap(value: number, length: number = 360): number {
@@ -1625,216 +1605,6 @@ function getInitialPawnPositions(lengthForEachPlayer: number,numberOfPlayers:num
     return [-1,-1,-1,-1];
 
 }
-
-const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
-    const state = {
-        presences: {} as Record<string, any>,
-        delay: 0,
-        tickCount: 0,
-        endGameTimeOut: 15,
-        commends: [] as [string, any][],
-        boardIndex:params.boardIndex,
-        bots:params.bots??false,
-        numberOfPlayers:params.numberOfPlayers,
-        gameMode:params.gameMode,
-        fee:params.fee,
-        gameData: genLudoGameData(params.boardIndex, params.numberOfPlayers, params.gameMode,30),
-        isPrivate:params.isPrivate
-    }; 
-    return { state, tickRate: 1, label: JSON.stringify(params) };
-};
-function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any) {
-    const [commendName, obj] = commend;
-    if (commendName !== "addDelay" && commendName !== "setDelay") {
-        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
-        );
-    }
-    switch (commendName) {
-        case "addDelay":
-            state.delay = (state.delay as number) + (obj as number);
-            break;
-        case "setDelay":
-            state.delay = obj as number;
-            break;
-        case "complected":
-            break;
-    case "playerWin":
-    {
-        let fee = state.fee;
-        let gameData = Object.assign(new LudoGameData(), state.gameData);
-
-        // The player we are rewarding
-        let p = obj as LudoPlayerData;
-        if (p.isBot) return;
-
-        // Update this player's rank
-        playerWin(nk, p, gameData);
-
-        // Total players in match (we use only this)
-        let playerCount = gameData.players.length;
-
-        // If this player has no rank, stop
-        if (p.rank <= 0) return;
-
-        // Deduction logic
-        let deduction = 0;
-        if (fee >= 50000) deduction = 5000;
-        else if (fee >= 10000) deduction = 1000;
-        else if (fee >= 5000) deduction = 500;
-        else if (fee >= 2000) deduction = 200;
-        else if (fee >= 1000) deduction = 100;
-        else if (fee >= 500) deduction = 50;
-
-        let totalPrize = fee * playerCount - deduction;
-
-        // ------------------------------
-        // REWARD ONLY THIS PLAYER (p)
-        // ------------------------------
-        let reward = 0;
-
-        if (playerCount === 2)
-        {
-            // Only rank 1 gets reward
-            if (p.rank === 1)
-                reward = Math.floor(totalPrize * 0.70);
-        }
-        else if (playerCount === 4)
-        {
-            // Rank 1 and Rank 2 get reward
-            if (p.rank === 1)
-                reward = Math.floor(totalPrize * 0.70);
-            else if (p.rank === 2)
-                reward = Math.floor(totalPrize * 0.30);
-        }
-        else
-        {
-            // Default: only rank 1 gets reward
-            if (p.rank === 1)
-                reward = Math.floor(totalPrize * 0.70);
-        }
-
-        if (reward > 0)
-            playerCoins(nk, p.UserId, p.UserName, reward);
-    }
-    break;
-
-    }
-
-}
-const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
-  logger.info("matchJoinAttempt called for user:", presence.userId);
-
-  if (state.gameData.isGameStarted) {
-    const players = state.gameData.players;
-    const matchedPlayer = players.find((player: any) => player.UserId === presence.userId);
-    if (matchedPlayer) {
-      return { state, accept: true };
-    }
-    return { state, accept: false }; // reject new players after game started
-  } else {
-      var coins = playerCoins(nk,presence.userId,presence.username,0);
-      if(coins<state.fee){
-      return { state, accept: false };
-    }
-    else{
-      return { state, accept: true }; // allow join before game starts
-    }
-  }
-};
-const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
-  // Store new presences
-  presences.forEach(p => {
-    state.presences[p.sessionId] = p;
-  });
-
-  logger.info("matchJoin called, players now:", Object.keys(state.presences));
-
-  if (state.gameData.isGameStarted) {
-    // Broadcast updated player info to joining players
-    let addP: any[]=[];
-    presences.forEach(p => {
-      const matchedPlayer = state.gameData.players.find((player: any) => player.UserId === p.userId);
-      if(matchedPlayer){
-      if(matchedPlayer.isOffline){
-        matchedPlayer.isOffline = false;
-        addP.push(p);
-      }
-      }
-    });
-    dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`),Object.values(addP));
-  } 
-  else {
-    // Start game when all players are connected
-    if (state.bots) {
-                      // Create game data
-                      state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
-                      // Start when enough players are connected
-                      if (state.numberOfPlayers === state.gameData.players.length) {
-                          logger.info("🔔✅ All players connected, starting private match...");
-                          const GameData = Object.assign(new LudoGameData(), state.gameData);
-                          // Assign user info to players
-                          for(let i =0;i<state.numberOfPlayers;i++){
-                                  if (GameData.players[i]) {
-                                    if(i===0){
-                                      let p :any= Object.values(state.presences)[0];
-                                      let userId = p.userId;
-                                      let username = p.username;
-                                      GameData.players[i].UserId = userId;
-                                      GameData.players[i].UserName = username;
-                                      //GameData.players[idx].isBot = state.bots;
-                                      if(state.fee)
-                                        playerCoins(nk,userId,username,-state.fee);
-                                    }
-                                    else{
-                                      GameData.players[i].isBot = true;
-
-                                    }
-                              }
-                          }
-                          GameData.start(logger, nk);
-                          state.gameData = GameData;
-                          applyCommend(["roomStarted", state.gameData], state, dispatcher, nk);
-                      } else {
-                      }
-    }
-    else{
-      if (Object.keys(state.presences).length === state.gameData.players.length && !state.isPrivate) {
-        const GameData = Object.assign(new LudoGameData(), state.gameData);
-        logger.info("🔔✅ All players connected 🎉");
-        Object.values(state.presences).forEach((p: any, idx: number) => {
-          if (state.gameData.players[idx]) 
-          {
-            state.gameData.players[idx].UserId = p.userId;
-            state.gameData.players[idx].UserName = p.username;
-            if(state.fee)
-            playerCoins(nk,p.userId,p.username,-state.fee);
-          }
-          
-        });
-        GameData.start(logger, nk);
-        state.gameData = GameData;
-      }
-    }
-
-  }
-
-  return { state };
-};
-const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
-  presences.forEach(p => {
-    // Find the player in gameData and mark as offline
-    const player = state.gameData.players.find((pl: any) => pl.UserId === p.userId || pl.id === p.userId);  
-    if (player) {
-      player.isOffline = true;
-    }
-    // Remove from active presences
-    delete state.presences[p.sessionId];
-  });
-  logger.info("matchLeave called, players now:", Object.keys(state.presences));
-  // Broadcast updated player status to all remaining players   
-  dispatcher.broadcastMessage(0,nk.stringToBinary(`UpdateMainPlayersData:${JSON.stringify(state.gameData.players)}`), Object.values(state.presences));
-  return { state };
-};
 // Main match loop – runs every tick.
 const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
 
@@ -2285,6 +2055,217 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         logger.error("matchSignal error: " + e);
         throw e;
     }
+};
+
+const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
+    const state = {
+        presences: {} as Record<string, any>,
+        delay: 0,
+        tickCount: 0,
+        endGameTimeOut: 15,
+        commends: [] as [string, any][],
+        boardIndex:params.boardIndex,
+        bots:params.bots??false,
+        numberOfPlayers:params.numberOfPlayers,
+        gameMode:params.gameMode,
+        fee:params.fee,
+        gameData: genLudoGameData(params.boardIndex, params.numberOfPlayers, params.gameMode,30),
+        isPrivate:params.isPrivate
+    }; 
+    return { state, tickRate: 1, label: JSON.stringify(params) };
+};
+function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any) {
+    const [commendName, obj] = commend;
+    if (commendName !== "addDelay" && commendName !== "setDelay") {
+        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
+        );
+    }
+    switch (commendName) {
+        case "addDelay":
+            state.delay = (state.delay as number) + (obj as number);
+            break;
+        case "setDelay":
+            state.delay = obj as number;
+            break;
+        case "complected":
+            break;
+    case "playerWin":
+    {
+        let fee = state.fee;
+        let gameData = Object.assign(new LudoGameData(), state.gameData);
+
+        // The player we are rewarding
+        let p = obj as LudoPlayerData;
+        if (p.isBot) return;
+
+        // Update this player's rank
+        playerWin(nk, p, gameData);
+
+        // Total players in match (we use only this)
+        let playerCount = gameData.players.length;
+
+        // If this player has no rank, stop
+        if (p.rank <= 0) return;
+
+        // Deduction logic
+        let deduction = 0;
+        if (fee >= 50000) deduction = 5000;
+        else if (fee >= 10000) deduction = 1000;
+        else if (fee >= 5000) deduction = 500;
+        else if (fee >= 2000) deduction = 200;
+        else if (fee >= 1000) deduction = 100;
+        else if (fee >= 500) deduction = 50;
+
+        let totalPrize = fee * playerCount - deduction;
+
+        // ------------------------------
+        // REWARD ONLY THIS PLAYER (p)
+        // ------------------------------
+        let reward = 0;
+
+        if (playerCount === 2)
+        {
+            // Only rank 1 gets reward
+            if (p.rank === 1)
+                reward = Math.floor(totalPrize * 0.70);
+        }
+        else if (playerCount === 4)
+        {
+            // Rank 1 and Rank 2 get reward
+            if (p.rank === 1)
+                reward = Math.floor(totalPrize * 0.70);
+            else if (p.rank === 2)
+                reward = Math.floor(totalPrize * 0.30);
+        }
+        else
+        {
+            // Default: only rank 1 gets reward
+            if (p.rank === 1)
+                reward = Math.floor(totalPrize * 0.70);
+        }
+
+        if (reward > 0)
+            playerCoins(nk, p.UserId, p.UserName, reward);
+    }
+    break;
+
+    }
+
+}
+
+const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
+  logger.info("matchJoinAttempt called for user:", presence.userId);
+
+  if (state.gameData.isGameStarted) {
+    const players = state.gameData.players;
+    const matchedPlayer = players.find((player: any) => player.UserId === presence.userId);
+    if (matchedPlayer) {
+      return { state, accept: true };
+    }
+    return { state, accept: false }; // reject new players after game started
+  } else {
+      var coins = playerCoins(nk,presence.userId,presence.username,0);
+      if(coins<state.fee){
+      return { state, accept: false };
+    }
+    else{
+      return { state, accept: true }; // allow join before game starts
+    }
+  }
+};
+const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
+  // Store new presences
+  presences.forEach(p => {
+    state.presences[p.sessionId] = p;
+  });
+
+  logger.info("matchJoin called, players now:", Object.keys(state.presences));
+
+  if (state.gameData.isGameStarted) {
+    // Broadcast updated player info to joining players
+    let addP: any[]=[];
+    presences.forEach(p => {
+      const matchedPlayer = state.gameData.players.find((player: any) => player.UserId === p.userId);
+      if(matchedPlayer){
+      if(matchedPlayer.isOffline){
+        matchedPlayer.isOffline = false;
+        addP.push(p);
+      }
+      }
+    });
+    dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`),Object.values(addP));
+  } 
+  else {
+    // Start game when all players are connected
+    if (state.bots) {
+                      // Create game data
+                      state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+                      // Start when enough players are connected
+                      if (state.numberOfPlayers === state.gameData.players.length) {
+                          logger.info("🔔✅ All players connected, starting private match...");
+                          const GameData = Object.assign(new LudoGameData(), state.gameData);
+                          // Assign user info to players
+                          for(let i =0;i<state.numberOfPlayers;i++){
+                                  if (GameData.players[i]) {
+                                    if(i===0){
+                                      let p :any= Object.values(state.presences)[0];
+                                      let userId = p.userId;
+                                      let username = p.username;
+                                      GameData.players[i].UserId = userId;
+                                      GameData.players[i].UserName = username;
+                                      //GameData.players[idx].isBot = state.bots;
+                                      if(state.fee)
+                                        playerCoins(nk,userId,username,-state.fee);
+                                    }
+                                    else{
+                                      GameData.players[i].isBot = true;
+
+                                    }
+                              }
+                          }
+                          GameData.start(logger, nk);
+                          state.gameData = GameData;
+                          applyCommend(["roomStarted", state.gameData], state, dispatcher, nk);
+                      } else {
+                      }
+    }
+    else{
+      if (Object.keys(state.presences).length === state.gameData.players.length && !state.isPrivate) {
+        const GameData = Object.assign(new LudoGameData(), state.gameData);
+        logger.info("🔔✅ All players connected 🎉");
+        Object.values(state.presences).forEach((p: any, idx: number) => {
+          if (state.gameData.players[idx]) 
+          {
+            state.gameData.players[idx].UserId = p.userId;
+            state.gameData.players[idx].UserName = p.username;
+            if(state.fee)
+            playerCoins(nk,p.userId,p.username,-state.fee);
+          }
+          
+        });
+        GameData.start(logger, nk);
+        state.gameData = GameData;
+      }
+    }
+
+  }
+
+  return { state };
+};
+const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
+  presences.forEach(p => {
+    // Find the player in gameData and mark as offline
+    const player = state.gameData.players.find((pl: any) => pl.UserId === p.userId || pl.id === p.userId);  
+    if (player) {
+      player.isOffline = true;
+    }
+    // Remove from active presences
+    delete state.presences[p.sessionId];
+  });
+  logger.info("matchLeave called, players now:", Object.keys(state.presences));
+  // Broadcast updated player status to all remaining players   
+  applyCommend(["UpdateMainPlayersData",state.gameData.players],state,dispatcher,nk);
+  return { state };
 };
 
 

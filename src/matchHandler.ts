@@ -1662,7 +1662,7 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             let fee = state.fee;
             let gameData = Object.assign(new LudoGameData(), state.gameData);
             let player :LudoPlayerData = obj;
-            if(player.isBot)return; 
+            if(player.isBot){return;}
             let players: LudoPlayerData[]=[];
             players.push(obj);
             let playerCount = gameData.players.length;

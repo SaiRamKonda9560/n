@@ -557,7 +557,7 @@ class LudoGameData {
               }
               this.PlayerWin(who);
               state.push(['playerWin', player]);
-              state.push(['UpdateMainPlayersData', this.players]);
+              state.push(['UpdateMainPlayersData', {fun:"handlePlaceLetters",players:this.players}]);
           }
           if (isAnyPlacement) {
               state.push(['updateWords', this.WordGameState]);
@@ -778,13 +778,13 @@ class LudoGameData {
             this.NextPlayer();
             state.push(['newFD', this.GenerateFutureMoves()]);
           }
-          state.push(['UpdateMainPlayersData', this.players]);
+          state.push(['UpdateMainPlayersData', {fun:"auto",players:this.players}]);
       }
       // Handle dice signal
       private handleDiceSignal(currentPlayer: LudoPlayerData, state: [string, any][]): void {
           if (this.futureData.futureMoves.length > 0) {
               currentPlayer.movebulPawnIds = this.futureData.futureMoves.map((move) => move.movablePawnId);
-              state.push(['UpdateMainPlayersData', [CloneUtility.deepClone<LudoPlayerData>(currentPlayer)]]);
+              state.push(['UpdateMainPlayersData', {fun:"handleDiceSignal",players:[CloneUtility.deepClone<LudoPlayerData>(currentPlayer)]}]);
               this.isWaitingForDiceRoll = false;
           } else {
                   this.isWaitingForDiceRoll = true;
@@ -813,7 +813,7 @@ class LudoGameData {
               this.NextPlayer();
           }
           const addDelay = futureMove.stepsCount > 0 ? Math.ceil(futureMove.stepsCount * 0.07) : 0;
-          state.push(['UpdateMainPlayersData', futureMove.playerDatas]);
+          state.push(['UpdateMainPlayersData', {fun:"handlePawnSignal",players:futureMove.playerDatas}]);
           state.push(['addDelay', addDelay]);
           if (this.gameMode === 'wordo') {
               this.handleWordoPawnMove(futureMove, pawnId, state);
@@ -831,7 +831,7 @@ class LudoGameData {
                   );
                   if (isAllPawnsReached && !this.IsLoop) {
                       this.PlayerWin(realPlayer.PlayerTurn);
-                      state.push(['UpdateMainPlayersData', this.players]);
+                      state.push(['UpdateMainPlayersData',{ fun:"updatePlayerPositions",players:this.players}]);
                       state.push(['playerWin', realPlayer]);
 
                   }
@@ -2251,7 +2251,7 @@ const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: 
   });
   logger.info("matchLeave called, players now:", Object.keys(state.presences));
   // Broadcast updated player status to all remaining players   
-  applyCommend(["UpdateMainPlayersData",state.gameData.players],state,dispatcher,nk);
+  applyCommend(["UpdateMainPlayersData",{fun:"matchLeave",players:state.gameData.players}],state,dispatcher,nk);
   return { state };
 };
 const matchTerminate = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {

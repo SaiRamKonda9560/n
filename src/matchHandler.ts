@@ -1505,7 +1505,23 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
   const gameData = new LudoGameData();
   // Basic settings
   gameData.BoardId = typeof boardIndex === 'string' ? parseInt(boardIndex) : boardIndex;
-  gameData.gameMode = gameMode;
+  let mode = gameMode;
+  let posMode = (gameMode === 'wordo')?1:0;
+  switch(gameMode){
+    case "m1":
+    mode = "wordo";
+    posMode = 2;
+    break;
+    case "m2":
+    mode = "wordo";
+    posMode = 3;
+
+    break;
+    case "m3":
+    mode = "wordo";
+    break;
+  }
+  gameData.gameMode = mode;
   gameData.isGameStarted = false;
   gameData.isGameComplected = false;
   gameData.IsLoop = gameMode === 'wordo';
@@ -1549,7 +1565,7 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
       0,
       0,
       false,
-      getInitialPawnPositions((gameData.BoardId === 0 ? 9 : 13),2,2)
+      getInitialPawnPositions((gameData.BoardId === 0 ? 9 : 13),2,posMode)
     );
     player.PlayerBaseIndex = baseIndexes[i];
     player.PlayerTurn = i;
@@ -1801,7 +1817,6 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
 
     return { state };
 };
-
 // Handles any signal coming from players/bots and updates game state.
 const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
@@ -2031,7 +2046,6 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         throw e;
     }
 };
-
 const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
     const state = {
         presences: {} as Record<string, any>,
@@ -2127,7 +2141,6 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
     }
 
 }
-
 const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
   logger.info("matchJoinAttempt called for user:", presence.userId);
 
@@ -2242,8 +2255,6 @@ const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: 
   applyCommend(["UpdateMainPlayersData",state.gameData.players],state,dispatcher,nk);
   return { state };
 };
-
-
 const matchTerminate = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
   logger.info("⭐⭐matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
   return { state };

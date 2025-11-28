@@ -1645,6 +1645,10 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
 };
 function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any) {
     const [commendName, obj] = commend;
+    if (commendName !== "addDelay" && commendName !== "setDelay") {
+        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
+        );
+    }
     switch (commendName) {
         case "addDelay":
             state.delay = (state.delay as number) + (obj as number);
@@ -1657,6 +1661,8 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
         case "playerWin":
             let fee = state.fee;
             let gameData = Object.assign(new LudoGameData(), state.gameData);
+            let player :LudoPlayerData = obj;
+            if(player.isBot)return; 
             let players: LudoPlayerData[]=[];
             players.push(obj);
             let playerCount = gameData.players.length;
@@ -1669,10 +1675,7 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
                 .sort((a: LudoPlayerData, b: LudoPlayerData) => a.rank - b.rank);
 
             if (filterPlayers.length === 0) {return;}
-
-
             let deduction = 0;
-            
             if (fee >= 50000) {deduction = 5000;}
             else if (fee >= 10000) {deduction = 1000;}
             else if (fee >= 5000) {deduction = 500;}
@@ -1700,10 +1703,7 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             }
             break;
     }
-    if (commendName !== "addDelay" && commendName !== "setDelay") {
-        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
-        );
-}
+
 }
 const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
   logger.info("matchJoinAttempt called for user:", presence.userId);

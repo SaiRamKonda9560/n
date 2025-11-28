@@ -252,7 +252,6 @@ class LudoGameData {
         for (let i = 0; i < fillCount; i++) {
           const keyValue = allTilesPositionsDictionary[keys[i]];
           boardLetters[keyValue] = randomLetters[i]; // Assign without repeating 
-
         }
       }
       this.WordGameState = new WordGameState(selectedWordsData, missingLettersWords, boardLetters); 
@@ -415,29 +414,26 @@ class LudoGameData {
           if (!signal || !this.futureData || this.isGameComplected) {
               return state; // Early return if prerequisites are missing
           }
-          // Ensure valid turn index
-          this.WhosTurn = this.normalizeTurnIndex(this.WhosTurn);
-          const currentPlayer = this.players[this.WhosTurn];
-          // Handle signal types
-          const isDiceSignal = signal.type === 'dice';
-          const isPawnSignal = signal.type === 'pawn';
-          const diceSignal = isDiceSignal ? signal : null;
-          const pawnSignal = isPawnSignal ? signal : null;
-          // Process Wordo-specific signals
-          if (signal.type.startsWith('wordo')) {
-              this.handleWordoSignal(signal, state);
-          }
-          // Handle tick signal
+          // Handle tick signal form loop
           if (signal.type === 'tick') {
-              this.handleTickSignal(state);
+            this.handleTickSignal(state);
           }
-          // Handle dice roll
-          if (this.isWaitingForDiceRoll && isDiceSignal && diceSignal) {
+          else{
+            // Ensure valid turn index
+            this.WhosTurn = this.normalizeTurnIndex(this.WhosTurn);
+            const currentPlayer = this.players[this.WhosTurn];
+            // Process Wordo-specific signals
+            if (signal.type.startsWith('wordo')) {
+              this.handleWordoSignal(signal, state);
+            }
+            // Handle dice roll
+            if (this.isWaitingForDiceRoll && signal.type === 'dice') {
               this.handleDiceSignal(currentPlayer, state);
-          }
-          // Handle pawn movement
-          if (isPawnSignal && pawnSignal) {
-              this.handlePawnSignal(currentPlayer, pawnSignal, state);
+            }
+            // Handle pawn movement
+            if (signal.type === 'pawn') {
+              this.handlePawnSignal(currentPlayer, signal, state);
+            }
           }
           return state;
       }
@@ -454,16 +450,16 @@ class LudoGameData {
           const json = value;
           switch (type) {
               case 'wordoPlaceLetters':
-                  this.handlePlaceLetters(json, who, state);
-                  break;
+                this.handlePlaceLetters(json, who, state);
+                break;
               case 'wordoUpdateSteal':
-                  if (this.isWaitingForStealData) {
-                      this.stealData!.stealLetters = JsonConvert.deserializeObject<number[]>(json);
-                  }
-                  break;
+                if (this.isWaitingForStealData) {
+                  this.stealData!.stealLetters = JsonConvert.deserializeObject<number[]>(json);
+                }
+                break;
               case 'wordoSaveSteal':
-                  this.handleSaveSteal(json, state);
-                  break;
+                this.handleSaveSteal(json, state);
+                break;
           }
       }
       // Handle placing letters in Wordo mode
@@ -481,19 +477,12 @@ class LudoGameData {
                   i++;
               }
           }
-          if (isAnyPlacement) {
-              state.push(['updateWords', this.WordGameState]);
-          }
           const isPlayerCompleted = this.WordGameState?.isPlayerCompleted(who) || false;
           if (!this.players[who].isWin && isPlayerCompleted) {
-
-
-
              let player= this.players[who];
               for(let i = 0;i<player.pawnPositions.length;i++){
                 player.pawnPositions[i]=-1;
               }
-              
               if (this.gameMode === "wordo" && this.WordGameState) {
                 let BoardLetters = this.WordGameState.BoardLetters;
                 let allTilesPositionsDictionary: { [key: number]: number } = {};
@@ -563,16 +552,15 @@ class LudoGameData {
                   }
                 }
               }
-
               if (this.WordGameState && Array.isArray(this.WordGameState.PlayerLetterCollections[player.PlayerTurn])) {
                 this.WordGameState.PlayerLetterCollections[player.PlayerTurn].length = 0;
               }
-              state.push(['updateWords', this.WordGameState]);
-
               this.PlayerWin(who);
               state.push(['playerWin', player]);
-
               state.push(['UpdateMainPlayersData', this.players]);
+          }
+          if (isAnyPlacement) {
+              state.push(['updateWords', this.WordGameState]);
           }
           if (isPlayerCompleted) {
               if (this.IsAllWin()) {
@@ -608,14 +596,13 @@ class LudoGameData {
               }
           }
           this.tickCount++;
-
           if (this.useTimeOut && this.tickCount >= this.futureData.tickEnd) {
             //time out
-              this.autoMove(state,1);
+            this.autoMove(state,1);
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
-            const move =(currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -1)));
+            const move = (currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -1)));
             if(move){
               //bot
               this.autoMove(state,0);
@@ -780,16 +767,16 @@ class LudoGameData {
 
           }
           else{
-              nextPlayer = true;
+            nextPlayer = true;
           }
           if(nextPlayer){
               if (this.IsAllWin()) {
-                 this.completeGame(state);
-                 return;
+                this.completeGame(state);
+                return;
               }
-                  this.isWaitingForDiceRoll = true;
-                  this.NextPlayer();
-                  state.push(['newFD', this.GenerateFutureMoves()]);
+            this.isWaitingForDiceRoll = true;
+            this.NextPlayer();
+            state.push(['newFD', this.GenerateFutureMoves()]);
           }
           state.push(['UpdateMainPlayersData', this.players]);
       }
@@ -1852,35 +1839,27 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         // 2️⃣ GAME STARTED → process dice, pawn, and wordo signals
         // -------------------------------------------------------
         if (gameData.isGameStarted) {
-
             const commends = state.commends as [string, any][];
-
             // Handle dice/pawn/wordo signals
             if (signal && (signal.type === "dice" || signal.type === "pawn" || signal.type.startsWith("wordo"))) {
-
-                // 🔹 wordo commands are applied immediately
+                const newCommends = gameData.GameLogic(logger, signal);
                 if (signal.type.startsWith("wordo")) {
-                    logger.info("😂 " + signal.type + " - " + signal.value);
-
-                    const newCommends = gameData.GameLogic(logger, signal);
-
-                    while (newCommends.length > 0) {
-                        logger.info("😂 new commend: " + newCommends[0][0]);
-                        applyCommend(newCommends.shift()!, state, dispatcher, nk);
-                    }
+                  // 🔹 wordo commands are applied immediately
+                  while (newCommends.length > 0) {
+                    logger.info("😂 new commend: " + newCommends[0][0]);
+                    applyCommend(newCommends.shift()!, state, dispatcher, nk);
+                  }
                 }
-                // 🔹 dice and pawn commands go to state.commends queue
                 else {
-                    commends.push(...gameData.GameLogic(logger, signal));
+                  // 🔹 dice and pawn commands go to state.commends queue
+                  commends.push(...newCommends);
                 }
-
                 // 🔹 Apply queued commends unless delay is active
                 while (commends.length > 0) {
                     if (state.delay > 0) break;
                     applyCommend(commends.shift()!, state, dispatcher, nk);
                 }
             }
-
             // -------------------------------------------------------
             // 3️⃣ Handle lock / unlock requests for Audio + Meaning
             // -------------------------------------------------------

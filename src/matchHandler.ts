@@ -2096,6 +2096,7 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
         numberOfPlayers:params.numberOfPlayers,
         gameMode:mode,
         fee:params.fee,
+        posMode:posMode,
         gameData: genLudoGameData(posMode,params.boardIndex, params.numberOfPlayers, params.gameMode,30),
         isPrivate:params.isPrivate
     }; 

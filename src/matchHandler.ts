@@ -557,7 +557,7 @@ class LudoGameData {
               }
               this.PlayerWin(who);
               state.push(['playerWin', player]);
-              state.push(['UpdateMainPlayersData', {fun:"handlePlaceLetters",players:this.players}]);
+              state.push(['UpdateMainPlayersData', {fun:"handlePlaceLetters",players:[player]}]);
           }
           if (isAnyPlacement) {
               state.push(['updateWords', this.WordGameState]);

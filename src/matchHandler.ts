@@ -1499,25 +1499,12 @@ class stealData {
   public maxLettersToPick: number = 0;
   public stealLetters: number[] = [];
 }
-function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | string,gameMode: string,tickCountForPlayer: number = 0): LudoGameData {
+function genLudoGameData(posMode:number,boardIndex: number | string,numberOfPlayers: number | string,gameMode: string,tickCountForPlayer: number = 0): LudoGameData {
   const gameData = new LudoGameData();
   // Basic settings
   gameData.BoardId = typeof boardIndex === 'string' ? parseInt(boardIndex) : boardIndex;
   let mode = gameMode;
-  let posMode = (gameMode === 'wordo')?1:0;
-  switch(gameMode){
-    case "m1":
-    mode = "wordo";
-    posMode = 2;
-    break;
-    case "m2":
-    mode = "wordo";
-    posMode = 3;
-    break;
-    case "m3":
-    mode = "wordo";
-    break;
-  }
+
   gameData.gameMode = mode;
   gameData.isGameStarted = false;
   gameData.isGameComplected = false;
@@ -2013,7 +2000,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                 // AUTO MODE (all real players)
                 if (playerCount > 1) {
 
-                    state.gameData = genLudoGameData(state.boardIndex, playerCount, state.gameMode, 30);
+                    state.gameData = genLudoGameData(state.posMode,state.boardIndex, playerCount, state.gameMode, 30);
 
                     // Start when full
                     if (playerCount === state.gameData.players.length) {
@@ -2041,7 +2028,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                 // BOT MODE
                 else {
 
-                    state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+                    state.gameData = genLudoGameData(state.posMode,state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
 
                     if (state.numberOfPlayers === state.gameData.players.length) {
 
@@ -2083,6 +2070,21 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     }
 };
 const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
+    let posMode = (params.gameMode === 'wordo')?1:0;
+    let mode = params.gameMode;
+    switch(params.gameMode){
+      case "m1":
+      mode = "wordo";
+      posMode = 2;
+      break;
+      case "m2":
+      mode = "wordo";
+      posMode = 3;
+      break;
+      case "m3":
+      mode = "wordo";
+      break;
+    }
     const state = {
         presences: {} as Record<string, any>,
         delay: 0,
@@ -2092,9 +2094,9 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
         boardIndex:params.boardIndex,
         bots:params.bots??false,
         numberOfPlayers:params.numberOfPlayers,
-        gameMode:params.gameMode,
+        gameMode:mode,
         fee:params.fee,
-        gameData: genLudoGameData(params.boardIndex, params.numberOfPlayers, params.gameMode,30),
+        gameData: genLudoGameData(posMode,params.boardIndex, params.numberOfPlayers, params.gameMode,30),
         isPrivate:params.isPrivate
     }; 
     return { state, tickRate: 1, label: JSON.stringify(params) };
@@ -2223,7 +2225,7 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // Start game when all players are connected
     if (state.bots) {
                       // Create game data
-                      state.gameData = genLudoGameData(state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+                      state.gameData = genLudoGameData(state.posMode,state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
                       // Start when enough players are connected
                       if (state.numberOfPlayers === state.gameData.players.length) {
                           logger.info("🔔✅ All players connected, starting private match...");

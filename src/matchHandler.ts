@@ -1564,6 +1564,12 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
       false,
       getInitialPawnPositions((gameData.BoardId === 0 ? 9 : 13),2,posMode)
     );
+   if(player.locks.length!=gameData.players.length && gameMode==="wordo"){
+      player.locks=[];
+      for(let index = 0;index<gameData.players.length;index++){
+      player.locks.push([0,0]);
+     }
+    }
     player.PlayerBaseIndex = baseIndexes[i];
     player.PlayerTurn = i;
     player.UserId = i.toString();

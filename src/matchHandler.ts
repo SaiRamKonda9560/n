@@ -1912,12 +1912,12 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
 
                             if (lockAudio && player.locks[whoms][AUDIO] === 0) {
                                 player.locks[whoms][AUDIO] = 1;
-                                applyCommend(["unLock", { who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
+                                applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
                             }
 
                             if (lockMeaning && player.locks[whoms][MEANING] === 0) {
                                 player.locks[whoms][MEANING] = 1;
-                                applyCommend(["unLock", { who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
+                                applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
                             }
 
                         } else {
@@ -1932,13 +1932,13 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                                 if (lockAudio && player.locks[whoms][AUDIO] === 0) {
                                     player.locks[whoms][AUDIO] = 1;
                                     unlocked = true;
-                                    applyCommend(["unLock", { who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
                                 }
 
                                 if (lockMeaning && player.locks[whoms][MEANING] === 0) {
                                     player.locks[whoms][MEANING] = 1;
                                     unlocked = true;
-                                    applyCommend(["unLock", { who: signal.who,locks:player.locks, type: "meaning" }], state, dispatcher, nk);
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "meaning" }], state, dispatcher, nk);
                                 }
 
                                 // Deduct coins only once

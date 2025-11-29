@@ -1045,9 +1045,7 @@ class LudoPlayerData {
   public movebulPawnIds: number[] = [];
   public isLost : boolean = false;
   public isBot : boolean = false;
-  public lockMeaning : boolean = false;
-  public lockAudio : boolean = false;
-
+  public locks : number[][] = [];
   public turnOverCount : number =0;
   public killCount : number = 0;
   public isAllPawnsReached(length: number): boolean {
@@ -1572,9 +1570,7 @@ function genLudoGameData(boardIndex: number | string,numberOfPlayers: number | s
     player.UserName = `player ${i}`;
     player.isWin = false;
     player.isOffline = false;
-    player.lockAudio = true;
-    player.lockMeaning = true;
-
+    
     player.rank = 0;
     player.movebulPawnIds = [];
     gameData.players.push(player);
@@ -1876,39 +1872,42 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
             if (signal && signal.type === "lock") {
 
                 let player = gameData.players[signal.who];
+                if(player.locks.length!=gameData.players.length){
+                  player.locks=[];
+                  for(let index = 0;index<gameData.players.length;index++){
+                    player.locks.push([0,0]);
+                  }
+                }
+
                 let data = JSON.parse(signal.value);
 
                 const lockAudio = (data.type === "audio");
                 const lockMeaning = (data.type === "meaning");
-
-                // Player used AD → unlock for free
+                const audioIndex = 0;
+                const meaningIndex = 1;
+                const coinsForUnlock =100;
+                const whoms = data.whoms;
                 if (data.ad) {
-
-                    if (lockAudio && player.lockAudio) {
-                        player.lockAudio = false;
+                    if (lockAudio && player.locks[whoms][audioIndex]===0) {
+                        player.locks[whoms][audioIndex]=1;
                         applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
                     }
-
-                    if (lockMeaning && player.lockMeaning) {
-                        player.lockMeaning = false;
+                    if (lockMeaning && player.locks[whoms][meaningIndex]===0) {
+                        player.locks[whoms][meaningIndex]=1;
                         applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
                     }
-                }
-                else {
+                }else{
                     // Normal unlock: deduct 100 coins
                     const coins = playerCoins(nk, player.UserId, player.UserId, 0);
-
-                    if (coins > 100) {
-
-                        if (lockAudio && player.lockAudio) {
-                            playerCoins(nk, player.UserId, player.UserId, -100);
-                            player.lockAudio = false;
+                    if (coins > coinsForUnlock) {
+                        if (lockAudio && player.locks[whoms][audioIndex]===0) {
+                            playerCoins(nk, player.UserId, player.UserId, -coinsForUnlock);
+                            player.locks[whoms][audioIndex]=1;
                             applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
                         }
-
-                        if (lockMeaning && player.lockMeaning) {
-                            playerCoins(nk, player.UserId, player.UserId, -100);
-                            player.lockMeaning = false;
+                        if (lockMeaning && player.locks[whoms][meaningIndex]===0) {
+                            playerCoins(nk, player.UserId, player.UserId, -coinsForUnlock);
+                            player.locks[whoms][meaningIndex]=1;
                             applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
                         }
                     }

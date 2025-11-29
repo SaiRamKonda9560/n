@@ -1877,44 +1877,76 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
             // -------------------------------------------------------
             if (signal && signal.type === "lock") {
 
-                let player = gameData.players[signal.who];
-                if(player.locks.length!=gameData.players.length){
-                  player.locks=[];
-                  for(let index = 0;index<gameData.players.length;index++){
-                    player.locks.push([0,0]);
-                  }
+                const player = gameData.players[signal.who];
+
+                // Ensure locks array matches number of players
+                if (player.locks.length !== gameData.players.length) {
+                    player.locks = Array(gameData.players.length)
+                        .fill(null)
+                        .map(() => [0, 0]);
                 }
 
-                let data = JSON.parse(signal.value);
+                let data;
+                try {
+                    data = JSON.parse(signal.value);
+                } catch (e) {
+                    // Can't use return, so just skip everything else
+                    data = null;
+                }
 
-                const lockAudio = (data.type === "audio");
-                const lockMeaning = (data.type === "meaning");
-                const audioIndex = 0;
-                const meaningIndex = 1;
-                const coinsForUnlock =100;
-                const whoms = data.whoms;
-                if (data.ad) {
-                    if (lockAudio && player.locks[whoms][audioIndex]===0) {
-                        player.locks[whoms][audioIndex]=1;
-                        applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
-                    }
-                    if (lockMeaning && player.locks[whoms][meaningIndex]===0) {
-                        player.locks[whoms][meaningIndex]=1;
-                        applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
-                    }
-                }else{
-                    // Normal unlock: deduct 100 coins
-                    const coins = playerCoins(nk, player.UserId, player.UserId, 0);
-                    if (coins > coinsForUnlock) {
-                        if (lockAudio && player.locks[whoms][audioIndex]===0) {
-                            playerCoins(nk, player.UserId, player.UserId, -coinsForUnlock);
-                            player.locks[whoms][audioIndex]=1;
-                            applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
-                        }
-                        if (lockMeaning && player.locks[whoms][meaningIndex]===0) {
-                            playerCoins(nk, player.UserId, player.UserId, -coinsForUnlock);
-                            player.locks[whoms][meaningIndex]=1;
-                            applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
+                if (data !== null) {
+
+                    const lockAudio = data.type === "audio";
+                    const lockMeaning = data.type === "meaning";
+                    const whoms = data.whoms;
+
+                    const AUDIO = 0;
+                    const MEANING = 1;
+                    const COST = 100;
+
+                    // Validate whoms index
+                    if (whoms >= 0 && whoms < player.locks.length) {
+
+                        // ---- AD UNLOCK ----
+                        if (data.ad) {
+
+                            if (lockAudio && player.locks[whoms][AUDIO] === 0) {
+                                player.locks[whoms][AUDIO] = 1;
+                                applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
+                            }
+
+                            if (lockMeaning && player.locks[whoms][MEANING] === 0) {
+                                player.locks[whoms][MEANING] = 1;
+                                applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
+                            }
+
+                        } else {
+
+                            // ---- NON-AD (coins unlock) ----
+                            const coins = playerCoins(nk, player.UserId, player.UserId, 0);
+
+                            if (coins >= COST) {
+
+                                let unlocked = false;
+
+                                if (lockAudio && player.locks[whoms][AUDIO] === 0) {
+                                    player.locks[whoms][AUDIO] = 1;
+                                    unlocked = true;
+                                    applyCommend(["unLock", { who: signal.who, type: "audio" }], state, dispatcher, nk);
+                                }
+
+                                if (lockMeaning && player.locks[whoms][MEANING] === 0) {
+                                    player.locks[whoms][MEANING] = 1;
+                                    unlocked = true;
+                                    applyCommend(["unLock", { who: signal.who, type: "meaning" }], state, dispatcher, nk);
+                                }
+
+                                // Deduct coins only once
+                                if (unlocked) {
+                                    playerCoins(nk, player.UserId, player.UserId, -COST);
+                                }
+                            }
+
                         }
                     }
                 }

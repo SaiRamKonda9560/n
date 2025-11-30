@@ -399,7 +399,7 @@ class LudoGameData {
         }
 
         // Use it in your function call
-        const randomCount = getRandomInt(5, 14);
+        //const randomCount = getRandomInt(5, 14);
         let level = getRandomLevelData(1,20);
         this.GenerateWordGameState(logger, nk, level.wordLength, level.uncommon, level.common, true, true, true, true);
     } else {
@@ -2445,15 +2445,14 @@ function getRandomLevelData(min: number, max: number) {
     return LEVEL_DATA[randomLevel - 1];
 }
 
-export type LevelInfo = {
+type LevelInfo = {
     level: number;
     wordLength: number;
     missing: number;
     common: number;
     uncommon: number;
 };
-
-export const LEVEL_DATA: LevelInfo[] = [
+ const LEVEL_DATA: LevelInfo[] = [
     { level: 1, wordLength: 5, missing: 2, common: 1, uncommon: 1 },
     { level: 2, wordLength: 5, missing: 3, common: 1, uncommon: 2 },
     { level: 3, wordLength: 5, missing: 4, common: 1, uncommon: 3 },

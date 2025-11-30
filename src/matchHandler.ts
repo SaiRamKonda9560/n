@@ -400,7 +400,7 @@ class LudoGameData {
 
         // Use it in your function call
         //const randomCount = getRandomInt(5, 14);
-        let level = getRandomLevelData(1,20);
+        let level = getRandomLevelData(1,114);
         this.GenerateWordGameState(logger, nk, level.wordLength, level.uncommon, level.common, true, true, true, true);
     } else {
       this.WordGameState = null;

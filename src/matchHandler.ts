@@ -2119,65 +2119,93 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             break;
         case "complected":
             break;
-    case "playerWin":
+case "playerWin":
+{
+    let fee = state.fee;
+    let gameData = Object.assign(new LudoGameData(), state.gameData);
+
+    // Player we are rewarding
+    let p = obj as LudoPlayerData;
+    if (p.isBot) return;
+
+    // Assign rank to player
+    playerWin(nk, p, gameData);
+
+    if (p.rank <= 0) return;
+
+    const playerCount = gameData.players.length;
+
+    // Total Pool
+    const totalPool = fee * playerCount;
+
+    // =====================================================
+    // PAYOUT TABLES - EXACTLY FROM YOUR SHEET
+    // =====================================================
+
+    // 3-player payouts
+    const map3: Record<number, { r1: number; r2: number }> = {
+        500: { r1: 900, r2: 500 },
+        1000: { r1: 1800, r2: 1000 },
+        2000: { r1: 3400, r2: 2000 },
+        5000: { r1: 8000, r2: 5000 },
+        10000: { r1: 16000, r2: 10000 },
+        50000: { r1: 70000, r2: 50000 },
+    };
+
+    // 4-player payouts
+    const map4: Record<number, { r1: number; r2: number }> = {
+        500: { r1: 1400, r2: 500 },
+        1000: { r1: 2800, r2: 1000 },
+        2000: { r1: 5400, r2: 2000 },
+        5000: { r1: 13000, r2: 5000 },
+        10000: { r1: 26000, r2: 10000 },
+        50000: { r1: 120000, r2: 50000 },
+    };
+
+    let reward = 0;
+
+    // =====================================================
+    // 2 PLAYERS → 90% to Rank1, Rank2 = 0
+    // =====================================================
+    if (playerCount === 2)
     {
-        let fee = state.fee;
-        let gameData = Object.assign(new LudoGameData(), state.gameData);
-
-        // The player we are rewarding
-        let p = obj as LudoPlayerData;
-        if (p.isBot) return;
-
-        // Update this player's rank
-        playerWin(nk, p, gameData);
-
-        // Total players in match (we use only this)
-        let playerCount = gameData.players.length;
-
-        // If this player has no rank, stop
-        if (p.rank <= 0) return;
-
-        // Deduction logic
-        let deduction = 0;
-        if (fee >= 50000) deduction = 5000;
-        else if (fee >= 10000) deduction = 1000;
-        else if (fee >= 5000) deduction = 500;
-        else if (fee >= 2000) deduction = 200;
-        else if (fee >= 1000) deduction = 100;
-        else if (fee >= 500) deduction = 50;
-
-        let totalPrize = fee * playerCount - deduction;
-
-        // ------------------------------
-        // REWARD ONLY THIS PLAYER (p)
-        // ------------------------------
-        let reward = 0;
-
-        if (playerCount === 2)
-        {
-            // Only rank 1 gets reward
-            if (p.rank === 1)
-                reward = Math.floor(totalPrize * 0.70);
-        }
-        else if (playerCount === 4)
-        {
-            // Rank 1 and Rank 2 get reward
-            if (p.rank === 1)
-                reward = Math.floor(totalPrize * 0.70);
-            else if (p.rank === 2)
-                reward = Math.floor(totalPrize * 0.30);
-        }
-        else
-        {
-            // Default: only rank 1 gets reward
-            if (p.rank === 1)
-                reward = Math.floor(totalPrize * 0.70);
-        }
-
-        if (reward > 0)
-            playerCoins(nk, p.UserId, p.UserName, reward);
+        if (p.rank === 1)
+            reward = Math.floor(totalPool * 0.90);
     }
-    break;
+
+    // =====================================================
+    // 3 PLAYERS → Use table
+    // =====================================================
+    else if (playerCount === 3)
+    {
+        const x = map3[fee];
+        if (x)
+        {
+            if (p.rank === 1) reward = x.r1;
+            else if (p.rank === 2) reward = x.r2;
+        }
+    }
+
+    // =====================================================
+    // 4 PLAYERS → Use table
+    // =====================================================
+    else if (playerCount === 4)
+    {
+        const x = map4[fee];
+        if (x)
+        {
+            if (p.rank === 1) reward = x.r1;
+            else if (p.rank === 2) reward = x.r2;
+        }
+    }
+
+    // =====================================================
+    // CREDIT PLAYER
+    // =====================================================
+    if (reward > 0)
+        playerCoins(nk, p.UserId, p.UserName, reward);
+}
+break;
 
     }
 

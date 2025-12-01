@@ -2073,7 +2073,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     }
 };
 const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
-    let posMode = (params.gameMode === 'wordo')?1:0;
+    let posMode = (params.gameMode === 'wordo'||params.gameMode === 'quick')?1:0;
     let mode = params.gameMode;
     switch(params.gameMode){
       case "m1":

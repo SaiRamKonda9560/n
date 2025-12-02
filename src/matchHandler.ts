@@ -1893,11 +1893,13 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     const AUDIO = 0;
                     const MEANING = 1;
                     let COST = 100;
-                    if(lockAudio){
-                      COST = fee*0.2;
+
+                    if (lockAudio) {
+                      COST = Math.round(fee * 0.2);   // 20%
                     }
-                    if(lockMeaning){
-                      COST = fee*0.1;
+
+                    if (lockMeaning) {
+                      COST = Math.round(fee * 0.1);   // 10%
                     }
                     // Validate whoms index
                     if (whoms >= 0 && whoms < player.locks.length) {

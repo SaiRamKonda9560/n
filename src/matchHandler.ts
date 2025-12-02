@@ -1885,15 +1885,20 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                 }
 
                 if (data !== null) {
-
+                    const fee : number = state.fee;
                     const lockAudio = data.type === "audio";
                     const lockMeaning = data.type === "meaning";
                     const whoms = data.whoms;
 
                     const AUDIO = 0;
                     const MEANING = 1;
-                    const COST = 100;
-
+                    let COST = 100;
+                    if(lockAudio){
+                      COST = fee*0.2;
+                    }
+                    if(lockMeaning){
+                      COST = fee*0.1;
+                    }
                     // Validate whoms index
                     if (whoms >= 0 && whoms < player.locks.length) {
 

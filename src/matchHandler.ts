@@ -171,7 +171,7 @@ class LudoGameData {
 
   public GenerateWordGameState(logger: any,nk: any,lengthOfWords: number,randomMissingCount: number,commonMissingCount: number,removeSafeTiles: boolean,comman: boolean,random: boolean,fill: boolean): void {
     const numberOfBlocksForPlayer = this.TilesSetData[0] / this.getTotalPlayersCount();
-    const url = "http://localhost:5000/files/Words.json"
+    const url = "http://127.0.0.1:5000/files/Words.json"
 
     const res = nk.httpRequest(url,'get',{ 'Accept': 'application/json' });
     const wordsGenInstance = new wordsGen(res.body);

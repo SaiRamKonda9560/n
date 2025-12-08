@@ -171,6 +171,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
   initializer.registerRpc("wordo", wordo);
   initializer.registerRpc("getPlayerCoins", getPlayerCoins);
+  initializer.registerRpc("rpcStoreWords", rpcStoreWords);
+
 
 }
 let wordsGenInstance:wordsGen;
@@ -841,6 +843,58 @@ const addWord = function (nk: any, userId: string, word: string) {
     nk.logger.error("Error writing storage: " + writeError);
   }
 };
+const rpcStoreWords = function (ctx: any, logger: any, nk: any, payload: string) {
+  const collection = "words";
+  const userId = "00000000-0000-0000-0000-000000000000";
+  if (!payload) {
+    return JSON.stringify({ success: false, error: "Empty payload" });
+  }
+  const data = JSON.parse(payload);
+  const key = data.key;
+  const valueJsonString = data.value;
+  if (!key || !valueJsonString) {
+    return JSON.stringify({ success: false, error: "key and value required" });
+  }
+  // Read existing data
+  let existingValue: any = {};
+  try {
+    const objects = nk.storageRead([{ collection, key, userId }]);
+    if (objects && objects.length > 0 && objects[0].value) {
+      existingValue = objects[0].value;
+    }
+  } catch (readError) {
+    logger.error("Error reading storage: " + readError);
+  }
+  // Parse JSON string
+  let parsedValue: any;
+  try {
+    parsedValue = JSON.parse(valueJsonString);
+  } catch (e) {
+    logger.error("Invalid JSON string: " + e);
+    return JSON.stringify({ success: false, error: "Invalid JSON string" });
+  }
+  // Overwrite value
+  existingValue = parsedValue;
+  // Write new value
+  try {
+    nk.storageWrite([
+      {
+        collection,
+        key,
+        userId,
+        value: existingValue,
+        permissionRead: 2,   // public readable
+        permissionWrite: 0,  // only server writes
+      },
+    ]);
+  } catch (writeError) {
+    logger.error("Error writing storage: " + writeError);
+    return JSON.stringify({ success: false, error: "Write failed" });
+  }
+
+  return JSON.stringify({ success: true });
+};
+
 const leaderboardCoinsId = "leaderboard_coins";
 const leaderboardWinsId = "leaderboard_wins";
 // RPC function to initialize both leaderboards

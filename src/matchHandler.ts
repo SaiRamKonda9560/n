@@ -171,8 +171,19 @@ class LudoGameData {
 
   public GenerateWordGameState(logger: any,nk: any,lengthOfWords: number,randomMissingCount: number,commonMissingCount: number,removeSafeTiles: boolean,comman: boolean,random: boolean,fill: boolean): void {
     const numberOfBlocksForPlayer = this.TilesSetData[0] / this.getTotalPlayersCount();
+            const collection = "words";
+            const key = "main";
+            const user = "00000000-0000-0000-0000-000000000000";
+            try {
+              const objects = nk.storageRead([{ collection, key, user }]);
+              if (objects && objects.length > 0 && objects[0].value) {
+                let data = objects[0].value;
+              }
+            } catch (readError) {
+              nk.logger.error("Error reading storage: " + readError);
+            }
+            
     const url = "http://127.0.0.1:5000/files/Words.json"
-
     const res = nk.httpRequest(url,'get',{ 'Accept': 'application/json' });
     const wordsGenInstance = new wordsGen(res.body);
 

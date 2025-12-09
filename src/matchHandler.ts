@@ -175,7 +175,7 @@ class LudoGameData {
             const key = "main";
             const user = "00000000-0000-0000-0000-000000000000";
             const objects = nk.storageRead([{ collection, key, user }]);
-            let json = JSON.parse(objects[0]).text;
+            //let json = JSON.parse(objects[0]).text;
 
             try {
               const objects = nk.storageRead([{ collection, key, user }]);
@@ -192,6 +192,7 @@ class LudoGameData {
 
     const decodedJson = this.base64ToString(nk,logger,base64Words);
     const wordsGenInstance = new wordsGen(decodedJson);
+
 
     if (wordsGenInstance) {
       const selectedWordsData: WordData[] = [];

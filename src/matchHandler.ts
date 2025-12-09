@@ -188,10 +188,10 @@ class LudoGameData {
             
     //const url = "http://127.0.0.1:5000/files/Words.json"
     //const res = nk.httpRequest(url,'get',{ 'Accept': 'application/json' });
-    const wordsGenInstance = new wordsGen(json);
+    //const wordsGenInstance = new wordsGen(json);
 
-    //const decodedJson = this.base64ToString(nk,logger,base64Words);
-    //const wordsGenInstance = new wordsGen(decodedJson);
+    const decodedJson = this.base64ToString(nk,logger,base64Words);
+    const wordsGenInstance = new wordsGen(decodedJson);
 
     if (wordsGenInstance) {
       const selectedWordsData: WordData[] = [];

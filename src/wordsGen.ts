@@ -24,14 +24,29 @@ class wordsGen {
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
         'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
     ];
-    constructor(json?:string) {
+    
+ constructor(input?: string | WordData[]) {
         wordsGen.instance = this;
-        try {
-            const data = JSON.parse(json || "[]");
-            this.wordList = data as WordData[];
+
+        if (!input) {
+            // No input given → empty array
+            this.wordList = [];
+        } else if (typeof input === "string") {
+            // Input is JSON string
+            try {
+                const data = JSON.parse(input);
+                this.wordList = data as WordData[];
             } catch (err) {
-            this.wordList = []; // fallback empty array
+                console.error("Invalid JSON string", err);
+                this.wordList = [];
             }
+        } else if (Array.isArray(input)) {
+            // Input is array of WordData
+            this.wordList = input;
+        } else {
+            // Fallback
+            this.wordList = [];
+        }
     }
     private GetWordsSortedByLength(words: WordData[]): WordData[] {
         return words.sort((a, b) => a.EnglishWord.length - b.EnglishWord.length);

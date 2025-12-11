@@ -189,7 +189,7 @@ class LudoGameData {
 for (const player of this.players) {
     if(player.isBot) continue;
     const playerId = player.UserId;
-    const playerIndex = this.players.indexOf(player);
+    const playerIndex = player.PlayerTurn;
 
     try {
         // 1. Read player's word packs

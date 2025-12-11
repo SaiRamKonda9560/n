@@ -172,8 +172,8 @@ class LudoGameData {
   public GenerateWordGameState(logger: any,nk: any,lengthOfWords: number,randomMissingCount: number,commonMissingCount: number,removeSafeTiles: boolean,comman: boolean,random: boolean,fill: boolean): void {
     const numberOfBlocksForPlayer = this.TilesSetData[0] / this.getTotalPlayersCount();
             const collection = "words";
-            //const key = "main";
-            const key = "Class_6_Eng_Ch_1";
+            const key = "main";
+            //const key = "Class_6_Eng_Ch_1";
             const user = "00000000-0000-0000-0000-000000000000";
             const objects = nk.storageRead([{ collection, key, user }]);
             //let json = objects[0].value.text;
@@ -188,17 +188,12 @@ class LudoGameData {
             } catch (readError) {
               nk.logger.error("Error reading storage: " + readError);
             }
-            
     //const url = "http://127.0.0.1:5000/files/Words.json"
     //const res = nk.httpRequest(url,'get',{ 'Accept': 'application/json' });
     //const wordsGenInstance = new wordsGen(json);
     const wordsGenInstance = new wordsGen(wordData);
-
-
     //const decodedJson = this.base64ToString(nk,logger,base64Words);
     //const wordsGenInstance = new wordsGen(decodedJson);
-
-
     if (wordsGenInstance) {
       const selectedWordsData: WordData[] = [];
       const missingLettersWords: string[] = [];

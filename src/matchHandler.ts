@@ -37,6 +37,7 @@ class LudoGameData {
   public isWaitingForStealData: boolean = false;
   public stealData: stealData | null = null;
   public maxTurnOverCount:number=0;
+  public CurrentPackWords: { [playerIndex: number]: string } = {};
 
   public getTotalPlayersCount(): number {
     return this.TilesSetData.length - 1;
@@ -171,42 +172,111 @@ class LudoGameData {
 
   public GenerateWordGameState(logger: any,nk: any,lengthOfWords: number,randomMissingCount: number,commonMissingCount: number,removeSafeTiles: boolean,comman: boolean,random: boolean,fill: boolean): void {
     const numberOfBlocksForPlayer = this.TilesSetData[0] / this.getTotalPlayersCount();
-            const collection = "words";
-            const key = "main";
-            //const key = "Class_6_Eng_Ch_1";
-            const user = "00000000-0000-0000-0000-000000000000";
-            const objects = nk.storageRead([{ collection, key, user }]);
-            //let json = objects[0].value.text;
-            let wordData:WordData[] = objects[0].value.wordData;
-
-
-            try {
-              const objects = nk.storageRead([{ collection, key, user }]);
-              if (objects && objects.length > 0 && objects[0].value) {
-                //let data = objects[0].value;
-              }
-            } catch (readError) {
-              nk.logger.error("Error reading storage: " + readError);
-            }
-    //const url = "http://127.0.0.1:5000/files/Words.json"
-    //const res = nk.httpRequest(url,'get',{ 'Accept': 'application/json' });
-    //const wordsGenInstance = new wordsGen(json);
+    const collection = "words";
+    const key = "main";
+    //const key = "Class_6_Eng_Ch_1";
+    const user = "00000000-0000-0000-0000-000000000000";
+    const objects = nk.storageRead([{ collection, key, user }]);
+    let wordData:WordData[] = objects[0].value.wordData;
     const wordsGenInstance = new wordsGen(wordData);
-    //const decodedJson = this.base64ToString(nk,logger,base64Words);
-    //const wordsGenInstance = new wordsGen(decodedJson);
     if (wordsGenInstance) {
       const selectedWordsData: WordData[] = [];
       const missingLettersWords: string[] = [];
       const commanRandomLettersList: string[] = [];
       const nonCommonLetters: string[][] = [];
       wordsGenInstance.generateWords(lengthOfWords,this.players.length,randomMissingCount,commonMissingCount,selectedWordsData,missingLettersWords,commanRandomLettersList,nonCommonLetters);
+      // After generate section…
+for (const player of this.players) {
+    const playerId = player.UserId;
+    const playerIndex = this.players.indexOf(player);
+
+    try {
+        // 1. Read player's word packs
+        const playerPackObj = nk.storageRead([
+            { collection: "player_data", key: "wordpacks", userId: playerId }
+        ]);
+
+        let packData = (
+            playerPackObj.length > 0 &&
+            playerPackObj[0].value &&
+            Array.isArray(playerPackObj[0].value.packs)
+        ) ? playerPackObj[0].value.packs : [];
+
+        let replaced = false;
+
+        // 2. Loop each purchased pack
+        for (const pack of packData) {
+            const packId = pack.packId;
+            const completedArr = pack.completed || [];
+
+            // 3. Load actual pack words
+            const packWordsObj = nk.storageRead([
+                {
+                    collection: "words",
+                    key: packId,
+                    user: "00000000-0000-0000-0000-000000000000"
+                }
+            ]);
+            if (!packWordsObj.length || !packWordsObj[0].value) continue;
+
+            const allWords: WordData[] = packWordsObj[0].value.wordData;
+
+            // 4. Loop through all words (with their actual index)
+            for (let wIndex = 0; wIndex < allWords.length; wIndex++) {
+                if (completedArr.includes(wIndex)) continue;
+
+                const w = allWords[wIndex];
+
+                // Check if word contains all common letters for this player
+                const tempLetters = w.EnglishWord.toLowerCase().split("");
+                let containsAll = true;
+                for (const c of commanRandomLettersList) {
+                    const idx = tempLetters.indexOf(c.toLowerCase());
+                    if (idx === -1) {
+                        containsAll = false;
+                        break;
+                    }
+                    tempLetters.splice(idx, 1);
+                }
+
+                if (!containsAll) continue;
+
+                // ✅ FOUND PLAYER WORD → REPLACE GENERATED WORD
+                selectedWordsData[playerIndex] = w;
+                // Recalculate missingLettersWords and nonCommonLetters for this player
+                const missing = wordsGenInstance.ReplaceWithMissingAndStars(
+                    w.EnglishWord,
+                    commanRandomLettersList,
+                    randomMissingCount
+                );
+                missingLettersWords[playerIndex] = missing;
+                const nonCommon: string[] = [];
+                for (let i = 0; i < missing.length; i++) {
+                    if (missing[i] === '*') nonCommon.push(w.EnglishWord[i]);
+                }
+                nonCommonLetters[playerIndex] = nonCommon;
+                replaced = true;
+                if (replaced) {
+                  // 🔥 STORE WORD INFO IN PUBLIC GAME VARIABLE
+                  this.CurrentPackWords[playerIndex] = JSON.stringify({packId: packId,wordIndex: wIndex,wordData: w});
+                }
+                break; // stop after first valid word
+            }
+
+            if (replaced) break; // stop after first pack that contains valid word
+        }
+
+    } catch (err) {
+        logger.error("Failed loading packs for player " + playerId + ": " + err);
+    }
+}
+
       //const selectedWords = selectedWordsData.map((c) => c.EnglishWord);
       let allTilesPositionsDictionary: { [key: number]: number } = {};
       for (let i = 0; i < this.TilesSetData[0]; i++) {
         allTilesPositionsDictionary[i] = i;
       }
       const boardLetters: { [key: number]: string } = {};
-
       if (removeSafeTiles) {
         const allTilesPositionsDictionaryFiltered: { [key: number]: number } = {};
         for (const [key, value] of Object.entries(allTilesPositionsDictionary)) {
@@ -227,7 +297,6 @@ class LudoGameData {
         }
         allTilesPositionsDictionary = allTilesPositionsDictionaryFiltered;
       }
-
       if (comman) {
         for (const s of commanRandomLettersList) {
           const keys = Object.keys(allTilesPositionsDictionary).map(Number);
@@ -237,7 +306,6 @@ class LudoGameData {
           delete allTilesPositionsDictionary[keys[randomIndex]];
         }
       }
-
       if (random) {
         for (let playerIndex = 0; playerIndex < this.players.length; playerIndex++) {
           const player = this.players[playerIndex];
@@ -2148,26 +2216,40 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
 case "playerWin":
 {
     let fee = state.fee;
-    let gameData = Object.assign(new LudoGameData(), state.gameData);
+    let gameData:LudoGameData = Object.assign(new LudoGameData(), state.gameData);
 
     // Player we are rewarding
     let p = obj as LudoPlayerData;
     if (p.isBot) return;
+    if(gameData.gameMode==="wordo"){
+        // --- WORD PACK COMPLETION LOGIC ---
+        try {
+            const playerIndex = p.PlayerTurn;  // The player who won
+            const jsonString = gameData.CurrentPackWords[playerIndex];
 
+            // If no pack word was used for this player → skip
+            if (jsonString) {
+                const info = JSON.parse(jsonString);
+
+                const packId: string = info.packId;
+                const wordIndex: number = info.wordIndex;
+                const userId: string = p.UserId;
+
+                // Mark this word as completed
+                const result = completeSingleWord(nk, userId, packId, wordIndex);
+            }
+        } catch (err) {
+        }
+    }
     // Assign rank to player
     playerWin(nk, p, gameData);
-
     if (p.rank <= 0) return;
-
     const playerCount = gameData.players.length;
-
     // Total Pool
     const totalPool = fee * playerCount;
-
     // =====================================================
     // PAYOUT TABLES - EXACTLY FROM YOUR SHEET
     // =====================================================
-
     // 3-player payouts
     const map3: Record<number, { r1: number; r2: number }> = {
         500: { r1: 900, r2: 500 },

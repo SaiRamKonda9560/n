@@ -113,7 +113,7 @@ class wordsGen {
             }
         }
     }
-    private ReplaceWithMissingAndStars(word: string, targets: string[], starCount: number): string {
+    public ReplaceWithMissingAndStars(word: string, targets: string[], starCount: number): string {
         const chars = word.split('');
 
         for (const target of targets) {

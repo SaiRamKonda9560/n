@@ -172,6 +172,17 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("wordo", wordo);
   initializer.registerRpc("getPlayerCoins", getPlayerCoins);
   initializer.registerRpc("rpcStoreWords", rpcStoreWords);
+  
+    initializer.registerRpc("rpcAddWordPack", rpcAddWordPack);
+    initializer.registerRpc("rpcUpdateWordPackProgress", rpcUpdateWordPackProgress);
+    initializer.registerRpc("rpcGetWordPacks", rpcGetWordPacks);
+    initializer.registerRpc("rpcRemoveWordPack", rpcRemoveWordPack);
+    initializer.registerRpc("rpcBuyPackWithCoins", rpcBuyPackWithCoins);
+    initializer.registerRpc("rpcResetProgress", rpcResetProgress);
+    initializer.registerRpc("rpcCompleteSingleWord", rpcCompleteSingleWord);
+    initializer.registerRpc("rpcCheckIfUnlocked", rpcCheckIfUnlocked);
+
+
 
 
 }
@@ -505,6 +516,57 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
         logger.error(`RPC Error in dailyAttendance: ${errMsg}`);
         return JSON.stringify({ success: false, error: errMsg });
     }
+};
+const rpcStoreWords = function (ctx: any, logger: any, nk: any, payload: string) {
+  const collection = "words";
+  const userId = "00000000-0000-0000-0000-000000000000";
+  if (!payload) {
+    return JSON.stringify({ success: false, error: "Empty payload" });
+  }
+  const data = JSON.parse(payload);
+  const key = data.key;
+  const valueJsonString = data.value;
+  if (!key || !valueJsonString) {
+    return JSON.stringify({ success: false, error: "key and value required" });
+  }
+  // Read existing data
+  let existingValue: any = {};
+  try {
+    const objects = nk.storageRead([{ collection, key, userId }]);
+    if (objects && objects.length > 0 && objects[0].value) {
+      existingValue = objects[0].value;
+    }
+  } catch (readError) {
+    logger.error("Error reading storage: " + readError);
+  }
+  // Parse JSON string
+  let parsedValue: any;
+  try {
+    parsedValue = JSON.parse(valueJsonString);
+  } catch (e) {
+    logger.error("Invalid JSON string: " + e);
+    return JSON.stringify({ success: false, error: "Invalid JSON string" });
+  }
+  // Overwrite value
+  existingValue = parsedValue;
+  // Write new value
+  try {
+    nk.storageWrite([
+      {
+        collection,
+        key,
+        userId,
+        value: existingValue,
+        permissionRead: 2,   // public readable
+        permissionWrite: 0,  // only server writes
+      },
+    ]);
+  } catch (writeError) {
+    logger.error("Error writing storage: " + writeError);
+    return JSON.stringify({ success: false, error: "Write failed" });
+  }
+
+  return JSON.stringify({ success: true });
 };
 const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
@@ -843,57 +905,7 @@ const addWord = function (nk: any, userId: string, word: string) {
     nk.logger.error("Error writing storage: " + writeError);
   }
 };
-const rpcStoreWords = function (ctx: any, logger: any, nk: any, payload: string) {
-  const collection = "words";
-  const userId = "00000000-0000-0000-0000-000000000000";
-  if (!payload) {
-    return JSON.stringify({ success: false, error: "Empty payload" });
-  }
-  const data = JSON.parse(payload);
-  const key = data.key;
-  const valueJsonString = data.value;
-  if (!key || !valueJsonString) {
-    return JSON.stringify({ success: false, error: "key and value required" });
-  }
-  // Read existing data
-  let existingValue: any = {};
-  try {
-    const objects = nk.storageRead([{ collection, key, userId }]);
-    if (objects && objects.length > 0 && objects[0].value) {
-      existingValue = objects[0].value;
-    }
-  } catch (readError) {
-    logger.error("Error reading storage: " + readError);
-  }
-  // Parse JSON string
-  let parsedValue: any;
-  try {
-    parsedValue = JSON.parse(valueJsonString);
-  } catch (e) {
-    logger.error("Invalid JSON string: " + e);
-    return JSON.stringify({ success: false, error: "Invalid JSON string" });
-  }
-  // Overwrite value
-  existingValue = parsedValue;
-  // Write new value
-  try {
-    nk.storageWrite([
-      {
-        collection,
-        key,
-        userId,
-        value: existingValue,
-        permissionRead: 2,   // public readable
-        permissionWrite: 0,  // only server writes
-      },
-    ]);
-  } catch (writeError) {
-    logger.error("Error writing storage: " + writeError);
-    return JSON.stringify({ success: false, error: "Write failed" });
-  }
 
-  return JSON.stringify({ success: true });
-};
 
 const leaderboardCoinsId = "leaderboard_coins";
 const leaderboardWinsId = "leaderboard_wins";
@@ -952,7 +964,200 @@ function GetTopPlayers(ctx: any, logger: any, nk: any, payload: string): string 
   }
 }
 
+//#region words pack
+
+// --------------------------------------------------------
+// TYPES
+// --------------------------------------------------------
+interface WordPack {
+    packId: string;
+    boughtOn: number;
+    completed: number[];
+}
+
+interface WordPackData {
+    packs: WordPack[];
+}
+
+const COLLECTION = "player_data";
+const KEY = "wordpacks";
+const COINS_KEY = "coins"; // optional for buyPackWithCoins
+
+// --------------------------------------------------------
+// STORAGE HELPERS
+// --------------------------------------------------------
+function loadWordPacks(nk: any, userId: string): WordPackData {
+    try {
+        const objs = nk.storageRead([{ collection: COLLECTION, key: KEY, userId }]);
+        if (objs.length > 0 && objs[0].value) {
+            return objs[0].value as WordPackData;
+        }
+    } catch (_) {}
+    return { packs: [] };
+}
+
+function saveWordPacks(nk: any, userId: string, data: WordPackData) {
+    nk.storageWrite([{
+        collection: COLLECTION,
+        key: KEY,
+        userId,
+        value: data,
+        permissionRead: 1,
+        permissionWrite: 1
+    }]);
+}
+
+// --------------------------------------------------------
+// HELPER METHODS (REAL LOGIC)
+// --------------------------------------------------------
+
+// 1. Add pack
+function addWordPack(nk: any, userId: string, packId: string) {
+    const packData = loadWordPacks(nk, userId);
+
+    if (packData.packs.some(p => p.packId === packId)) {
+        return { success: true, alreadyOwned: true };
+    }
+
+    packData.packs.push({
+        packId,
+        boughtOn: Date.now(),
+        completed: []
+    });
+
+    saveWordPacks(nk, userId, packData);
+    return { success: true, added: true };
+}
+
+// 2. Update completed array fully
+function updateWordPackProgress(nk: any, userId: string, packId: string, completed: number[]) {
+    const packData = loadWordPacks(nk, userId);
+    const pack = packData.packs.find(p => p.packId === packId);
+
+    if (!pack) return { success: false, error: "Pack not owned" };
+
+    pack.completed = completed;
+    saveWordPacks(nk, userId, packData);
+
+    return { success: true };
+}
+
+// 3. Get all packs
+function getWordPacks(nk: any, userId: string) {
+    return loadWordPacks(nk, userId);
+}
+
+// 4. Remove pack
+function removeWordPack(nk: any, userId: string, packId: string) {
+    const packData = loadWordPacks(nk, userId);
+    const before = packData.packs.length;
+
+    packData.packs = packData.packs.filter(p => p.packId !== packId);
+
+    if (before === packData.packs.length) {
+        return { success: false, error: "Pack not found" };
+    }
+
+    saveWordPacks(nk, userId, packData);
+    return { success: true, removed: true };
+}
+
+// 5. Buy pack with coins
+function buyPackWithCoins(nk: any, userId: string, packId: string, price: number) {
+    // read coins
+    let coins = 0;
+    try {
+        const c = nk.storageRead([{ collection: COLLECTION, key: COINS_KEY, userId }]);
+        if (c.length > 0 && c[0].value.amount) coins = c[0].value.amount;
+    } catch (_) {}
+
+    if (coins < price) {
+        return { success: false, error: "Not enough coins" };
+    }
+
+    coins -= price;
+
+    // save coins
+    nk.storageWrite([{
+        collection: COLLECTION,
+        key: COINS_KEY,
+        userId,
+        value: { amount: coins },
+        permissionRead: 1,
+        permissionWrite: 1
+    }]);
+
+    // add pack
+    return addWordPack(nk, userId, packId);
+}
+
+// 6. Reset progress
+function resetProgress(nk: any, userId: string, packId: string) {
+    const packData = loadWordPacks(nk, userId);
+    const pack = packData.packs.find(p => p.packId === packId);
+    if (!pack) return { success: false, error: "Pack not owned" };
+
+    pack.completed = [];
+    saveWordPacks(nk, userId, packData);
+
+    return { success: true };
+}
+
+// 7. Complete single index
+function completeSingleWord(nk: any, userId: string, packId: string, index: number) {
+    const packData = loadWordPacks(nk, userId);
+    const pack = packData.packs.find(p => p.packId === packId);
+    if (!pack) return { success: false, error: "Pack not owned" };
+
+    if (!pack.completed.includes(index)) {
+        pack.completed.push(index);
+    }
+
+    saveWordPacks(nk, userId, packData);
+    return { success: true };
+}
+
+// 8. Check if unlocked
+function checkIfUnlocked(nk: any, userId: string, packId: string) {
+    const packData = loadWordPacks(nk, userId);
+    const pack = packData.packs.find(p => p.packId === packId);
+    return { unlocked: !!pack };
+}
 
 
 
-
+// --------------------------------------------------------
+// RPC WRAPPERS (Use helper functions only)
+// --------------------------------------------------------
+const rpcAddWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
+    const { packId } = JSON.parse(payload);
+    return JSON.stringify(addWordPack(nk, ctx.userId, packId));
+};
+const rpcUpdateWordPackProgress = (ctx: any, logger: any, nk: any, payload: string) => {
+    const { packId, completed } = JSON.parse(payload);
+    return JSON.stringify(updateWordPackProgress(nk, ctx.userId, packId, completed));
+};
+const rpcGetWordPacks = (ctx: any, logger: any, nk: any, payload: string) => {
+    return JSON.stringify(getWordPacks(nk, ctx.userId));
+};
+const rpcRemoveWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
+    const { packId } = JSON.parse(payload);
+    return JSON.stringify(removeWordPack(nk, ctx.userId, packId));
+};
+const rpcBuyPackWithCoins = (ctx: any, logger: any, nk: any, payload: string) => {
+    const { packId, price } = JSON.parse(payload);
+    return JSON.stringify(buyPackWithCoins(nk, ctx.userId, packId, price));
+};
+const rpcResetProgress = (ctx: any, logger: any, nk: any, payload: string) => {
+    const { packId } = JSON.parse(payload);
+    return JSON.stringify(resetProgress(nk, ctx.userId, packId));
+};
+const rpcCompleteSingleWord = (ctx: any, logger: any, nk: any, payload: string) => {
+    const { packId, index } = JSON.parse(payload);
+    return JSON.stringify(completeSingleWord(nk, ctx.userId, packId, index));
+};
+const rpcCheckIfUnlocked = (ctx: any, logger: any, nk: any, payload: string) => {
+    const { packId } = JSON.parse(payload);
+    return JSON.stringify(checkIfUnlocked(nk, ctx.userId, packId));
+};
+//#endregion

@@ -187,6 +187,7 @@ class LudoGameData {
       wordsGenInstance.generateWords(lengthOfWords,this.players.length,randomMissingCount,commonMissingCount,selectedWordsData,missingLettersWords,commanRandomLettersList,nonCommonLetters);
       // After generate section…
 for (const player of this.players) {
+    if(player.isBot) continue;
     const playerId = player.UserId;
     const playerIndex = this.players.indexOf(player);
 

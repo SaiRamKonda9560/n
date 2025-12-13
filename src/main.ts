@@ -1065,6 +1065,8 @@ function removeWordPack(nk: any, userId: string, packId: string) {
 
 // 5. Buy pack with coins
 function buyPackWithCoins(nk: any, userId: string, packId: string, price: number) {
+    return addWordPack(nk, userId, packId);
+
     // read coins
     let coins = playerCoins(nk,userId,"",0);
 

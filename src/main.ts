@@ -1027,7 +1027,7 @@ function addWordPack(nk: any, userId: string, packId: string) {
     });
 
     saveWordPacks(nk, userId, packData);
-    return { success: true, added: packId };
+    return { success: true,  packId };
 }
 
 // 2. Update completed array fully
@@ -1186,8 +1186,9 @@ const rpcRemoveWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
     return JSON.stringify(removeWordPack(nk, ctx.userId, packId));
 };
 const rpcBuyPackWithCoins = (ctx: any, logger: any, nk: any, payload: string) => {
-    const { packId, price } = JSON.parse(payload);
-    return JSON.stringify(buyPackWithCoins(nk, ctx.userId, packId, price));
+    //const { packId, price } = JSON.parse(payload);
+    const data = JSON.parse(payload);
+    return JSON.stringify(buyPackWithCoins(nk, ctx.userId, data.packId,data.price));
 };
 const rpcResetProgress = (ctx: any, logger: any, nk: any, payload: string) => {
     const { packId } = JSON.parse(payload);

@@ -1074,7 +1074,7 @@ function buyPackWithCoins(nk: any, userId: string,username:string, packId: strin
     // save coins
     playerCoins(nk,userId,username,-price);
     } catch (_) {
-        return { success: false, error: "storageWrite coins" };
+        return { success: false, error: "storageWrite coins" ,username,userId,price,packId };
 
     }
     // add pack

@@ -1070,7 +1070,10 @@ function buyPackWithCoins(nk: any, userId: string, packId: string, price: number
     try {
         const c = nk.storageRead([{ collection: COLLECTION, key: COINS_KEY, userId }]);
         if (c.length > 0 && c[0].value.amount) coins = c[0].value.amount;
-    } catch (_) {}
+    } catch (_) {
+        return { success: false, error: "storageRead coins" };
+
+    }
 
     if (coins < price) {
         return { success: false, error: "Not enough coins" };
@@ -1078,6 +1081,8 @@ function buyPackWithCoins(nk: any, userId: string, packId: string, price: number
 
     coins -= price;
 
+
+    try {
     // save coins
     nk.storageWrite([{
         collection: COLLECTION,
@@ -1087,7 +1092,10 @@ function buyPackWithCoins(nk: any, userId: string, packId: string, price: number
         permissionRead: 1,
         permissionWrite: 1
     }]);
+    } catch (_) {
+        return { success: false, error: "storageWrite coins" };
 
+    }
     // add pack
     return addWordPack(nk, userId, packId);
 }

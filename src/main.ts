@@ -181,6 +181,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcResetProgress", rpcResetProgress);
     initializer.registerRpc("rpcCompleteSingleWord", rpcCompleteSingleWord);
     initializer.registerRpc("rpcCheckIfUnlocked", rpcCheckIfUnlocked);
+    initializer.registerRpc("rpcGetWordPackStoreData", rpcGetWordPackStoreData);
 
 
 
@@ -1123,6 +1124,48 @@ function checkIfUnlocked(nk: any, userId: string, packId: string) {
     const pack = packData.packs.find(p => p.packId === packId);
     return { unlocked: !!pack };
 }
+function getOwnedPackMap(nk: any, userId: string): Map<string, any> {
+    const data = loadWordPacks(nk, userId);
+    const map = new Map<string, any>();
+    for (const p of data.packs) {
+        map.set(p.packId, p);
+    }
+    return map;
+}
+
+function getStoreData(nk: any, userId: string) {
+    const STORE_USER = "00000000-0000-0000-0000-000000000000";
+    const WORDS_COLLECTION = "words";
+    const PRICE = 1000;
+
+    // 1. Owned packs
+    const ownedMap = getOwnedPackMap(nk, userId);
+
+    // 2. Read all word packs
+    const allPacks = nk.storageList(WORDS_COLLECTION, STORE_USER, 100, null);
+
+    const result: any[] = [];
+
+    for (const obj of allPacks.objects) {
+        if (!obj.value || !obj.value.wordData) continue;
+
+        const packId = obj.key;
+        const totalWords = obj.value.wordData.length;
+
+        const owned = ownedMap.get(packId);
+
+        result.push({
+            packId,
+            totalWords,
+            completedCount: owned ? owned.completed.length : 0,
+            isBought: !!owned,
+            price: PRICE,
+            boughtOn: owned ? owned.boughtOn : 0
+        });
+    }
+
+    return { packs: result };
+}
 
 
 
@@ -1160,4 +1203,8 @@ const rpcCheckIfUnlocked = (ctx: any, logger: any, nk: any, payload: string) => 
     const { packId } = JSON.parse(payload);
     return JSON.stringify(checkIfUnlocked(nk, ctx.userId, packId));
 };
+const rpcGetWordPackStoreData = (ctx: any, logger: any, nk: any, payload: string) => {
+    return JSON.stringify(getStoreData(nk, ctx.userId));
+};
+
 //#endregion

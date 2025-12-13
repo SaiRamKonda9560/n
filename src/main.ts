@@ -1067,11 +1067,9 @@ function removeWordPack(nk: any, userId: string, packId: string) {
 function buyPackWithCoins(nk: any, userId: string,username:string, packId: string, price: number) {
     // read coins
     let coins = playerCoins(nk,userId,username,0);
-
     if (coins < price) {
-        return { success: false, error: "Not enough coins "+coins+" userId "+userId };
+        return { success: false, error: "Not enough coins "};
     }
-
     try {
     // save coins
     playerCoins(nk,userId,username,-price);
@@ -1181,7 +1179,7 @@ const rpcRemoveWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
 const rpcBuyPackWithCoins = (ctx: any, logger: any, nk: any, payload: string) => {
     //const { packId, price } = JSON.parse(payload);
     const data = JSON.parse(payload);
-    return JSON.stringify(buyPackWithCoins(nk, ctx.userId,ctx.username, "Class_6_Science_Ch_1",1000));
+    return JSON.stringify(buyPackWithCoins(nk, ctx.userId,ctx.username, data.packId,data.price));
 };
 const rpcResetProgress = (ctx: any, logger: any, nk: any, payload: string) => {
     const { packId } = JSON.parse(payload);

@@ -1065,9 +1065,6 @@ function removeWordPack(nk: any, userId: string, packId: string) {
 
 // 5. Buy pack with coins
 function buyPackWithCoins(nk: any, userId: string, packId: string, price: number) {
-    return {packId,price};
-
-
     // read coins
     let coins = playerCoins(nk,userId,"",0);
 
@@ -1184,7 +1181,7 @@ const rpcRemoveWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
 const rpcBuyPackWithCoins = (ctx: any, logger: any, nk: any, payload: string) => {
     //const { packId, price } = JSON.parse(payload);
     const data = JSON.parse(payload);
-    return JSON.stringify(buyPackWithCoins(nk, ctx.userId, data.packId,data.price));
+    return JSON.stringify(buyPackWithCoins(nk, ctx.userId, "Class_6_Science_Ch_1",1000));
 };
 const rpcResetProgress = (ctx: any, logger: any, nk: any, payload: string) => {
     const { packId } = JSON.parse(payload);

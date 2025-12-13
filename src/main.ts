@@ -1079,19 +1079,9 @@ function buyPackWithCoins(nk: any, userId: string, packId: string, price: number
         return { success: false, error: "Not enough coins" };
     }
 
-    coins -= price;
-
-
     try {
     // save coins
-    nk.storageWrite([{
-        collection: COLLECTION,
-        key: COINS_KEY,
-        userId,
-        value: { amount: coins },
-        permissionRead: 1,
-        permissionWrite: 1
-    }]);
+    playerCoins(nk,userId,"",-price);
     } catch (_) {
         return { success: false, error: "storageWrite coins" };
 

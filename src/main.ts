@@ -1069,7 +1069,7 @@ function buyPackWithCoins(nk: any, userId: string, packId: string, price: number
     let coins = playerCoins(nk,userId,"",0);
 
     if (coins < price) {
-        return { success: false, error: "Not enough coins "+coins };
+        return { success: false, error: "Not enough coins "+coins+" userId "+userId };
     }
 
     try {

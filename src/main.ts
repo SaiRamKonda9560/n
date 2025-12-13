@@ -1142,7 +1142,7 @@ function getStoreData(nk: any, userId: string) {
     const ownedMap = getOwnedPackMap(nk, userId);
 
     // 2. Read all word packs
-    const allPacks = nk.storageList(WORDS_COLLECTION, STORE_USER, 100);
+    const allPacks = nk.storageList(STORE_USER,WORDS_COLLECTION, 100);
 
     const result: any[] = [];
 

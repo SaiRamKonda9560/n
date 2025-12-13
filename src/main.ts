@@ -1142,7 +1142,7 @@ function getStoreData(nk: any, userId: string) {
     const ownedMap = getOwnedPackMap(nk, userId);
 
     // 2. Read all word packs
-    const allPacks = nk.storageList(WORDS_COLLECTION, STORE_USER, 100, null);
+    const allPacks = nk.storageList(WORDS_COLLECTION, STORE_USER, 100);
 
     const result: any[] = [];
 
@@ -1204,8 +1204,8 @@ const rpcCheckIfUnlocked = (ctx: any, logger: any, nk: any, payload: string) => 
     return JSON.stringify(checkIfUnlocked(nk, ctx.userId, packId));
 };
 const rpcGetWordPackStoreData = (ctx: any, logger: any, nk: any, payload: string) => {
-    //return JSON.stringify(getStoreData(nk, ctx.userId));
-    return JSON.stringify({s:"hello"});
+    return JSON.stringify(getStoreData(nk, ctx.userId));
+    //return JSON.stringify({s:"hello"});
 
 };
 

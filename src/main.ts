@@ -1027,7 +1027,7 @@ function addWordPack(nk: any, userId: string, packId: string) {
     });
 
     saveWordPacks(nk, userId, packData);
-    return { success: true, added: true };
+    return { success: true, added: packId };
 }
 
 // 2. Update completed array fully

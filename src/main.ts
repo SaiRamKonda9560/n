@@ -1204,7 +1204,9 @@ const rpcCheckIfUnlocked = (ctx: any, logger: any, nk: any, payload: string) => 
     return JSON.stringify(checkIfUnlocked(nk, ctx.userId, packId));
 };
 const rpcGetWordPackStoreData = (ctx: any, logger: any, nk: any, payload: string) => {
-    return JSON.stringify(getStoreData(nk, ctx.userId));
+    //return JSON.stringify(getStoreData(nk, ctx.userId));
+    return JSON.stringify({s:"hello"});
+
 };
 
 //#endregion

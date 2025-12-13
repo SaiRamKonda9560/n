@@ -1066,14 +1066,7 @@ function removeWordPack(nk: any, userId: string, packId: string) {
 // 5. Buy pack with coins
 function buyPackWithCoins(nk: any, userId: string, packId: string, price: number) {
     // read coins
-    let coins = 0;
-    try {
-        const c = nk.storageRead([{ collection: COLLECTION, key: COINS_KEY, userId }]);
-        if (c.length > 0 && c[0].value.amount) coins = c[0].value.amount;
-    } catch (_) {
-        return { success: false, error: "storageRead coins" };
-
-    }
+    let coins = playerCoins(nk,userId,"",0);
 
     if (coins < price) {
         return { success: false, error: "Not enough coins" };

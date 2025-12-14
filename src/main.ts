@@ -511,7 +511,7 @@ const collectDailyReward = function (
             throw new Error("No attendance data found");
         }
         const attendanceData = attendanceObjects[0].value;
-        if (!attendanceData.dailyReward?.today) {
+        if (!attendanceData.dailyReward?.today && false) {
             throw new Error(`Daily reward data missing ${attendanceData},${attendanceData.dailyReward},${attendanceData.dailyReward?.today}`);
         }
         const today = attendanceData.dailyReward.today;

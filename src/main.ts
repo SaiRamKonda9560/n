@@ -370,129 +370,98 @@ const getPlayerCoins = function (ctx: any, logger: any, nk: any, payload: string
         });
     }
 };
-const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: string): string {
+
+const dailyAttendance = function (
+    ctx: any,
+    logger: any,
+    nk: any,
+    payload: string
+): string {
     try {
         const userId = ctx.userId;
-        if (!userId) throw new Error("User ID missing from context");
+        if (!userId) throw new Error("User ID missing");
 
         const collection = "player_data";
         const key = "daily_attendance";
 
-        // --- READ CURRENT DATA ---
         let attendanceData: any = null;
-        try {
-            const objects = nk.storageRead([{ collection, key, userId }]);
-            if (objects && objects.length > 0 && objects[0].value) {
-                attendanceData = objects[0].value;
-            }
-        } catch (readError) {
-            logger.warn(`Failed to read attendance data: ${readError}`);
+
+        // -------- READ STORAGE --------
+        const objects = nk.storageRead([{ collection, key, userId }]);
+        if (objects.length && objects[0].value) {
+            attendanceData = objects[0].value;
         }
 
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(); // midnight timestamp
-        let isNewPlayer = false;
+        const ONE_DAY = 24 * 60 * 60 * 1000;
 
-        // --- NEW PLAYER CHECK ---
+        const today = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+        ).getTime();
+
+        const yesterday = today - ONE_DAY;
+
+        let isNewPlayer = false;
+        let firstLoginToday = false;
+
+        // -------- NEW PLAYER --------
         if (!attendanceData) {
             isNewPlayer = true;
             attendanceData = {
                 firstLogin: now.getTime(),
                 lastLogin: 0,
                 dayIndex: 0,
-                dailyReward: null,
-                killCount:0,
-                wins:0,
-                losses:0,
-                houseOfWords:[]
+                dailyReward: null
             };
-
-            // --- GIVE 5000 COINS TO NEW PLAYER ---
-            const coinCollection = "player_data";
-            const coinKey = "coins";
-            const writeCoins: nkruntime.StorageWriteRequest = {
-                collection: coinCollection,
-                key: coinKey,
-                userId,
-                value: { coins: 5000 },
-                permissionRead: 1,
-                permissionWrite: 1
-            };
-
-            try {
-                nk.storageWrite([writeCoins]);
-                attendanceData.initialCoins = 5000;
-            } catch (err) {
-                logger.error(`Failed to write initial coins for new player ${userId}: ${err}`);
-            }
         }
 
-        // --- DAILY REWARD GENERATION FUNCTION ---
-        function generateDailyRewards(currentDay: number) {
-            const rewards: any[] = [];
-            const startDay = Math.floor((currentDay - 1) / 9) * 9 + 1;
-            const endDay = startDay + 8;
-
-            for (let i = startDay; i <= endDay; i++) {
-                const rewardAmount = Math.min(500 + (i - 1) * 100, 5000);
-                rewards.push({
-                    day: i,
-                    amount: rewardAmount,
-                    isCollected: false
-                });
-            }
-
+        // -------- WEEKLY REWARD GENERATOR --------
+        function generateWeeklyRewards() {
             return {
-                today: currentDay,
-                dailyRewardDatas: rewards
+                today: 1,
+                dailyRewardDatas: [
+                    { day: 1, amount: 500, isCollected: false },
+                    { day: 2, amount: 700, isCollected: false },
+                    { day: 3, amount: 900, isCollected: false },
+                    { day: 4, amount: 1200, isCollected: false },
+                    { day: 5, amount: 1500, isCollected: false },
+                    { day: 6, amount: 2000, isCollected: false },
+                    { day: 7, amount: 3000, isCollected: false }
+                ]
             };
         }
 
-        // --- DAILY LOGIN CHECK ---
-        let firstLoginToday = false;
+        // -------- DAILY LOGIN CHECK --------
         if (attendanceData.lastLogin < today) {
             firstLoginToday = true;
-            // Increment day index
-            attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
 
-            // Original spins array
-            let spins = [350, 300, 500, 350, 300, 250, 500, 400, 1000, 2000];
-            // Shuffle function (Fisher–Yates shuffle)
-            function shuffleArray<T>(array: T[]): T[] {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
+            // FIRST EVER LOGIN
+            if (attendanceData.dayIndex === 0) {
+                attendanceData.dayIndex = 1;
+                attendanceData.dailyReward = generateWeeklyRewards();
             }
-            // Shuffle spins before assigning
-            let shuffledSpins = shuffleArray(spins);
-            // Generate random spin indexes (for example, 3 random indexes)
-            function getRandomIndexes(count: number, max: number): number[] {
-                let indexes: number[] = [];
-                while (indexes.length < count) {
-                    let rand = Math.floor(Math.random() * max);
-                    if (!indexes.includes(rand)) indexes.push(rand);
-                }
-                return indexes;
-            }
-            let spinData = {
-                spins: shuffledSpins,
-                spinCount: getRandomIndexes(3, spins.length) // returns something like [1, 7, 4]
-            };
-            attendanceData.spinData = spinData;
+            // CONTINUOUS LOGIN
+            else if (attendanceData.lastLogin >= yesterday) {
+                attendanceData.dayIndex++;
 
-            // Check if new 9-day cycle is needed
-            if (!attendanceData.dailyReward ||
-                attendanceData.dayIndex > attendanceData.dailyReward.dailyRewardDatas.length) {
-                attendanceData.dailyReward = generateDailyRewards(attendanceData.dayIndex);
+                if (attendanceData.dayIndex > 7) {
+                    attendanceData.dayIndex = 7; // stay at day 7
+                }
             }
+            // MISSED DAY → RESET
+            else {
+                attendanceData.dayIndex = 1;
+                attendanceData.dailyReward = generateWeeklyRewards();
+            }
+
             attendanceData.dailyReward.today = attendanceData.dayIndex;
         }
 
         attendanceData.lastLogin = now.getTime();
 
-        // --- WRITE BACK STORAGE ---
+        // -------- WRITE STORAGE --------
         nk.storageWrite([{
             collection,
             key,
@@ -506,18 +475,17 @@ const dailyAttendance = function (ctx: any, logger: any, nk: any, payload: strin
             success: true,
             isNewPlayer,
             firstLoginToday,
-            data:attendanceData,
             dayIndex: attendanceData.dayIndex,
-            dailyReward: attendanceData.dailyReward,
-            todayReward: attendanceData.dailyRewards?.[0] || null
+            dailyReward: attendanceData.dailyReward
         });
 
     } catch (e) {
-        const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
-        logger.error(`RPC Error in dailyAttendance: ${errMsg}`);
-        return JSON.stringify({ success: false, error: errMsg });
+        logger.error("dailyAttendance error: " + e);
+        return JSON.stringify({ success: false, error: e });
     }
 };
+
+
 const rpcStoreWords = function (ctx: any, logger: any, nk: any, payload: string) {
   const collection = "words";
   const userId = "00000000-0000-0000-0000-000000000000";
@@ -569,57 +537,78 @@ const rpcStoreWords = function (ctx: any, logger: any, nk: any, payload: string)
 
   return JSON.stringify({ success: true });
 };
-const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: string): string {
+
+const collectDailyReward = function (
+    ctx: any,
+    logger: any,
+    nk: any,
+    payload: string
+): string {
     try {
         const userId = ctx.userId;
         const username = ctx.username;
 
-        if (!userId) throw new Error("User ID missing from context");
+        if (!userId) throw new Error("User ID missing");
 
         const collection = "player_data";
         const attendanceKey = "daily_attendance";
         const coinsKey = "coins";
 
-        // --- PARSE PAYLOAD ---
+        // -------- PARSE PAYLOAD --------
         const request = payload ? JSON.parse(payload) : {};
-        const mode = request.mode || "read"; // "read" or "collect"
+        const mode = request.mode || "read"; // read | collect
 
-        // --- READ ATTENDANCE DATA ---
-        const attendanceObjects = nk.storageRead([{ collection, key: attendanceKey, userId }]);
-        if (!attendanceObjects || attendanceObjects.length === 0 || !attendanceObjects[0].value) {
-            throw new Error("No attendance data found for this player");
+        // -------- READ ATTENDANCE --------
+        const attendanceObjects = nk.storageRead([
+            { collection, key: attendanceKey, userId }
+        ]);
+
+        if (!attendanceObjects.length || !attendanceObjects[0].value) {
+            throw new Error("Attendance data not found");
         }
 
         const attendanceData = attendanceObjects[0].value;
-        if (!attendanceData.dailyReward || !attendanceData.dailyReward.today) {
+
+        if (!attendanceData.dailyReward ||
+            !attendanceData.dailyReward.dailyRewardDatas) {
             throw new Error("Daily reward data missing");
         }
 
         const today = attendanceData.dailyReward.today;
-        const todayReward = attendanceData.dailyReward.dailyRewardDatas.find((r: any) => r.day === today);
-        if (!todayReward) throw new Error(`Reward for day ${today} not found`);
 
-        // --- READ CURRENT COINS ---
+        const todayReward =
+            attendanceData.dailyReward.dailyRewardDatas.find(
+                (r: any) => r.day === today
+            );
+
+        if (!todayReward) {
+            throw new Error(`Reward not found for day ${today}`);
+        }
+
+        // -------- READ COINS --------
         let currentCoins = 0;
         try {
-            const coinObjects = nk.storageRead([{ collection, key: coinsKey, userId }]);
-            if (coinObjects && coinObjects.length > 0 && coinObjects[0].value) {
+            const coinObjects = nk.storageRead([
+                { collection, key: coinsKey, userId }
+            ]);
+            if (coinObjects.length && coinObjects[0].value) {
                 currentCoins = coinObjects[0].value.coins || 0;
             }
-        } catch (err) {
-            logger.warn(`Failed to read coin data for ${userId}: ${err}`);
+        } catch {
+            logger.warn("Coin read failed");
         }
-        // --- IF MODE IS "read" ---
+
+        // -------- READ MODE --------
         if (mode === "read") {
             return JSON.stringify({
                 success: true,
-                message: "attendanceData",
                 coinsAdded: 0,
                 currentCoins,
                 attendanceData
             });
         }
-        // --- IF MODE IS "collect" ---
+
+        // -------- COLLECT MODE --------
         if (todayReward.isCollected) {
             return JSON.stringify({
                 success: false,
@@ -629,11 +618,20 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
                 attendanceData
             });
         }
+
         const rewardAmount = todayReward.amount;
-        // --- UPDATE COINS ---
-        const newBalance = playerCoins(nk,userId,username,rewardAmount);
-        // --- MARK REWARD AS COLLECTED ---
+
+        // -------- ADD COINS --------
+        const newBalance = playerCoins(
+            nk,
+            userId,
+            username,
+            rewardAmount
+        );
+
+        // -------- MARK AS COLLECTED --------
         todayReward.isCollected = true;
+
         nk.storageWrite([{
             collection,
             key: attendanceKey,
@@ -642,11 +640,10 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
             permissionRead: 1,
             permissionWrite: 1
         }]);
-        logger.debug(`User ${userId} collected ${rewardAmount} coins for day ${today}. New total: ${newBalance}`);
 
         return JSON.stringify({
             success: true,
-            message: "Reward collected successfully",
+            message: "Reward collected",
             coinsAdded: rewardAmount,
             currentCoins: newBalance,
             attendanceData
@@ -654,10 +651,11 @@ const collectDailyReward = function (ctx: any, logger: any, nk: any, payload: st
 
     } catch (e) {
         const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
-        logger.error(`RPC Error in collectDailyReward: ${errMsg}`);
+        logger.error(`collectDailyReward error: ${errMsg}`);
         return JSON.stringify({ success: false, error: errMsg });
     }
 };
+
 const spin = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;

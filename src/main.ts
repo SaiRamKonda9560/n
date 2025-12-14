@@ -906,6 +906,7 @@ interface WordPack {
 }
 
 interface WordPackData {
+    activePack: string;
     packs: WordPack[];
 }
 

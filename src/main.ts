@@ -907,7 +907,7 @@ interface WordPack {
 
 interface WordPackData {
     activePack: string;
-    packs: WordPack[];
+    packs: WordPack[]; 
 }
 
 const COLLECTION = "player_data";
@@ -924,7 +924,7 @@ function loadWordPacks(nk: any, userId: string): WordPackData {
             return objs[0].value as WordPackData;
         }
     } catch (_) {}
-    return { packs: [] };
+    return { packs: [] ,activePack:""};
 }
 
 function saveWordPacks(nk: any, userId: string, data: WordPackData) {

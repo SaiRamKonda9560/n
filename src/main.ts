@@ -419,13 +419,13 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             return {
                 today: 0,
                 dailyRewardDatas: [
-                    { day: 1, amount: 500, isCollected: false },
-                    { day: 2, amount: 700, isCollected: false },
-                    { day: 3, amount: 900, isCollected: false },
-                    { day: 4, amount: 1200, isCollected: false },
-                    { day: 5, amount: 1500, isCollected: false },
-                    { day: 6, amount: 2000, isCollected: false },
-                    { day: 7, amount: 3000, isCollected: false }
+                    {amount: 500, isCollected: false },
+                    {amount: 700, isCollected: false },
+                    {amount: 900, isCollected: false },
+                    {amount: 1200, isCollected: false },
+                    {amount: 1500, isCollected: false },
+                    {amount: 2000, isCollected: false },
+                    {amount: 3000, isCollected: false }
                 ]
             };
         }
@@ -497,7 +497,7 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         if (!userId) throw new Error("User ID missing from context"); 
         // ================= PARSE REQUEST =================
         const request = payload ? JSON.parse(payload) : {};
-        const mode = request.mode || "read";
+        const read = request.read || true;
         // ================= READ ATTENDANCE =================
         const attendanceObjects = nk.storageRead([
             { collection: player_data, key: daily_attendance, userId }
@@ -514,7 +514,7 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         // ================= READ COINS =================
         let currentCoins = playerCoins(nk,userId,username, 0);
         // ================= READ MODE =================
-        if (mode === "read") {
+        if (read) {
             return JSON.stringify({success: true,message: "attendanceData",coinsAdded: 0,currentCoins,attendanceData});
         }
         // ================= COLLECT MODE =================

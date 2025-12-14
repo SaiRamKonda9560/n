@@ -469,7 +469,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                 spinCount: getRandomIndexes(3, spins.length)
             };
             // ---------- Daily Reward Cycle (INDEX BASED) ----------
-            if (!attendanceData.dailyReward ||missedDays > 0 ||attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length)
+            if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length)
             {
                 // reset reward cycle
                 attendanceData.dailyReward = generateDailyRewards();

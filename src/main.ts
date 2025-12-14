@@ -414,25 +414,9 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         }
 
         // ================= DAILY REWARD GENERATOR =================
-        function generateDailyRewards(currentDay: number) {
-            const rewards: any[] = [];
-            const startDay = Math.floor((currentDay - 1) / 9) * 9 + 1;
-            const endDay = startDay + 8;
-            for (let i = startDay; i <= endDay; i++) {
-                rewards.push({
-                    day: i,
-                    amount: Math.min(500 + (i - 1) * 100, 5000),
-                    isCollected: false
-                });
-            }
+        function generateDailyRewards() {
             return {
-                today: currentDay,
-                dailyRewardDatas: rewards
-            };
-        }
-        function generateDailyRewardsNew() {
-            return {
-                today: 1,
+                today: 0,
                 dailyRewardDatas: [
                     { day: 1, amount: 500, isCollected: false },
                     { day: 2, amount: 700, isCollected: false },
@@ -449,6 +433,19 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         if (attendanceData.lastLogin < todayMidnight) {
             firstLoginToday = true;
             attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
+
+            const DAY_MS = 24 * 60 * 60 * 1000;
+            // normalize last login to midnight
+            const lastLoginMidnight =attendanceData.lastLogin > 0? new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;
+            // day numbers (since epoch)
+            const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
+            const todayDay = Math.floor(todayMidnight / DAY_MS);
+            // difference in days
+            const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
+            const missedDays = Math.max(0, dayDiff - 1);
+
+
+
             // ---------- Spin Data ----------
             const spins = [350, 300, 500, 350, 300, 250, 500, 400, 1000, 2000];
             function shuffleArray<T>(array: T[]): T[] {
@@ -470,12 +467,17 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                 spins: shuffleArray(spins),
                 spinCount: getRandomIndexes(3, spins.length)
             };
-            // ---------- Daily Reward Cycle ----------
-            if (!attendanceData.dailyReward ||attendanceData.dayIndex >attendanceData.dailyReward.dailyRewardDatas.length) 
+            // ---------- Daily Reward Cycle (INDEX BASED) ----------
+            if (!attendanceData.dailyReward ||missedDays > 0 ||attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length)
             {
-                attendanceData.dailyReward = generateDailyRewards(attendanceData.dayIndex);
+                // reset reward cycle
+                attendanceData.dailyReward = generateDailyRewards();
             }
-            attendanceData.dailyReward.today = attendanceData.dayIndex;
+            else {
+                // next index
+                attendanceData.dailyReward.today += 1;
+            }
+
         }
         attendanceData.lastLogin = now.getTime();
         // ================= SAVE BACK =================
@@ -514,7 +516,7 @@ const collectDailyReward = function (
             throw new Error("Daily reward data missing");
         }
         const today = attendanceData.dailyReward.today;
-        const todayReward = attendanceData.dailyReward.dailyRewardDatas.find((r: any) => r.day === today);
+        const todayReward = attendanceData.dailyReward.dailyRewardDatas[today];
         if (!todayReward) {
             throw new Error(`Reward for day ${today} not found`);
         }

@@ -409,6 +409,7 @@ const dailyAttendance = function (
         // -------- NEW PLAYER --------
         if (!attendanceData) {
             isNewPlayer = true;
+            playerCoins(nk,ctx.userId,ctx.username,5000);
             attendanceData = {
                 firstLogin: now.getTime(),
                 lastLogin: 0,

@@ -497,7 +497,7 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         if (!userId) throw new Error("User ID missing from context"); 
         // ================= PARSE REQUEST =================
         const request = payload ? JSON.parse(payload) : {};
-        const read = request.read || true;
+        const read = request.read;
         // ================= READ ATTENDANCE =================
         const attendanceObjects = nk.storageRead([
             { collection: player_data, key: daily_attendance, userId }

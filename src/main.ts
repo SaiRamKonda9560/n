@@ -1045,11 +1045,11 @@ function checkIfUnlocked(nk: any, userId: string, packId: string) {
 }
 function getOwnedPackMap(nk: any, userId: string): Map<string, any> {
     const data = loadWordPacks(nk, userId);
-    const map = new Map<string, any>();
+    const ownedMap = new Map<string, any>();
     for (const p of data.packs) {
-        map.set(p.packId, p);
+        ownedMap.set(p.packId, p);
     }
-    return map;
+    return ownedMap;
 }
 
 function getStoreData(nk: any, userId: string) {
@@ -1058,7 +1058,11 @@ function getStoreData(nk: any, userId: string) {
     const PRICE = 1000;
 
     // 1. Owned packs
-    const ownedMap = getOwnedPackMap(nk, userId);
+    let data = loadWordPacks(nk, userId);
+    const ownedMap = new Map<string, any>();
+    for (const p of data.packs) {
+        ownedMap.set(p.packId, p);
+    }
 
     // 2. Read all word packs
     const allPacks = nk.storageList(STORE_USER,WORDS_COLLECTION, 100);
@@ -1082,8 +1086,7 @@ function getStoreData(nk: any, userId: string) {
             boughtOn: owned ? owned.boughtOn : 0
         });
     }
-
-    return { packs: result };
+    return { packs: result, activePack:data.activePack};
 }
 
 

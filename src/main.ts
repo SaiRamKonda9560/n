@@ -182,6 +182,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcCompleteSingleWord", rpcCompleteSingleWord);
     initializer.registerRpc("rpcCheckIfUnlocked", rpcCheckIfUnlocked);
     initializer.registerRpc("rpcGetWordPackStoreData", rpcGetWordPackStoreData);
+    initializer.registerRpc("rpcSetActiveWordPack", rpcSetActiveWordPack);
+    initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
 
 
 
@@ -1088,7 +1090,33 @@ function getStoreData(nk: any, userId: string) {
     }
     return { packs: result, activePack:data.activePack};
 }
+function setActiveWordPack(nk: any, userId: string, packId: string) {
+    const data = loadWordPacks(nk, userId);
 
+    // Check ownership
+    const ownsPack = data.packs.some(p => p.packId === packId);
+    if (!ownsPack) {
+        return { success: false, error: "Pack not owned" };
+    }
+
+    // Set active pack
+    data.activePack = packId;
+
+    saveWordPacks(nk, userId, data);
+    return { success: true, activePack: packId };
+}
+function deactivateWordPack(nk: any, userId: string) {
+    const data = loadWordPacks(nk, userId);
+
+    if (!data.activePack || data.activePack === "") {
+        return { success: false, error: "No active pack" };
+    }
+
+    data.activePack = "";
+
+    saveWordPacks(nk, userId, data);
+    return { success: true };
+}
 
 
 // --------------------------------------------------------
@@ -1131,5 +1159,11 @@ const rpcGetWordPackStoreData = (ctx: any, logger: any, nk: any, payload: string
     //return JSON.stringify({s:"hello"});
 
 };
-
+const rpcSetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
+    const { packId } = JSON.parse(payload);
+    return JSON.stringify(setActiveWordPack(nk, ctx.userId, packId));
+};
+const rpcDeactivateWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
+    return JSON.stringify(deactivateWordPack(nk, ctx.userId));
+};
 //#endregion

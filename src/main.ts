@@ -370,17 +370,18 @@ const getPlayerCoins = function (ctx: any, logger: any, nk: any, payload: string
         });
     }
 };
+const player_data = "player_data";
+const daily_attendance = "daily_attendance";
 const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string): string {
     try {
         const userId = ctx.userId;
         if (!userId) throw new Error("User ID missing from context");
 
-        const collection = "player_data";
-        const key = "daily_attendance";
+
         // ================= READ EXISTING DATA =================
         let attendanceData: any = null;
         try {
-            const objects = nk.storageRead([{ collection, key, userId }]);
+            const objects = nk.storageRead([{ collection: player_data, key: daily_attendance, userId }]);
             if (objects?.length && objects[0].value) {
                 attendanceData = objects[0].value;
             }
@@ -481,7 +482,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         }
         attendanceData.lastLogin = now.getTime();
         // ================= SAVE BACK =================
-        nk.storageWrite([{collection,key,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
+        nk.storageWrite([{collection: player_data,key: daily_attendance,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
         return JSON.stringify({success: true, isNewPlayer,firstLoginToday,data: attendanceData,dayIndex: attendanceData.dayIndex,dailyReward: attendanceData.dailyReward,todayReward: attendanceData.dailyRewards?.[0] || null});
     } catch (e) {
         const msg = e instanceof Error ? e.message : JSON.stringify(e);
@@ -498,15 +499,13 @@ const collectDailyReward = function (
     try {
         const userId = ctx.userId;
         const username = ctx.username;
-        if (!userId) throw new Error("User ID missing from context");
-        const collection = "player_data";
-        const attendanceKey = "daily_attendance";
+        if (!userId) throw new Error("User ID missing from context"); 
         // ================= PARSE REQUEST =================
         const request = payload ? JSON.parse(payload) : {};
         const mode = request.mode || "read";
         // ================= READ ATTENDANCE =================
         const attendanceObjects = nk.storageRead([
-            { collection, key: attendanceKey, userId }
+            { collection: player_data, key: daily_attendance, userId }
         ]);
         if (!attendanceObjects?.length || !attendanceObjects[0].value) {
             throw new Error("No attendance data found");
@@ -533,7 +532,7 @@ const collectDailyReward = function (
         const rewardAmount = todayReward.amount;
         const newBalance = playerCoins(nk,userId,username, rewardAmount);
         todayReward.isCollected = true;
-        nk.storageWrite([{collection,key: attendanceKey,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
+        nk.storageWrite([{collection: player_data,key: daily_attendance,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
         return JSON.stringify({success: true,message: "Reward collected successfully",coinsAdded: rewardAmount,currentCoins: newBalance,attendanceData});
 
     } catch (e) {

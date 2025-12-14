@@ -394,7 +394,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         let isNewPlayer = false;
 
         // ================= NEW PLAYER SETUP =================
-        if (attendanceData===null) {
+        if (!attendanceData) {
             isNewPlayer = true;
             attendanceData = {
                 firstLogin: now.getTime(),
@@ -512,7 +512,7 @@ const collectDailyReward = function (
         }
         const attendanceData = attendanceObjects[0].value;
         if (!attendanceData.dailyReward?.today) {
-            throw new Error("Daily reward data missing");
+            throw new Error(`Daily reward data missing ${attendanceData},${attendanceData.dailyReward},${attendanceData.dailyReward?.today}`);
         }
         const today = attendanceData.dailyReward.today;
         const todayReward = attendanceData.dailyReward.dailyRewardDatas[today];

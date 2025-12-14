@@ -394,7 +394,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         let isNewPlayer = false;
 
         // ================= NEW PLAYER SETUP =================
-        if (!attendanceData) {
+        if (attendanceData===null) {
             isNewPlayer = true;
             attendanceData = {
                 firstLogin: now.getTime(),

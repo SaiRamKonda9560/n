@@ -1053,7 +1053,6 @@ function getOwnedPackMap(nk: any, userId: string): Map<string, any> {
     }
     return ownedMap;
 }
-
 function getStoreData(nk: any, userId: string) {
     const STORE_USER = "00000000-0000-0000-0000-000000000000";
     const WORDS_COLLECTION = "words";
@@ -1117,6 +1116,44 @@ function deactivateWordPack(nk: any, userId: string) {
     saveWordPacks(nk, userId, data);
     return { success: true };
 }
+function getActiveWordPackWithData(nk: any, userId: string) {
+    const data = loadWordPacks(nk, userId);
+    if (!data.activePack || data.activePack === "") {
+        return {
+            hasActivePack: false,
+            pack: null
+        };
+    }
+    const pack = data.packs.find(p => p.packId === data.activePack);
+    if (!pack) {
+        // safety: activePack exists but pack missing
+        return {
+            hasActivePack: false,
+            pack: null
+        };
+    }
+
+    return {
+        hasActivePack: true,
+        pack
+    };
+}
+function getActiveWordPack(nk: any, userId: string) {
+    const data = loadWordPacks(nk, userId);
+
+    if (!data.activePack || data.activePack === "") {
+        return {
+            hasActivePack: false,
+            activePack: ""
+        };
+    }
+
+    return {
+        hasActivePack: true,
+        activePack: data.activePack
+    };
+}
+
 
 
 // --------------------------------------------------------
@@ -1166,4 +1203,11 @@ const rpcSetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
 const rpcDeactivateWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
     return JSON.stringify(deactivateWordPack(nk, ctx.userId));
 };
+const rpcGetActiveWordPackWithData = (ctx: any,logger: any,nk: any,payload: string) => {
+    return JSON.stringify(getActiveWordPackWithData(nk, ctx.userId));
+};
+const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
+    return JSON.stringify(getActiveWordPack(nk, ctx.userId));
+};
+
 //#endregion

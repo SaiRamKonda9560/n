@@ -193,41 +193,24 @@ for (const player of this.players) {
 
     try {
         // 1. Read player's word packs
-        const playerPackObj = nk.storageRead([
-            { collection: "player_data", key: "wordpacks", userId: playerId }
-        ]);
-
-        let packData = (
-            playerPackObj.length > 0 &&
-            playerPackObj[0].value &&
-            Array.isArray(playerPackObj[0].value.packs)
-        ) ? playerPackObj[0].value.packs : [];
-
+        //const playerPackObj = nk.storageRead([{ collection: "player_data", key: "wordpacks", userId: playerId }]);
+        //let packData = (playerPackObj.length > 0 &&playerPackObj[0].value && Array.isArray(playerPackObj[0].value.packs)) ? playerPackObj[0].value.packs : [];
+        let activePackData=getActiveWordPackWithData(nk,playerId);
+        if(activePackData && activePackData.hasActivePack && activePackData.pack){
+        let packData:WordPack[] = [activePackData.pack];
         let replaced = false;
-
         // 2. Loop each purchased pack
         for (const pack of packData) {
             const packId = pack.packId;
             const completedArr = pack.completed || [];
-
             // 3. Load actual pack words
-            const packWordsObj = nk.storageRead([
-                {
-                    collection: "words",
-                    key: packId,
-                    user: "00000000-0000-0000-0000-000000000000"
-                }
-            ]);
+            const packWordsObj = nk.storageRead([{collection: "words",key: packId,user: "00000000-0000-0000-0000-000000000000"}]);
             if (!packWordsObj.length || !packWordsObj[0].value) continue;
-
             const allWords: WordData[] = packWordsObj[0].value.wordData;
-
             // 4. Loop through all words (with their actual index)
             for (let wIndex = 0; wIndex < allWords.length; wIndex++) {
                 if (completedArr.includes(wIndex)) continue;
-
                 const w = allWords[wIndex];
-
                 // Check if word contains all common letters for this player
                 const tempLetters = w.EnglishWord.toLowerCase().split("");
                 let containsAll = true;
@@ -239,9 +222,7 @@ for (const player of this.players) {
                     }
                     tempLetters.splice(idx, 1);
                 }
-
                 if (!containsAll) continue;
-
                 // ✅ FOUND PLAYER WORD → REPLACE GENERATED WORD
                 selectedWordsData[playerIndex] = w;
                 // Recalculate missingLettersWords and nonCommonLetters for this player
@@ -266,6 +247,7 @@ for (const player of this.players) {
 
             if (replaced) break; // stop after first pack that contains valid word
         }
+      }
 
     } catch (err) {
         logger.error("Failed loading packs for player " + playerId + ": " + err);

@@ -674,7 +674,7 @@ for (const player of this.players) {
           }
           else{
             const currentPlayer = this.players[this.WhosTurn];
-            const move = (currentPlayer.isOffline||currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -1)));
+            const move = (currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -1)));
             if(move){
               //bot
               this.autoMove(state,0);
@@ -1989,7 +1989,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                         } else {
 
                             // ---- NON-AD (coins unlock) ----
-                            const coins = playerCoins(nk, player.UserId, player.UserId, 0);
+                            const coins = playerCoins(nk, player.UserId, player.UserName, 0);
 
                             if (coins >= COST) {
 
@@ -2009,7 +2009,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
 
                                 // Deduct coins only once
                                 if (unlocked) {
-                                    playerCoins(nk, player.UserId, player.UserId, -COST);
+                                    playerCoins(nk, player.UserId, player.UserName, -COST);
                                 }
                             }
 
@@ -2200,7 +2200,6 @@ case "playerWin":
 {
     let fee = state.fee;
     let gameData:LudoGameData = Object.assign(new LudoGameData(), state.gameData);
-
     // Player we are rewarding
     let p = obj as LudoPlayerData;
     if (p.isBot) return;

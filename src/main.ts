@@ -419,7 +419,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         // ================= DAILY REWARD GENERATOR =================
         function generateDailyRewards() {
             return {
-                today: 0,
+                today: 5,
                 dailyRewardDatas: [
                     {amount: 500, isCollected: false },
                     {amount: 700, isCollected: false },

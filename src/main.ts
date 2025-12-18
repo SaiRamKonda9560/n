@@ -437,15 +437,30 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             firstLoginToday = true;
             attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
 
-            const DAY_MS = 24 * 60 * 60 * 1000;
+            //const DAY_MS = 24 * 60 * 60 * 1000;
             // normalize last login to midnight
-            const lastLoginMidnight =attendanceData.lastLogin > 0? new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;
+            //const lastLoginMidnight =attendanceData.lastLogin > 0? new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;
             // day numbers (since epoch)
-            const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
-            const todayDay = Math.floor(todayMidnight / DAY_MS);
+            //const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
+            //const todayDay = Math.floor(todayMidnight / DAY_MS);
             // difference in days
-            const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
-            const missedDays = Math.max(0, dayDiff - 1);
+            //const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
+            //const missedDays = Math.max(0, dayDiff - 1);
+
+
+
+// 1 "day" = 1 minute
+const DAY_MS = 60 * 1000; // 1 minute in ms
+// normalize last login to minute boundary (acts like midnight)
+const lastLoginMidnight =attendanceData.lastLogin > 0? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS: 0;
+// day numbers (since epoch, but now minute-based)
+const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
+const todayDay = Math.floor(todayMidnight / DAY_MS);
+// difference in "days" (minutes)
+const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
+// missed "days" (missed minutes)
+const missedDays = Math.max(0, dayDiff - 1);
+
 
 
 
@@ -535,7 +550,6 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         return JSON.stringify({ success: false, error: msg });
     }
 };
-
 const rpcStoreWords = function (ctx: any, logger: any, nk: any, payload: string) {
   const collection = "words";
   const userId = "00000000-0000-0000-0000-000000000000";
@@ -587,8 +601,6 @@ const rpcStoreWords = function (ctx: any, logger: any, nk: any, payload: string)
 
   return JSON.stringify({ success: true });
 };
-
-
 const spin = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;

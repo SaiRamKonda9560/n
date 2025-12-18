@@ -473,15 +473,21 @@ if (attendanceData.lastLogin < todayMidnight) {
                 spinCount: getRandomIndexes(3, spins.length)
             };
             // ---------- Daily Reward Cycle (INDEX BASED) ----------
-            if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= (attendanceData.dailyReward.dailyRewardDatas.length-1))
-            {
+            const rewardLength = attendanceData.dailyReward.dailyRewardDatas.length;
+            const lastIndex = rewardLength - 1;
+
+            if (
+                !attendanceData.dailyReward ||
+                missedDays > 0 ||
+                attendanceData.dailyReward.today >= lastIndex
+            ) {
                 // reset reward cycle
                 attendanceData.dailyReward = generateDailyRewards();
-            }
-            else {
-                // next index
+            } else {
+                // move to next reward
                 attendanceData.dailyReward.today += 1;
             }
+
 
         }
         attendanceData.lastLogin = now.getTime();

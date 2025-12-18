@@ -391,9 +391,9 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             logger.warn(`Failed to read attendance data: ${err}`);
         }
 
-        const now = new Date();
-        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() ).getTime();
+
         let isNewPlayer = false;
+const now = new Date();
 
         // ================= NEW PLAYER SETUP =================
         if (!attendanceData) {
@@ -433,35 +433,35 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         }
         // ================= DAILY LOGIN CHECK =================
         let firstLoginToday = false;
-        if (attendanceData.lastLogin < todayMidnight) {
-            firstLoginToday = true;
-            attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
 
-            //const DAY_MS = 24 * 60 * 60 * 1000;
-            // normalize last login to midnight
-            //const lastLoginMidnight =attendanceData.lastLogin > 0? new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;
-            // day numbers (since epoch)
-            //const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
-            //const todayDay = Math.floor(todayMidnight / DAY_MS);
-            // difference in days
-            //const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
-            //const missedDays = Math.max(0, dayDiff - 1);
+// "todayMidnight" → current minute boundary
+const todayMidnight = Math.floor(now.getTime() / (60 * 1000)) * (60 * 1000);
 
+if (attendanceData.lastLogin < todayMidnight) {
+    firstLoginToday = true;
+    attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
 
+    // 1 "day" = 1 minute
+    const DAY_MS = 60 * 1000;
 
-// 1 "day" = 1 minute
-const DAY_MS = 60 * 1000; // 1 minute in ms
-// normalize last login to minute boundary (acts like midnight)
-const lastLoginMidnight =attendanceData.lastLogin > 0? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS: 0;
-// day numbers (since epoch, but now minute-based)
-const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
-const todayDay = Math.floor(todayMidnight / DAY_MS);
-// difference in "days" (minutes)
-const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
-// missed "days" (missed minutes)
-const missedDays = Math.max(0, dayDiff - 1);
+    // normalize last login to minute boundary
+    const lastLoginMidnight =
+        attendanceData.lastLogin > 0
+            ? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS
+            : 0;
 
+    // "day numbers" → minute numbers
+    const lastLoginDay = lastLoginMidnight
+        ? Math.floor(lastLoginMidnight / DAY_MS)
+        : 0;
 
+    const todayDay = Math.floor(todayMidnight / DAY_MS);
+
+    // difference in "days" (minutes)
+    const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
+
+    // missed "days" (missed minutes)
+    const missedDays = Math.max(0, dayDiff - 1);
 
 
             // ---------- Spin Data ----------

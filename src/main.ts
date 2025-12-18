@@ -393,7 +393,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
 
 
         let isNewPlayer = false;
-const now = new Date();
+        const now = new Date();
 
         // ================= NEW PLAYER SETUP =================
         if (!attendanceData) {
@@ -433,37 +433,24 @@ const now = new Date();
         }
         // ================= DAILY LOGIN CHECK =================
         let firstLoginToday = false;
+//for testing use useMin = true 
+const useMin = true; // true = 1 minute = 1 day, false = real day 
+// choose "day" length
+const DAY_MS = useMin ? 60 * 1000 : 24 * 60 * 60 * 1000;
 
-// "todayMidnight" → current minute boundary
-const todayMidnight = Math.floor(now.getTime() / (60 * 1000)) * (60 * 1000);
+// normalize "today"
+const todayMidnight = useMin
+    ? Math.floor(now.getTime() / DAY_MS) * DAY_MS
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
 if (attendanceData.lastLogin < todayMidnight) {
     firstLoginToday = true;
     attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
-
-    // 1 "day" = 1 minute
-    const DAY_MS = 60 * 1000;
-
-    // normalize last login to minute boundary
-    const lastLoginMidnight =
-        attendanceData.lastLogin > 0
-            ? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS
-            : 0;
-
-    // "day numbers" → minute numbers
-    const lastLoginDay = lastLoginMidnight
-        ? Math.floor(lastLoginMidnight / DAY_MS)
-        : 0;
-
+    const lastLoginMidnight =attendanceData.lastLogin > 0? useMin? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS: new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;
+    const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
     const todayDay = Math.floor(todayMidnight / DAY_MS);
-
-    // difference in "days" (minutes)
     const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
-
-    // missed "days" (missed minutes)
     const missedDays = Math.max(0, dayDiff - 1);
-
-
             // ---------- Spin Data ----------
             const spins = [350, 300, 500, 350, 300, 250, 500, 400, 1000, 2000];
             function shuffleArray<T>(array: T[]): T[] {
@@ -486,7 +473,7 @@ if (attendanceData.lastLogin < todayMidnight) {
                 spinCount: getRandomIndexes(3, spins.length)
             };
             // ---------- Daily Reward Cycle (INDEX BASED) ----------
-            if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length)
+            if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= (attendanceData.dailyReward.dailyRewardDatas.length-1))
             {
                 // reset reward cycle
                 attendanceData.dailyReward = generateDailyRewards();

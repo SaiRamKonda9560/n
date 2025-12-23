@@ -2152,11 +2152,11 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
     let posMode = (params.gameMode === 'wordo'||params.gameMode === 'quick')?1:0;
 
     switch(params.gameMode){
-      case "m1":
+      case "Cross":
       params.gameMode = "wordo";
       posMode = 2;
       break;
-      case "m2":
+      case "Chaos":
       params.gameMode = "wordo";
       posMode = 3;
       break;

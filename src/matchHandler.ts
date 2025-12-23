@@ -2072,6 +2072,21 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     state.boardIndex = parseInt(values[0]);
                     state.gameMode = values[1];
                     state.fee = values[2];
+                    let posMode = (state.gameMode === 'wordo'||state.gameMode === 'quick')?1:0;
+                        switch(state.gameMode){
+                          case "Cross":
+                          state.gameMode = "wordo";
+                          posMode = 2;
+                          break;
+                          case "Chaos":
+                          state.gameMode = "wordo";
+                          posMode = 3;
+                          break;
+                          case "m3":
+                          state.gameMode = "wordo";
+                          break;
+                        }
+                      state.posMode = posMode;
                 }
 
                 logger.info(`🎮 StartRoom: players=${playerCount}`);
@@ -2148,9 +2163,12 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         throw e;
     }
 };
+const getGameModeName =function(mode:string):string{
+
+  return mode;
+}
 const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
     let posMode = (params.gameMode === 'wordo'||params.gameMode === 'quick')?1:0;
-
     switch(params.gameMode){
       case "Cross":
       params.gameMode = "wordo";

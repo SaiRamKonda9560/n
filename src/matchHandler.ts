@@ -2074,11 +2074,11 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     state.fee = values[2];
                     let posMode = (state.gameMode === 'wordo'||state.gameMode === 'quick')?1:0;
                         switch(state.gameMode){
-                          case "Cross":
+                          case "m1":
                           state.gameMode = "wordo";
                           posMode = 2;
                           break;
-                          case "Chaos":
+                          case "m2":
                           state.gameMode = "wordo";
                           posMode = 3;
                           break;
@@ -2170,11 +2170,11 @@ const getGameModeName =function(mode:string):string{
 const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
     let posMode = (params.gameMode === 'wordo'||params.gameMode === 'quick')?1:0;
     switch(params.gameMode){
-      case "Cross":
+      case "m1":
       params.gameMode = "wordo";
       posMode = 2;
       break;
-      case "Chaos":
+      case "m2":
       params.gameMode = "wordo";
       posMode = 3;
       break;

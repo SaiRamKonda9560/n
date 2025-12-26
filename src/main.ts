@@ -439,7 +439,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         const DAY_MS = useMin ? 60 * 1000 : 24 * 60 * 60 * 1000;
         // normalize "today"
         const todayMidnight = useMin? Math.floor(now.getTime() / DAY_MS) * DAY_MS: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        if (attendanceData.lastLogin < todayMidnight || isNewPlayer) {
+        if (attendanceData.lastLogin < todayMidnight) {
             firstLoginToday = true;
             attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
             const lastLoginMidnight =attendanceData.lastLogin > 0? useMin? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS: new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;

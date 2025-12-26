@@ -433,72 +433,65 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         }
         // ================= DAILY LOGIN CHECK =================
         let firstLoginToday = false;
-//for testing use useMin = true 
-const useMin = false; // true = 1 minute = 1 day, false = real day 
-// choose "day" length
-const DAY_MS = useMin ? 60 * 1000 : 24 * 60 * 60 * 1000;
+        //for testing use useMin = true 
+        const useMin = false; // true = 1 minute = 1 day, false = real day 
+        // choose "day" length
+        const DAY_MS = useMin ? 60 * 1000 : 24 * 60 * 60 * 1000;
+        // normalize "today"
+        const todayMidnight = useMin? Math.floor(now.getTime() / DAY_MS) * DAY_MS: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        if (attendanceData.lastLogin < todayMidnight || isNewPlayer) {
+            firstLoginToday = true;
+            attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
+            const lastLoginMidnight =attendanceData.lastLogin > 0? useMin? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS: new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;
+            const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
+            const todayDay = Math.floor(todayMidnight / DAY_MS);
+            const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
+            const missedDays = Math.max(0, dayDiff - 1);
+                    // ---------- Spin Data ----------
+                    const spins = [350, 300, 500, 350, 300, 250, 500, 400, 1000, 2000];
+                    function shuffleArray<T>(array: T[]): T[] {
+                        for (let i = array.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [array[i], array[j]] = [array[j], array[i]];
+                        }
+                        return array;
+                    }
+                    function getRandomIndexes(count: number, max: number): number[] {
+                        const indexes: number[] = [];
+                        while (indexes.length < count) {
+                            const r = Math.floor(Math.random() * max);
+                            if (!indexes.includes(r)) indexes.push(r);
+                        }
+                        return indexes;
+                    }
+                    attendanceData.spinData = {
+                        spins: shuffleArray(spins),
+                        spinCount: getRandomIndexes(3, spins.length)
+                    };
+                    // ---------- Daily Reward Cycle (INDEX BASED) ----------
+                    const rewardLength = attendanceData.dailyReward.dailyRewardDatas.length;
+                    const lastIndex = rewardLength - 1;
 
-// normalize "today"
-const todayMidnight = useMin
-    ? Math.floor(now.getTime() / DAY_MS) * DAY_MS
-    : new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                    if (!attendanceData.dailyReward || missedDays > 0 ||attendanceData.dailyReward.today >= lastIndex)
+                    {
+                        // reset reward cycle
+                        attendanceData.dailyReward = generateDailyRewards();
+                    } else {
+                        // move to next reward
+                        attendanceData.dailyReward.today += 1;
+                    }
 
-if (attendanceData.lastLogin < todayMidnight) {
-    firstLoginToday = true;
-    attendanceData.dayIndex = (attendanceData.dayIndex || 0) + 1;
-    const lastLoginMidnight =attendanceData.lastLogin > 0? useMin? Math.floor(attendanceData.lastLogin / DAY_MS) * DAY_MS: new Date(attendanceData.lastLogin).setHours(0, 0, 0, 0): 0;
-    const lastLoginDay = lastLoginMidnight? Math.floor(lastLoginMidnight / DAY_MS): 0;
-    const todayDay = Math.floor(todayMidnight / DAY_MS);
-    const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
-    const missedDays = Math.max(0, dayDiff - 1);
-            // ---------- Spin Data ----------
-            const spins = [350, 300, 500, 350, 300, 250, 500, 400, 1000, 2000];
-            function shuffleArray<T>(array: T[]): T[] {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
+
                 }
-                return array;
+                attendanceData.lastLogin = now.getTime();
+                // ================= SAVE BACK =================
+                nk.storageWrite([{collection: player_data,key: daily_attendance,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
+                return JSON.stringify({success: true, isNewPlayer,firstLoginToday,data: attendanceData,dayIndex: attendanceData.dayIndex,dailyReward: attendanceData.dailyReward,todayReward: attendanceData.dailyRewards?.[0] || null});
+            } catch (e) {
+                const msg = e instanceof Error ? e.message : JSON.stringify(e);
+                logger.error(`RPC Error in dailyAttendance: ${msg}`);
+                return JSON.stringify({ success: false, error: msg });
             }
-            function getRandomIndexes(count: number, max: number): number[] {
-                const indexes: number[] = [];
-                while (indexes.length < count) {
-                    const r = Math.floor(Math.random() * max);
-                    if (!indexes.includes(r)) indexes.push(r);
-                }
-                return indexes;
-            }
-            attendanceData.spinData = {
-                spins: shuffleArray(spins),
-                spinCount: getRandomIndexes(3, spins.length)
-            };
-            // ---------- Daily Reward Cycle (INDEX BASED) ----------
-            const rewardLength = attendanceData.dailyReward.dailyRewardDatas.length;
-            const lastIndex = rewardLength - 1;
-
-            if (
-                !attendanceData.dailyReward ||
-                missedDays > 0 ||
-                attendanceData.dailyReward.today >= lastIndex
-            ) {
-                // reset reward cycle
-                attendanceData.dailyReward = generateDailyRewards();
-            } else {
-                // move to next reward
-                attendanceData.dailyReward.today += 1;
-            }
-
-
-        }
-        attendanceData.lastLogin = now.getTime();
-        // ================= SAVE BACK =================
-        nk.storageWrite([{collection: player_data,key: daily_attendance,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
-        return JSON.stringify({success: true, isNewPlayer,firstLoginToday,data: attendanceData,dayIndex: attendanceData.dayIndex,dailyReward: attendanceData.dailyReward,todayReward: attendanceData.dailyRewards?.[0] || null});
-    } catch (e) {
-        const msg = e instanceof Error ? e.message : JSON.stringify(e);
-        logger.error(`RPC Error in dailyAttendance: ${msg}`);
-        return JSON.stringify({ success: false, error: msg });
-    }
 };
 const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: string): string {
     try {

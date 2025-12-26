@@ -472,9 +472,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             const missedDays = Math.max(0, dayDiff - 1);
             generateSpinData();
             // ---------- Daily Reward Cycle (INDEX BASED) ----------
-            const rewardLength = attendanceData.dailyReward.dailyRewardDatas.length;
-            const lastIndex = rewardLength - 1;
-            if (!attendanceData.dailyReward || missedDays > 0 ||attendanceData.dailyReward.today >= lastIndex)
+            if (!attendanceData.dailyReward || missedDays > 0 ||attendanceData.dailyReward.today >= 6)
             {
                 // reset reward cycle
                 attendanceData.dailyReward = generateDailyRewards();

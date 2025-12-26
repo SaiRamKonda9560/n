@@ -2543,10 +2543,10 @@ const playerWin = function (nk: any, player: LudoPlayerData, gameData: LudoGameD
     try {
       const WordGameState: WordGameState | null = gameData?.WordGameState ?? null;
       if(WordGameState!=null){
-          if(WordGameState.PlayersFullWordsData!=null){
-            let PlayerFullWordsData = WordGameState.PlayersFullWordsData[PlayerTurn];
-            let words : WordData[] = attendanceData.words;
-            words.push(PlayerFullWordsData);
+          if(WordGameState.PlayersFullWordsData!=null && WordGameState.PlayersFullWordsData[PlayerTurn].EnglishWord){
+            let EnglishWord = WordGameState.PlayersFullWordsData[PlayerTurn].EnglishWord;
+            let words : string[] = attendanceData.words;
+            words.push(EnglishWord);
             attendanceData.words = words;
           }
       }

@@ -743,7 +743,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         if (!collect) {
             return JSON.stringify({
                 success: true,
-                message: "mysteryData",
+                message: "mysteryData read",
                 mysteryData : m
             });
         }

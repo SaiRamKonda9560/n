@@ -751,7 +751,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         }
         // --- COLLECT MODE ---
         var m = attendanceData.m;
-        if (m.collected) {
+        if (m.Collected) {
             return JSON.stringify({
                 success: false,
                 message: "mystery collected",

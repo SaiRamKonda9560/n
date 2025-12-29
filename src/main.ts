@@ -729,14 +729,6 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         if (!attendanceData.m) {
             throw new Error("mystery missing or invalid");
         }
-        function getRandomIndexes(count: number, max: number): number[] {
-                let indexes: number[] = [];
-                while (indexes.length < count) {
-                    let rand = Math.floor(Math.random() * max);
-                    if (!indexes.includes(rand)) indexes.push(rand);
-                }
-                return indexes;
-        }
         // --- READ CURRENT COINS ---
         let currentCoins = 0;
         try {
@@ -776,12 +768,10 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
             case "m2":
                 m.collected = true;
                 m.type += " collected";
-
                 break;
             case "m2":
                 m.collected = true;
                 m.type += " collected";
-
                 break;
         }
         attendanceData.m = m;

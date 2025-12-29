@@ -774,6 +774,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
                 attendanceData.m.type =" collected";
                 break;
         }
+        attendanceData.m.Collected = true;
         // --- SAVE UPDATED COINS ---
         //const newBalance = playerCoins(nk,userId,username,rewardAmount);
         // --- SAVE UPDATED ATTENDANCE ---

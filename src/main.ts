@@ -739,6 +739,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         } catch (err) {
             logger.warn(`Failed to read coin data for ${userId}: ${err}`);
         }
+        var m = attendanceData.m;
         // --- READ MODE ---
         if (!collect) {
             return JSON.stringify({
@@ -748,13 +749,10 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
             });
         }
         // --- COLLECT MODE ---
-        var m = attendanceData.m;
         if (m.Collected) {
             return JSON.stringify({
                 success: false,
                 message: "mystery already collected",
-                coinsAdded: 0,
-                currentCoins,
                 mysteryData : m
             });
         }
@@ -772,7 +770,6 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
                 attendanceData.m.type =0;
                 break;
         }
-        attendanceData.m.Collected = true;
         // --- SAVE UPDATED COINS ---
         //const newBalance = playerCoins(nk,userId,username,rewardAmount);
         // --- SAVE UPDATED ATTENDANCE ---

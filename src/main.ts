@@ -762,20 +762,18 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         }
         switch(m.type){
             case "m1":
-                m.collected = true;
-                m.type += " collected";
+                attendanceData.m.collected = true;
+                attendanceData.m.type += " collected";
                 break;
             case "m2":
-                m.collected = true;
-                m.type += " collected";
+                attendanceData.m.collected = true;
+                attendanceData.m.type += " collected";
                 break;
             case "m2":
-                m.collected = true;
-                m.type += " collected";
+                attendanceData.m.collected = true;
+                attendanceData.m.type += " collected";
                 break;
         }
-        attendanceData.m = m;
-
         // --- SAVE UPDATED COINS ---
         //const newBalance = playerCoins(nk,userId,username,rewardAmount);
         // --- SAVE UPDATED ATTENDANCE ---

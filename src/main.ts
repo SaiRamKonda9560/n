@@ -458,7 +458,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                     };
         }
         function generateMysteryBox(){
-            const mysterys = [1,2,3];
+            const mysterys = [1,2];
             attendanceData.m = {type:shuffleArray(mysterys)[0],Collected:false};
         }
         // ================= DAILY LOGIN CHECK =================

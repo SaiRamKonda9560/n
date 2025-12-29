@@ -165,6 +165,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("dailyAttendance", dailyAttendance);
   initializer.registerRpc("collectDailyReward", collectDailyReward);
   initializer.registerRpc("spin", spin);
+  initializer.registerRpc("mystery", mystery);
+
   initializer.registerRpc("rpc", rpc);
   initializer.registerRpc("getLongIdRpc", getLongIdRpc);
   initializer.registerRpc("generateShortIdRpc", generateShortIdRpc);
@@ -699,6 +701,105 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
             message: "Reward collected successfully",
             coinsAdded: rewardAmount,
             currentCoins: newBalance,
+            attendanceData
+        });
+    } catch (e) {
+        const errMsg = e instanceof Error ? e.message : JSON.stringify(e);
+        logger.error(`RPC Error in spin: ${errMsg}`);
+        return JSON.stringify({ success: false, error: errMsg });
+    }
+};
+const mystery = function (ctx: any, logger: any, nk: any, payload: string): string {
+    try {
+        const userId = ctx.userId;
+        const username = ctx.username;
+        if (!userId) throw new Error("User ID missing from context");
+        const collection = "player_data";
+        const attendanceKey = "daily_attendance";
+        const coinsKey = "coins";
+        // --- PARSE PAYLOAD ---
+        const request = payload ? JSON.parse(payload) : {};
+        const mode = request.mode || "read"; // "read" or "collect"
+        // --- READ ATTENDANCE DATA ---
+        const attendanceObjects = nk.storageRead([{ collection, key: attendanceKey, userId }]);
+        if (!attendanceObjects || attendanceObjects.length === 0 || !attendanceObjects[0].value) {
+            throw new Error("No attendance data found for this player");
+        }
+        const attendanceData = attendanceObjects[0].value;
+        if (!attendanceData.m) {
+            throw new Error("mystery missing or invalid");
+        }
+        function getRandomIndexes(count: number, max: number): number[] {
+                let indexes: number[] = [];
+                while (indexes.length < count) {
+                    let rand = Math.floor(Math.random() * max);
+                    if (!indexes.includes(rand)) indexes.push(rand);
+                }
+                return indexes;
+        }
+        // --- READ CURRENT COINS ---
+        let currentCoins = 0;
+        try {
+            const coinObjects = nk.storageRead([{ collection, key: coinsKey, userId }]);
+            if (coinObjects && coinObjects.length > 0 && coinObjects[0].value) {
+                currentCoins = coinObjects[0].value.coins || 0;
+            }
+        } catch (err) {
+            logger.warn(`Failed to read coin data for ${userId}: ${err}`);
+        }
+        // --- READ MODE ---
+        if (mode === "read") {
+            return JSON.stringify({
+                success: true,
+                message: "mysteryData",
+                coinsAdded: 0,
+                currentCoins,
+                attendanceData
+            });
+        }
+        // --- COLLECT MODE ---
+        var m = attendanceData.m;
+        if (m.collected) {
+            return JSON.stringify({
+                success: false,
+                message: "mystery collected",
+                coinsAdded: 0,
+                currentCoins,
+                attendanceData
+            });
+        }
+        switch(m.type){
+            case "m1":
+                m.collected = true;
+                m.type += " collected";
+                break;
+            case "m2":
+                m.collected = true;
+                m.type += " collected";
+
+                break;
+            case "m2":
+                m.collected = true;
+                m.type += " collected";
+
+                break;
+        }
+        attendanceData.m = m;
+
+        // --- SAVE UPDATED COINS ---
+        //const newBalance = playerCoins(nk,userId,username,rewardAmount);
+        // --- SAVE UPDATED ATTENDANCE ---
+        nk.storageWrite([{
+            collection,
+            key: attendanceKey,
+            userId,
+            value: attendanceData,
+            permissionRead: 1,
+            permissionWrite: 1
+        }]);
+        return JSON.stringify({
+            success: true,
+            message: "mystery collected successfully",
             attendanceData
         });
     } catch (e) {

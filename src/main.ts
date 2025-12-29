@@ -759,11 +759,17 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         switch(m.type){
             case 1:
                 attendanceData.m.Collected = true;
-                attendanceData.m.type =0;
+                if(attendanceData.meaningUnlockCards===null){
+                    attendanceData.meaningUnlockCards=0;
+                }
+                attendanceData.meaningUnlockCards+=1;
                 break;
             case 2:
                 attendanceData.m.Collected = true;
-                attendanceData.m.type =0;
+                if(attendanceData.pronounciationUnlockCards===null){
+                    attendanceData.pronounciationUnlockCards=0;
+                }
+                attendanceData.pronounciationUnlockCards+=1;
                 break;
             case 3:
                 attendanceData.m.Collected = true;

@@ -762,16 +762,16 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         }
         switch(m.type){
             case "m1":
-                attendanceData.m.collected = true;
-                attendanceData.m.type += " collected";
+                attendanceData.m.Collected = true;
+                attendanceData.m.type =" collected";
                 break;
             case "m2":
-                attendanceData.m.collected = true;
-                attendanceData.m.type += " collected";
+                attendanceData.m.Collected = true;
+                attendanceData.m.type =" collected";
                 break;
             case "m2":
-                attendanceData.m.collected = true;
-                attendanceData.m.type += " collected";
+                attendanceData.m.Collected = true;
+                attendanceData.m.type =" collected";
                 break;
         }
         // --- SAVE UPDATED COINS ---

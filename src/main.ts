@@ -719,7 +719,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         const coinsKey = "coins";
         // --- PARSE PAYLOAD ---
         const request = payload ? JSON.parse(payload) : {};
-        const mode = request.mode || "read"; // "read" or "collect"
+        const collect = request.collect || false; // "read" or "collect"
         // --- READ ATTENDANCE DATA ---
         const attendanceObjects = nk.storageRead([{ collection, key: attendanceKey, userId }]);
         if (!attendanceObjects || attendanceObjects.length === 0 || !attendanceObjects[0].value) {
@@ -740,7 +740,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
             logger.warn(`Failed to read coin data for ${userId}: ${err}`);
         }
         // --- READ MODE ---
-        if (mode === "read") {
+        if (!collect) {
             return JSON.stringify({
                 success: true,
                 message: "mysteryData",

@@ -754,7 +754,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         if (m.Collected) {
             return JSON.stringify({
                 success: false,
-                message: "mystery collected",
+                message: "mystery already collected",
                 coinsAdded: 0,
                 currentCoins,
                 attendanceData

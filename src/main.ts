@@ -458,7 +458,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                     };
         }
         function generateMysteryBox(){
-            const mysterys = ["m1","m2","m3"];
+            const mysterys = [1,2,3];
             attendanceData.m = {type:shuffleArray(mysterys)[0],Collected:false};
         }
         // ================= DAILY LOGIN CHECK =================
@@ -761,17 +761,17 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
             });
         }
         switch(m.type){
-            case "m1":
+            case 1:
                 attendanceData.m.Collected = true;
-                attendanceData.m.type =" collected";
+                attendanceData.m.type =0;
                 break;
-            case "m2":
+            case 2:
                 attendanceData.m.Collected = true;
-                attendanceData.m.type =" collected";
+                attendanceData.m.type =0;
                 break;
-            case "m2":
+            case 3:
                 attendanceData.m.Collected = true;
-                attendanceData.m.type =" collected";
+                attendanceData.m.type =0;
                 break;
         }
         attendanceData.m.Collected = true;

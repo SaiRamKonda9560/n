@@ -417,6 +417,13 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         }
 
         // ================= DAILY REWARD GENERATOR =================
+        function shuffleArray<T>(array: T[]): T[] {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
         function generateDailyRewards() {
             return {
                 today: 0,
@@ -434,13 +441,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         function generateSpinData() {
             // ---------- Spin Data ----------
             const spins = [350, 300, 500, 350, 300, 250, 500, 400, 1000, 2000];
-            function shuffleArray<T>(array: T[]): T[] {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-            }
+
             function getRandomIndexes(count: number, max: number): number[] {
                 const indexes: number[] = [];
                 while (indexes.length < count) {
@@ -453,6 +454,10 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                         spins: shuffleArray(spins),
                         spinCount: getRandomIndexes(3, spins.length)
                     };
+        }
+        function generateMysteryBox(){
+            const mysterys = ["m1","m2","m3"];
+            attendanceData.m = {type:shuffleArray(mysterys)[0],Collected:false};
         }
         // ================= DAILY LOGIN CHECK =================
         let firstLoginToday = false;
@@ -471,6 +476,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             const dayDiff = lastLoginDay > 0 ? todayDay - lastLoginDay : 0;
             const missedDays = Math.max(0, dayDiff - 1);
             generateSpinData();
+            generateMysteryBox();
             // ---------- Daily Reward Cycle (INDEX BASED) ----------
             if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= (attendanceData.dailyReward.dailyRewardDatas.length-1))
             {
@@ -481,7 +487,9 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                 attendanceData.dailyReward.today += 1;
             }
         }
-
+        if(!attendanceData.m){
+            generateMysteryBox();
+        }
         attendanceData.lastLogin = now.getTime();
         // ================= SAVE BACK =================
         nk.storageWrite([{collection: player_data,key: daily_attendance,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);

@@ -756,18 +756,13 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
                 mysteryData : m
             });
         }
+        attendanceData.m.Collected = true;
         switch(m.type){
             case 1:
-                attendanceData.m.Collected = true;
-                var c:number = attendanceData.meaningUnlockCards||0;
-                c+=1;
-                attendanceData.meaningUnlockCards=c;
+                attendanceData.meaningUnlockCards = (attendanceData.meaningUnlockCards || 0) + 1;
                 break;
             case 2:
-                attendanceData.m.Collected = true;
-                var c:number = attendanceData.pronounciationUnlockCards||0;
-                c+=1;
-                attendanceData.pronounciationUnlockCards=c;
+                attendanceData.pronounciationUnlockCards =(attendanceData.pronounciationUnlockCards || 0) + 1;
                 break;
         }
         // --- SAVE UPDATED COINS ---

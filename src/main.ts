@@ -744,9 +744,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
             return JSON.stringify({
                 success: true,
                 message: "mysteryData",
-                coinsAdded: 0,
-                currentCoins,
-                attendanceData
+                mysteryData : m
             });
         }
         // --- COLLECT MODE ---
@@ -757,7 +755,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
                 message: "mystery already collected",
                 coinsAdded: 0,
                 currentCoins,
-                attendanceData
+                mysteryData : m
             });
         }
         switch(m.type){
@@ -789,7 +787,8 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         return JSON.stringify({
             success: true,
             message: "mystery collected successfully",
-            attendanceData
+            mysteryData : m
+
         });
     } catch (e) {
         const errMsg = e instanceof Error ? e.message : JSON.stringify(e);

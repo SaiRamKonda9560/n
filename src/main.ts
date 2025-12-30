@@ -186,10 +186,6 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcGetWordPackStoreData", rpcGetWordPackStoreData);
     initializer.registerRpc("rpcSetActiveWordPack", rpcSetActiveWordPack);
     initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
-
-
-
-
 }
 let wordsGenInstance:wordsGen;
 const getWordoInstance=function():wordsGen{
@@ -739,6 +735,8 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         } catch (err) {
             logger.warn(`Failed to read coin data for ${userId}: ${err}`);
         }
+        attendanceData.meaningUnlockCards = (attendanceData.meaningUnlockCards || 0);
+        attendanceData.pronounciationUnlockCards =(attendanceData.pronounciationUnlockCards || 0);
         var m = attendanceData.m;
         // --- READ MODE ---
         if (!collect) {
@@ -753,16 +751,20 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
             return JSON.stringify({
                 success: false,
                 message: "mystery already collected",
-                mysteryData : m
+                mysteryData : m,
+
             });
         }
         attendanceData.m.Collected = true;
+        let message = "";
         switch(m.type){
             case 1:
                 attendanceData.meaningUnlockCards = (attendanceData.meaningUnlockCards || 0) + 1;
+                message = "meaning Unlock Cards";
                 break;
             case 2:
                 attendanceData.pronounciationUnlockCards =(attendanceData.pronounciationUnlockCards || 0) + 1;
+                message = "pronounciation Unlock Cards";
                 break;
         }
         // --- SAVE UPDATED COINS ---
@@ -778,7 +780,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         }]);
         return JSON.stringify({
             success: true,
-            message: "mystery collected successfully",
+            message: message,
             mysteryData : m
 
         });
@@ -923,8 +925,6 @@ const addWord = function (nk: any, userId: string, word: string) {
     nk.logger.error("Error writing storage: " + writeError);
   }
 };
-
-
 const leaderboardCoinsId = "leaderboard_coins";
 const leaderboardWinsId = "leaderboard_wins";
 // RPC function to initialize both leaderboards

@@ -1928,7 +1928,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     const lockAudio = data.type === "audio";
                     const lockMeaning = data.type === "meaning";
                     const whoms = data.whoms;
-
+                    const unlock_With:unlockWith = data.unlockWith;
                     const AUDIO = 0;
                     const MEANING = 1;
                     let COST = 100;
@@ -1943,9 +1943,8 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     // Validate whoms index
                     if (whoms >= 0 && whoms < player.locks.length) {
 
-                        // ---- AD UNLOCK ----
-                        if (data.ad) {
-
+                        switch(unlock_With){
+                          case unlockWith.ad:
                             if (lockAudio && player.locks[whoms][AUDIO] === 0) {
                                 player.locks[whoms][AUDIO] = 1;
                                 applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
@@ -1955,34 +1954,30 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                                 player.locks[whoms][MEANING] = 1;
                                 applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
                             }
-
-                        } else {
-
-                            // ---- NON-AD (coins unlock) ----
+                            break;
+                          case unlockWith.card:
+                            break;
+                          case unlockWith.coins:
+                             // ---- NON-AD (coins unlock) ----
                             const coins = playerCoins(nk, player.UserId, player.UserName, 0);
-
                             if (coins >= COST) {
-
                                 let unlocked = false;
-
                                 if (lockAudio && player.locks[whoms][AUDIO] === 0) {
                                     player.locks[whoms][AUDIO] = 1;
                                     unlocked = true;
                                     applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
                                 }
-
                                 if (lockMeaning && player.locks[whoms][MEANING] === 0) {
                                     player.locks[whoms][MEANING] = 1;
                                     unlocked = true;
                                     applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "meaning" }], state, dispatcher, nk);
                                 }
-
                                 // Deduct coins only once
                                 if (unlocked) {
                                     playerCoins(nk, player.UserId, player.UserName, -COST);
                                 }
                             }
-
+                            break;
                         }
                     }
                 }
@@ -2630,3 +2625,7 @@ const LEVEL_DATA = [
   { level: 59, wordLength: 16, common: 2, uncommon: 4 },
   { level: 60, wordLength: 16, common: 2, uncommon: 5 }
 ];
+enum unlockWith
+{
+    ad,coins,card
+}

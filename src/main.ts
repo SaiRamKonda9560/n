@@ -1,3 +1,42 @@
+export class DailyRewardData{
+     amount:number=0;
+     isCollected:boolean=false;
+}
+export class DailyReward {
+    today: number = 0;
+    dailyRewardDatas: DailyRewardData[] = [];
+}
+export class SpinData {
+    spins: number[] = [];
+    spinCount: number[] = [];
+}
+
+export class MysteryData {
+    type: number = 0;
+    collected: boolean = false;
+}
+
+export class AttendanceData {
+    firstLogin: number = 0;
+    lastLogin: number = 0;
+    dayIndex: number = 0;
+
+    dailyReward: DailyReward = new DailyReward();
+
+    spinCount: number = 0;
+    initialCoins: number = 0;
+
+    spinData: SpinData = new SpinData();
+    wins: number = 0;
+    words: string[] = [];
+    losses: number = 0;
+    killCount: number = 0;
+    m: MysteryData = new MysteryData();
+    meaningUnlockCards: number = 0;
+    pronounciationUnlockCards: number = 0;
+}
+
+
 const generateShortIdRpc =  function (ctx: any, logger: any, nk: any, payload: string): string {
     // Parse incoming payload safely
     let data: { longId: string };
@@ -187,10 +226,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcSetActiveWordPack", rpcSetActiveWordPack);
     initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
 }
-let wordsGenInstance:wordsGen;
-const getWordoInstance=function():wordsGen{
- return wordsGenInstance;
-}
+
 const rpc = function (ctx: any, logger: any, nk: any, payload: string): string {
   try {
     const res = nk.httpRequest(
@@ -984,6 +1020,7 @@ function GetTopPlayers(ctx: any, logger: any, nk: any, payload: string): string 
 
 //#region words pack
 
+
 // --------------------------------------------------------
 // TYPES
 // --------------------------------------------------------
@@ -1297,3 +1334,4 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
 };
 
 //#endregion
+

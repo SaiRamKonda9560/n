@@ -2627,5 +2627,7 @@ const LEVEL_DATA = [
 ];
 enum unlockWith
 {
-    ad,coins,card
+    ad=0,
+    coins=1,
+    card=2
 }

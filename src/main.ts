@@ -1,6 +1,3 @@
-
-
-
 const generateShortIdRpc =  function (ctx: any, logger: any, nk: any, payload: string): string {
     // Parse incoming payload safely
     let data: { longId: string };
@@ -983,8 +980,6 @@ function GetTopPlayers(ctx: any, logger: any, nk: any, payload: string): string 
 }
 
 //#region words pack
-
-
 // --------------------------------------------------------
 // TYPES
 // --------------------------------------------------------

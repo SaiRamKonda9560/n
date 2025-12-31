@@ -1960,6 +1960,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                                   player.locks[whoms][MEANING] = 1;
                                   applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
                               }
+                              saveAttendanceData(player.UserId,nk,attendanceData);
                             }
                             break;
                           case unlockWith.coins:

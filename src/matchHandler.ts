@@ -146,7 +146,7 @@ class LudoGameData {
       p.movebulPawnIds = [];
     }
   }
-  public GenerateWordGameState(logger: any,nk: any,lengthOfWords: number,randomMissingCount: number,commonMissingCount: number,removeSafeTiles: boolean,comman: boolean,random: boolean,fill: boolean): void {
+  public GenerateWordGameState(logger: any,nk: any,removeSafeTiles: boolean,comman: boolean,random: boolean,fill: boolean): void {
     const numberOfBlocksForPlayer = this.TilesSetData[0] / this.getTotalPlayersCount();
     const collection = "words";
     const key = "main";
@@ -156,11 +156,63 @@ class LudoGameData {
     let wordData:WordData[] = objects[0].value.wordData;
     const wordsGenInstance = new wordsGen(wordData);
     if (wordsGenInstance) {
-      const selectedWordsData: WordData[] = [];
-      const missingLettersWords: string[] = [];
-      const commanRandomLettersList: string[] = [];
-      const nonCommonLetters: string[][] = [];
-      wordsGenInstance.generateWords(lengthOfWords,this.players.length,randomMissingCount,commonMissingCount,selectedWordsData,missingLettersWords,commanRandomLettersList,nonCommonLetters);
+    let lengthOfWords :number= 0;
+    let randomMissingCount :number= 0;
+    let commonMissingCount:number = 0;
+const selectedWordsData: WordData[] = [];
+const missingLettersWords: string[] = [];
+const commanRandomLettersList: string[] = [];
+const nonCommonLetters: string[][] = [];
+
+// initial level index (random once)
+let levelIndex = Math.floor(Math.random() * 60); // 0–59
+let success = false;
+
+for (let attempt = 0; attempt < 100; attempt++) {
+
+    // clear old data before retry
+    selectedWordsData.length = 0;
+    missingLettersWords.length = 0;
+    commanRandomLettersList.length = 0;
+    nonCommonLetters.length = 0;
+
+    // downgrade level safely (never below 0)
+    const level = LEVEL_DATA[Math.max(0, levelIndex)];
+    levelIndex--;
+
+     lengthOfWords = level.wordLength;
+     randomMissingCount = level.uncommon;
+     commonMissingCount = level.common;
+
+    try {
+        wordsGenInstance.generateWords(
+            lengthOfWords,
+            this.players.length,
+            randomMissingCount,
+            commonMissingCount,
+            selectedWordsData,
+            missingLettersWords,
+            commanRandomLettersList,
+            nonCommonLetters
+        );
+
+        // validation check
+        if (selectedWordsData.length === this.players.length) {
+            success = true;
+            break;
+        }
+
+    } catch (e) {
+        // silently retry (no crash)
+    }
+}
+
+// final safety check
+if (!success) {
+    console.error("generateWords failed after 100 attempts");
+    // optional: fallback logic here
+}
+
       // After generate section…
 for (const player of this.players) {
     if(player.isBot) continue;
@@ -444,9 +496,7 @@ for (const player of this.players) {
         }
 
         // Use it in your function call
-        let level = getRandomLevelData(55,60);
-        let wordLength = level.wordLength;
-        this.GenerateWordGameState(logger, nk, wordLength, level.uncommon, level.common, true, true, true, true);
+        this.GenerateWordGameState(logger, nk, true, true, true, true);
     } else {
       this.WordGameState = null;
     }

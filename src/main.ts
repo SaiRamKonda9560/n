@@ -977,7 +977,6 @@ function GetTopPlayers(ctx: any, logger: any, nk: any, payload: string): string 
   }
 }
 
-
 function loadAttendanceData(userId: string, nk: any): any {
     try {
         const objects = nk.storageRead([{

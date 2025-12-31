@@ -444,7 +444,7 @@ for (const player of this.players) {
         }
 
         // Use it in your function call
-        let level = getRandomLevelData(1,60);
+        let level = getRandomLevelData(55,60);
         let wordLength = level.wordLength;
         this.GenerateWordGameState(logger, nk, wordLength, level.uncommon, level.common, true, true, true, true);
     } else {

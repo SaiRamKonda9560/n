@@ -1,137 +1,215 @@
+// =======================
 // WordDataEntry class
+// =======================
 class WordDataEntry {
     PartOfSpeech!: string;
     WordMeaning!: string;
 }
+
+// =======================
 // WordData class
+// =======================
 class WordData {
     EnglishWord!: string;
     Entries!: WordDataEntry[];
     audiofile!: string;
     PronunciationAudioClip!: string;
 }
+
+// =======================
 // wordsGen class
+// =======================
 class wordsGen {
-    static instance: wordsGen;
-    static jsondata : string;
-    public wordList: WordData[];
-    // Most common letters in English from most to least frequent
+
+    static instance: wordsGen | null = null;
+    static jsondata: string = "";
+
+    public wordList: WordData[] = [];
+
+    // Most common letters
     static readonly MostCommonLetters: string[] = [
         'E', 'T', 'A', 'O', 'I', 'N', 'S', 'H', 'R', 'D'
     ];
-    // All uppercase English letters
+
     static readonly AllLetters: string[] = [
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+        'A','B','C','D','E','F','G','H','I','J','K','L','M',
+        'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
     ];
-    
- constructor(input?: string | WordData[]) {
-        wordsGen.instance = this;
+
+    constructor(input?: string | WordData[]) {
+
+        if (!wordsGen.instance) {
+            wordsGen.instance = this;
+        }
 
         if (!input) {
-            // No input given → empty array
             this.wordList = [];
-        } else if (typeof input === "string") {
-            // Input is JSON string
+            return;
+        }
+
+        if (typeof input === "string") {
             try {
                 const data = JSON.parse(input);
-                this.wordList = data as WordData[];
-            } catch (err) {
-                console.error("Invalid JSON string", err);
+                if (Array.isArray(data)) {
+                    this.wordList = data.filter(w => w?.EnglishWord);
+                } else {
+                    this.wordList = [];
+                }
+            } catch {
                 this.wordList = [];
             }
-        } else if (Array.isArray(input)) {
-            // Input is array of WordData
-            this.wordList = input;
-        } else {
-            // Fallback
-            this.wordList = [];
+            return;
         }
+
+        if (Array.isArray(input)) {
+            this.wordList = input.filter(w => w?.EnglishWord);
+            return;
+        }
+
+        this.wordList = [];
     }
+
+    // =======================
+    // SAFE SORT (no mutation)
+    // =======================
     private GetWordsSortedByLength(words: WordData[]): WordData[] {
-        return words.sort((a, b) => a.EnglishWord.length - b.EnglishWord.length);
+        return [...words].sort(
+            (a, b) => a.EnglishWord.length - b.EnglishWord.length
+        );
     }
+
     public GetWordsByLength(length: number): WordData[] {
-        if (!this.wordList) return [];
-        return this.wordList.filter(w => w.EnglishWord.length === length);
+        if (!this.wordList || length <= 0) return [];
+        return this.wordList.filter(
+            w => w?.EnglishWord && w.EnglishWord.length === length
+        );
     }
-    generateWords(lengthOfWords: number,max: number,randomMissingCount: number,commonMissingCount: number,selectedWords: WordData[],missingLettersWords: string[],commanRandomLettersList: string[],nonCommonRandomLettersList: string[][]): void {
+
+    // =======================
+    // MAIN GENERATOR
+    // =======================
+    generateWords(
+        lengthOfWords: number,
+        max: number,
+        randomMissingCount: number,
+        commonMissingCount: number,
+        selectedWords: WordData[],
+        missingLettersWords: string[],
+        commanRandomLettersList: string[],
+        nonCommonRandomLettersList: string[][]
+    ): void {
+
+        // reset outputs
         selectedWords.length = 0;
         missingLettersWords.length = 0;
         commanRandomLettersList.length = 0;
         nonCommonRandomLettersList.length = 0;
 
-        if (commonMissingCount <= 0 || commonMissingCount > wordsGen.MostCommonLetters.length) {
-            console.warn("Invalid letter count.");
+        if (lengthOfWords <= 0 || max <= 0) return;
+
+        if (
+            commonMissingCount <= 0 ||
+            commonMissingCount > wordsGen.MostCommonLetters.length
+        ) {
             return;
         }
 
-        let availableLetters = [...wordsGen.MostCommonLetters];
+        // pick common letters
+        const availableLetters = [...wordsGen.MostCommonLetters];
         for (let i = 0; i < commonMissingCount; i++) {
-            const rand = Math.floor(Math.random() * availableLetters.length);
-            commanRandomLettersList.push(availableLetters[rand]);
-            availableLetters.splice(rand, 1);
+            const idx = Math.floor(Math.random() * availableLetters.length);
+            commanRandomLettersList.push(availableLetters[idx]);
+            availableLetters.splice(idx, 1);
         }
 
         const words = this.GetWordsByLength(lengthOfWords);
-        if (words.length === 0) {
-            console.warn("No words available for this length.");
-            return;
-        }
+        if (words.length === 0) return;
 
-        let availableIndices = Array.from({ length: words.length }, (_, i) => i);
-        while (selectedWords.length < max && availableIndices.length > 0) {
-            const randomIndex = Math.floor(Math.random() * availableIndices.length);
-            const wordIndex = availableIndices[randomIndex];
-            availableIndices.splice(randomIndex, 1);
+        const shuffled = [...words].sort(() => Math.random() - 0.5);
 
-            const word = words[wordIndex].EnglishWord;
-            const containsAll = commanRandomLettersList.every(letter =>
-                word.toLowerCase().includes(letter.toLowerCase())
+        for (const wd of shuffled) {
+
+            if (selectedWords.length >= max) break;
+
+            const word = wd.EnglishWord;
+            if (!word) continue;
+
+            const containsAll = commanRandomLettersList.every(l =>
+                word.toLowerCase().includes(l.toLowerCase())
             );
 
-            if (containsAll) {
-                selectedWords.push(words[wordIndex]);
-                let missing = this.ReplaceWithMissingAndStars(word, commanRandomLettersList, randomMissingCount);
-                missingLettersWords.push(missing);
-                const nonCommon: string[] = [];
-                for (let i = 0; i < missing.length; i++) {
-                    if (missing[i] === '*') {
-                        nonCommon.push(word[i]);
-                    }
+            if (!containsAll) continue;
+
+            selectedWords.push(wd);
+
+            const masked = this.ReplaceWithMissingAndStars(
+                word,
+                commanRandomLettersList,
+                randomMissingCount
+            );
+
+            missingLettersWords.push(masked);
+
+            const nonCommon: string[] = [];
+            for (let i = 0; i < masked.length; i++) {
+                if (masked[i] === '*') {
+                    nonCommon.push(word[i]);
                 }
-                nonCommonRandomLettersList.push(nonCommon);
             }
+            nonCommonRandomLettersList.push(nonCommon);
         }
     }
-    public ReplaceWithMissingAndStars(word: string, targets: string[], starCount: number): string {
+
+    // =======================
+    // SAFE MASKING
+    // =======================
+    public ReplaceWithMissingAndStars(
+        word: string,
+        targets: string[],
+        starCount: number
+    ): string {
+
+        if (!word) return "";
+
         const chars = word.split('');
 
+        // replace common letters with '_'
         for (const target of targets) {
             const indices: number[] = [];
-            for (let i = 0; i < word.length; i++) {
-                if (word[i].toLowerCase() === target.toLowerCase() && chars[i] !== '_') {
+            for (let i = 0; i < chars.length; i++) {
+                if (
+                    chars[i] !== '_' &&
+                    chars[i].toLowerCase() === target.toLowerCase()
+                ) {
                     indices.push(i);
                 }
             }
+
             if (indices.length > 0) {
-                const randomIndex = indices[Math.floor(Math.random() * indices.length)];
-                chars[randomIndex] = '_';
+                const r = indices[Math.floor(Math.random() * indices.length)];
+                chars[r] = '_';
             }
         }
 
+        // find remaining positions
         const otherIndices: number[] = [];
-        for (let i = 0; i < word.length; i++) {
-            if (!targets.some(t => word[i].toLowerCase() === t.toLowerCase()) && chars[i] !== '_') {
+        for (let i = 0; i < chars.length; i++) {
+            if (
+                chars[i] !== '_' &&
+                !targets.some(t => t.toLowerCase() === chars[i].toLowerCase())
+            ) {
                 otherIndices.push(i);
             }
         }
 
-        for (let i = 0; i < starCount && otherIndices.length > 0; i++) {
-            const randomIndex = Math.floor(Math.random() * otherIndices.length);
-            const pos = otherIndices[randomIndex];
+        // clamp starCount
+        const stars = Math.min(starCount, otherIndices.length);
+
+        for (let i = 0; i < stars; i++) {
+            const r = Math.floor(Math.random() * otherIndices.length);
+            const pos = otherIndices[r];
             chars[pos] = '*';
-            otherIndices.splice(randomIndex, 1);
+            otherIndices.splice(r, 1);
         }
 
         return chars.join('');

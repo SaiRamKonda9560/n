@@ -80,7 +80,6 @@ const getLongIdRpc = function (ctx: any, logger: any, nk: any, payload: string):
         return JSON.stringify({ success: false, error: "Storage read failed" });
     }
 };
-
 // --- Utility: generate unique short referral code ---
 function generateReferralCode(length = 6): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -187,7 +186,6 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcSetActiveWordPack", rpcSetActiveWordPack);
     initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
 }
-
 const rpc = function (ctx: any, logger: any, nk: any, payload: string): string {
   try {
     const res = nk.httpRequest(
@@ -977,6 +975,40 @@ function GetTopPlayers(ctx: any, logger: any, nk: any, payload: string): string 
     logger.error("Error getting leaderboard: " + error);
     return JSON.stringify({success : false});
   }
+}
+
+
+function loadAttendanceData(userId: string, nk: any): any {
+    try {
+        const objects = nk.storageRead([{
+            collection: player_data,
+            key: daily_attendance,
+            userId
+        }]);
+
+        if (objects && objects.length > 0 && objects[0].value) {
+            return objects[0].value;
+        }
+    } catch (err) {
+        nk.logger.error("loadAttendanceData error: %s", err);
+    }
+
+    return null; // not found
+}
+
+function saveAttendanceData(userId: string, nk: any, attendanceData: any): void {
+    try {
+        nk.storageWrite([{
+            collection: player_data,
+            key: daily_attendance,
+            userId,
+            value: attendanceData,
+            permissionRead: 1,  // public read (ok for client)
+            permissionWrite: 0  // only server can write (IMPORTANT)
+        }]);
+    } catch (err) {
+        nk.logger.error("saveAttendanceData error: %s", err);
+    }
 }
 
 //#region words pack

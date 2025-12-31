@@ -1850,31 +1850,25 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
 const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
     try {
-
         // 🔹 Send the raw JSON signal to all connected players
         dispatcher.broadcastMessage(1, data, null, null);
-
         // 🔹 Re-create gameData and WordGameState classes (important for class methods)
         let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);
         gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
-
         // -------------------------------------------------------
         // 1️⃣ Parse incoming JSON → create a Signal instance
         // -------------------------------------------------------
         let signalData: any;
-
         try {
             signalData = JSON.parse(data);
         } catch (e) {
             throw new Error("Invalid JSON in matchSignal: " + e);
         }
-
         const signal = new Signal(
             signalData.type ?? "tick",
             signalData.who ?? 0,
             signalData.value ?? ""
         );
-
         // -------------------------------------------------------
         // 2️⃣ GAME STARTED → process dice, pawn, and wordo signals
         // -------------------------------------------------------
@@ -1924,19 +1918,16 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
 
                 if (data !== null) {
                     const fee : number = state.fee;
-                    const lockAudio = data.type === "audio";
-                    const lockMeaning = data.type === "meaning";
+                    const type : unlockType =data.type;
                     const whoms = data.whoms;
                     const unlock_With:unlockWith = data.unlockWith;
                     const AUDIO = 0;
                     const MEANING = 1;
                     let COST = 100;
-
-                    if (lockAudio) {
+                    if (type===unlockType.audio) {
                       COST = Math.round(fee * 0.2);   // 20%
                     }
-
-                    if (lockMeaning) {
+                    if (type===unlockType.meaning) {
                       COST = Math.round(fee * 0.1);   // 10%
                     }
                     // Validate whoms index
@@ -1944,29 +1935,44 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
 
                         switch(unlock_With){
                           case unlockWith.ad:
-                            if (lockAudio && player.locks[whoms][AUDIO] === 0) {
+                            if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
                                 player.locks[whoms][AUDIO] = 1;
                                 applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
                             }
 
-                            if (lockMeaning && player.locks[whoms][MEANING] === 0) {
+                            if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
                                 player.locks[whoms][MEANING] = 1;
                                 applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
                             }
                             break;
                           case unlockWith.card:
+                            let attendanceData= loadAttendanceData(player.UserId,nk);
+                            if(attendanceData!==null){
+                              let pronounciationUnlockCards = attendanceData.pronounciationUnlockCards||0;
+                              let meaningUnlockCards = attendanceData.meaningUnlockCards||0;
+                              if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0 && pronounciationUnlockCards>0) {
+                                  attendanceData.pronounciationUnlockCards = (pronounciationUnlockCards-1); 
+                                  player.locks[whoms][AUDIO] = 1;
+                                  applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
+                              }
+                              if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0&& meaningUnlockCards>0) {
+                                  attendanceData.meaningUnlockCards = (meaningUnlockCards-1); 
+                                  player.locks[whoms][MEANING] = 1;
+                                  applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
+                              }
+                            }
                             break;
                           case unlockWith.coins:
                              // ---- NON-AD (coins unlock) ----
                             const coins = playerCoins(nk, player.UserId, player.UserName, 0);
                             if (coins >= COST) {
                                 let unlocked = false;
-                                if (lockAudio && player.locks[whoms][AUDIO] === 0) {
+                                if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
                                     player.locks[whoms][AUDIO] = 1;
                                     unlocked = true;
                                     applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
                                 }
-                                if (lockMeaning && player.locks[whoms][MEANING] === 0) {
+                                if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
                                     player.locks[whoms][MEANING] = 1;
                                     unlocked = true;
                                     applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "meaning" }], state, dispatcher, nk);
@@ -1982,7 +1988,6 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                 }
             }
         }
-
         // -------------------------------------------------------
         // 4️⃣ PRIVATE ROOM → handle updateRoom and startRoom
         // -------------------------------------------------------
@@ -2116,10 +2121,8 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                 }
             }
         }
-
         // Save updated gameData
         state.gameData = gameData;
-
         return { state };
     }
     catch (e) {
@@ -2629,4 +2632,9 @@ enum unlockWith
     ad=0,
     coins=1,
     card=2
+}
+enum unlockType
+{
+    audio=0,
+    meaning=1
 }

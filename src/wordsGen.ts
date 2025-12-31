@@ -55,16 +55,7 @@ class wordsGen {
         if (!this.wordList) return [];
         return this.wordList.filter(w => w.EnglishWord.length === length);
     }
-    generateWords(
-        lengthOfWords: number,
-        max: number,
-        randomMissingCount: number,
-        commonMissingCount: number,
-        selectedWords: WordData[],
-        missingLettersWords: string[],
-        commanRandomLettersList: string[],
-        nonCommonRandomLettersList: string[][]
-    ): void {
+    generateWords(lengthOfWords: number,max: number,randomMissingCount: number,commonMissingCount: number,selectedWords: WordData[],missingLettersWords: string[],commanRandomLettersList: string[],nonCommonRandomLettersList: string[][]): void {
         selectedWords.length = 0;
         missingLettersWords.length = 0;
         commanRandomLettersList.length = 0;

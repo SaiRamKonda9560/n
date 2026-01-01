@@ -173,6 +173,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
   initializer.registerRpc("wordo", wordo);
   initializer.registerRpc("getPlayerCoins", getPlayerCoins);
   initializer.registerRpc("rpcStoreWords", rpcStoreWords);
+  initializer.registerRpc("getCardsData", getCardsData);
   
     initializer.registerRpc("rpcAddWordPack", rpcAddWordPack);
     initializer.registerRpc("rpcUpdateWordPackProgress", rpcUpdateWordPackProgress);
@@ -731,7 +732,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         } catch (err) {
             logger.warn(`Failed to read coin data for ${userId}: ${err}`);
         }
-        let cardsData = (attendanceData.cards ||  new cards());
+        let cardsData :cards = (attendanceData.cards ||  new cards());
         var m = attendanceData.m;
         // --- READ MODE ---
         if (!collect) {
@@ -754,11 +755,11 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         let message = "";
         switch(m.type){
             case 1:
-                cardsData.meaningUnlockCards = (cardsData.meaningUnlockCards || 0) + 1;
+                cardsData.MeaningCards = (cardsData.MeaningCards ?? 0) + 1; + 1;
                 message = "meaning Unlock Cards";
                 break;
             case 2:
-                cardsData.pronounciationUnlockCards = (cardsData.pronounciationUnlockCards || 0) + 1;
+                cardsData.SpeechCards = (cardsData.SpeechCards ?? 0) + 1; + 1;
                 message = "pronounciation Unlock Cards";
                 break;
         }
@@ -1010,7 +1011,57 @@ function saveAttendanceData(userId: string, nk: any, attendanceData: any): void 
         nk.logger.error("saveAttendanceData error: %s", err);
     }
 }
+const getCardsData = function (ctx: any, logger: any, nk: any, payload: string) {
+  
+  try {
+    return JSON.stringify(loadCardsData(ctx.userId,nk));
+  } catch (err: any) {
+    logger.error("❌ Failed to create match: " + err.message);
+    throw err;
+  }
+};
+function loadCardsData(userId: string, nk: any): any {
+    try {
+        const objects = nk.storageRead([{
+            collection: player_data,
+            key: daily_attendance,
+            userId
+        }]);
 
+        if (objects && objects.length > 0 && objects[0].value) {
+            return objects[0].value.cards;
+        }
+    } catch (err) {
+        nk.logger.error("loadAttendanceData error: %s", err);
+    }
+
+    return null; // not found
+}
+function saveCardsData(userId: string, nk: any, cardsdata: any): void {
+    try {
+            const objects = nk.storageRead([{
+            collection: player_data,
+            key: daily_attendance,
+            userId
+        }]);
+
+        if (objects && objects.length > 0 && objects[0].value) {
+            let data = objects[0].value;
+            data.cards = cardsdata;
+            nk.storageWrite([{
+            collection: player_data,
+            key: daily_attendance,
+            userId,
+            value: data,
+            permissionRead: 1,  // public read (ok for client)
+            permissionWrite: 0  // only server can write (IMPORTANT)
+        }]);
+        }
+
+    } catch (err) {
+        nk.logger.error("saveAttendanceData error: %s", err);
+    }
+}
 //#region words pack
 // --------------------------------------------------------
 // TYPES
@@ -1327,6 +1378,6 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
 //#endregion
 
 class cards{
-    public meaningUnlockCards : number = 0;
-    public pronounciationUnlockCards : number = 0;
+    public MeaningCards : number = 0;
+    public SpeechCards : number = 0;
 }

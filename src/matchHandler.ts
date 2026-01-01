@@ -1987,29 +1987,28 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                           case unlockWith.ad:
                             if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
                                 player.locks[whoms][AUDIO] = 1;
-                                applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
+                                applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks,type,unlockWith:unlock_With }], state, dispatcher, nk);
                             }
-
                             if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
                                 player.locks[whoms][MEANING] = 1;
-                                applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
+                                applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk);
                             }
                             break;
                           case unlockWith.card:
                             let attendanceData= loadAttendanceData(player.UserId,nk);
                             if(attendanceData!==null){
-                              let cardsData = (attendanceData.cards ||  new cards());
-                              let pronounciationUnlockCards = cardsData.pronounciationUnlockCards||0;
-                              let meaningUnlockCards = cardsData.meaningUnlockCards||0;
-                              if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0 && pronounciationUnlockCards>0) {
-                                  cardsData.pronounciationUnlockCards = (pronounciationUnlockCards-1); 
+                              let cardsData:cards = (attendanceData.cards ||  new cards());
+                              let SpeechCards = (cardsData.SpeechCards??0);
+                              let MeaningCards = (cardsData.MeaningCards??0);
+                              if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0 && SpeechCards>0) {
+                                  cardsData.SpeechCards = (SpeechCards-1); 
                                   player.locks[whoms][AUDIO] = 1;
-                                  applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
+                                  applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
                               }
-                              if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0&& meaningUnlockCards>0) {
-                                  cardsData.meaningUnlockCards = (meaningUnlockCards-1); 
+                              if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0&& MeaningCards>0) {
+                                  cardsData.MeaningCards = (MeaningCards-1); 
                                   player.locks[whoms][MEANING] = 1;
-                                  applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
+                                  applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk);
                               }
                               attendanceData.cards = cardsData;
                               saveAttendanceData(player.UserId,nk,attendanceData);
@@ -2023,12 +2022,12 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                                 if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
                                     player.locks[whoms][AUDIO] = 1;
                                     unlocked = true;
-                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
                                 }
                                 if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
                                     player.locks[whoms][MEANING] = 1;
                                     unlocked = true;
-                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type: "meaning" }], state, dispatcher, nk);
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
                                 }
                                 // Deduct coins only once
                                 if (unlocked) {
@@ -2690,4 +2689,7 @@ enum unlockType
 {
     audio=0,
     meaning=1
+}
+class unlockResponce{
+
 }

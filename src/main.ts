@@ -700,6 +700,7 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         return JSON.stringify({ success: false, error: errMsg });
     }
 };
+
 const mystery = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         const userId = ctx.userId;
@@ -730,8 +731,7 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         } catch (err) {
             logger.warn(`Failed to read coin data for ${userId}: ${err}`);
         }
-        attendanceData.meaningUnlockCards = (attendanceData.meaningUnlockCards || 0);
-        attendanceData.pronounciationUnlockCards =(attendanceData.pronounciationUnlockCards || 0);
+        let cardsData = (attendanceData.cards ||  new cards());
         var m = attendanceData.m;
         // --- READ MODE ---
         if (!collect) {
@@ -754,14 +754,15 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         let message = "";
         switch(m.type){
             case 1:
-                attendanceData.meaningUnlockCards = (attendanceData.meaningUnlockCards || 0) + 1;
+                cardsData.meaningUnlockCards = (cardsData.meaningUnlockCards || 0) + 1;
                 message = "meaning Unlock Cards";
                 break;
             case 2:
-                attendanceData.pronounciationUnlockCards =(attendanceData.pronounciationUnlockCards || 0) + 1;
+                cardsData.pronounciationUnlockCards = (cardsData.pronounciationUnlockCards || 0) + 1;
                 message = "pronounciation Unlock Cards";
                 break;
         }
+        attendanceData.cards = cardsData;
         // --- SAVE UPDATED COINS ---
         //const newBalance = playerCoins(nk,userId,username,rewardAmount);
         // --- SAVE UPDATED ATTENDANCE ---
@@ -1325,3 +1326,7 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
 
 //#endregion
 
+class cards{
+    public meaningUnlockCards : number = 0;
+    public pronounciationUnlockCards : number = 0;
+}

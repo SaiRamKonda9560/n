@@ -1998,18 +1998,20 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                           case unlockWith.card:
                             let attendanceData= loadAttendanceData(player.UserId,nk);
                             if(attendanceData!==null){
-                              let pronounciationUnlockCards = attendanceData.pronounciationUnlockCards||0;
-                              let meaningUnlockCards = attendanceData.meaningUnlockCards||0;
+                              let cardsData = (attendanceData.cards ||  new cards());
+                              let pronounciationUnlockCards = cardsData.pronounciationUnlockCards||0;
+                              let meaningUnlockCards = cardsData.meaningUnlockCards||0;
                               if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0 && pronounciationUnlockCards>0) {
-                                  attendanceData.pronounciationUnlockCards = (pronounciationUnlockCards-1); 
+                                  cardsData.pronounciationUnlockCards = (pronounciationUnlockCards-1); 
                                   player.locks[whoms][AUDIO] = 1;
                                   applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type: "audio" }], state, dispatcher, nk);
                               }
                               if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0&& meaningUnlockCards>0) {
-                                  attendanceData.meaningUnlockCards = (meaningUnlockCards-1); 
+                                  cardsData.meaningUnlockCards = (meaningUnlockCards-1); 
                                   player.locks[whoms][MEANING] = 1;
                                   applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type: "meaning" }], state, dispatcher, nk);
                               }
+                              attendanceData.cards = cardsData;
                               saveAttendanceData(player.UserId,nk,attendanceData);
                             }
                             break;

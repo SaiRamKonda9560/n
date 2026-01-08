@@ -1601,7 +1601,7 @@ const rpcTournamentHaystack = (ctx: any, logger: any, nk: any, payload: string) 
 
 const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => {
     let categoryStart = 0;
-    let categoryEnd = 0;
+    let categoryEnd = 100;
     let startTime = 0;
     let endTime = 0 // All tournaments from the start time.
     let limit = 10 // Number to list per page.

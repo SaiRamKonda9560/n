@@ -1598,7 +1598,7 @@ const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => 
     let endTime = 0 // All tournaments from the start time.
     let limit = 10 // Number to list per page.
     try {
-    return nk.tournamentList(categoryStart, categoryEnd, startTime, endTime, limit);
+    return JSON.stringify(nk.tournamentList(categoryStart, categoryEnd, startTime, endTime, limit));
     } catch (error) {
         throw error;  
     // Handle error

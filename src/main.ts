@@ -1592,18 +1592,18 @@ const rpcTournamentHaystack = (ctx: any, logger: any, nk: any, payload: string) 
 };
 
 const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => {
-    const p = payload ? JSON.parse(payload) : {};
     let categoryStart = 1;
     let categoryEnd = 2;
-    let startTime = 1538147711;
+    let startTime = 0;
     let endTime = 0 // All tournaments from the start time.
     let limit = 100 // Number to list per page.
-
-try {
-  return nk.tournamentList(categoryStart, categoryEnd, startTime, endTime, limit);
-} catch (error) {
-  // Handle error
-}
+    try {
+    return nk.tournamentList(categoryStart, categoryEnd, startTime, endTime, limit);
+    } catch (error) {
+        throw "eeeerooo";
+    // Handle error
+    }
+    const p = payload ? JSON.parse(payload) : {};
     return JSON.stringify(
         listTournaments(nk, p.categoryStart, p.categoryEnd, p.startTime, p.endTime, p.limit, p.cursor)
     );

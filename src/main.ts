@@ -1421,23 +1421,7 @@ function createTournament(
     maxNumScore?: number,
     joinRequired?: boolean
 ) {
-    nk.tournamentCreate(
-        id,
-        authoritative,
-        sortOrder,
-        operator,
-        resetSchedule,
-        metadata,
-        title,
-        description,
-        category,
-        startTime,
-        endTime,
-        duration,
-        maxSize,
-        maxNumScore,
-        joinRequired
-    );
+    nk.tournamentCreate(id,authoritative,sortOrder, operator,resetSchedule,metadata,title,description,category,startTime,endTime,duration, maxSize,maxNumScore,joinRequired);
 }
 
 // Delete tournament
@@ -1609,6 +1593,17 @@ const rpcTournamentHaystack = (ctx: any, logger: any, nk: any, payload: string) 
 
 const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => {
     const p = payload ? JSON.parse(payload) : {};
+    let categoryStart = 1;
+    let categoryEnd = 2;
+    let startTime = 1538147711;
+    let endTime = 0 // All tournaments from the start time.
+    let limit = 100 // Number to list per page.
+
+try {
+  return nk.tournamentList(categoryStart, categoryEnd, startTime, endTime, limit);
+} catch (error) {
+  // Handle error
+}
     return JSON.stringify(
         listTournaments(nk, p.categoryStart, p.categoryEnd, p.startTime, p.endTime, p.limit, p.cursor)
     );

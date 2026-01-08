@@ -1526,24 +1526,32 @@ function resetTournament(nk: any, tournamentId: string) {
 
 const rpcCreateTournament = (ctx: any, logger: any, nk: any, payload: string) => {
     const p = JSON.parse(payload);
-    createTournament(
-        nk,
-        p.id,
-        p.resetSchedule,
-        p.authoritative ?? true,
-        p.sortOrder ?? "desc",
-        p.operator ?? "best",
-        p.metadata,
-        p.title,
-        p.description,
-        p.category,
-        p.startTime,
-        p.endTime,
-        p.duration,
-        p.maxSize,
-        p.maxNumScore,
-        p.joinRequired
-    );
+    let id = '4ec4f126-3f9d-11e7-84ef-b7c182b36521';
+    let authoritative = false
+    let sortOrder = nk.SortOrder.DESCENDING;
+    let operator = nk.Operator.BEST;
+    let duration = 3600;              // In seconds.
+    let resetSchedule = '0 12 * * *'; // Noon UTC each day.
+
+    let metadata = {
+        weatherConditions: 'rain',
+    };
+
+        let title = 'Daily Dash';
+        let description = "Dash past your opponents for high scores and big rewards!";
+        let category = 1;
+        let startTime = 0;       // Start now.
+        let endTime = 0;         // Never end, repeat the tournament each day forever.
+        let maxSize = 10000;     // First 10,000 players who join.
+        let maxNumScore = 3;     // Each player can have 3 attempts to score.
+        let joinRequired = true; // Must join to compete.
+        let enableRanks = true;  // Set to true to enable rank computation on leaderboard records.
+
+        try {
+        nk.tournamentCreate(id, authoritative, sortOrder, operator, duration, resetSchedule, metadata, title, description, category, startTime, endTime, maxSize, maxNumScore, joinRequired, enableRanks);
+        } catch (error) {
+        // Handle error
+        }
     return "{}";
 };
 

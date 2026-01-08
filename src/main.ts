@@ -1528,8 +1528,8 @@ const rpcCreateTournament = (ctx: any, logger: any, nk: any, payload: string) =>
     const p = JSON.parse(payload);
     let id = '4ec4f126-3f9d-11e7-84ef-b7c182b36521';
     let authoritative = false
-    let sortOrder = nk.SortOrder.DESCENDING;
-    let operator = nk.Operator.BEST;
+    let sortOrder = "asc";
+    let operator = "best";
     let duration = 3600;              // In seconds.
     let resetSchedule = '0 12 * * *'; // Noon UTC each day.
 

@@ -1600,7 +1600,7 @@ const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => 
     try {
     return nk.tournamentList(limit);
     } catch (error) {
-        throw "eeeerooo";
+        throw error;
     // Handle error
     }
     const p = payload ? JSON.parse(payload) : {};

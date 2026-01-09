@@ -1600,21 +1600,14 @@ const rpcTournamentHaystack = (ctx: any, logger: any, nk: any, payload: string) 
 };
 
 const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => {
-    let categoryStart = 0;
-    let categoryEnd = 100;
-    let startTime = 0;
-    let endTime = 0 // All tournaments from the start time.
-    let limit = 10 // Number to list per page.
+
+    const data = payload ? JSON.parse(payload) : {};
     try {
-    return JSON.stringify(nk.tournamentList(categoryStart, categoryEnd, startTime, endTime, limit));
+    return JSON.stringify(nk.tournamentList(data.categoryStart, data.categoryEnd, data.startTime, data.endTime, data.limit));
     } catch (error) {
         throw error;  
     // Handle error
     }
-    const p = payload ? JSON.parse(payload) : {};
-    return JSON.stringify(
-        listTournaments(nk, p.categoryStart, p.categoryEnd, p.startTime, p.endTime, p.limit, p.cursor)
-    );
 };
 
 const rpcResetTournament = (ctx: any, logger: any, nk: any, payload: string) => {

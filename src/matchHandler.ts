@@ -2218,125 +2218,7 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
     }; 
     return { state, tickRate: 1, label: JSON.stringify(params) };
 };
-function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any) {
-    const [commendName, obj] = commend;
-    if (commendName !== "addDelay" && commendName !== "setDelay") {
-        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
-        );
-    }
-    switch (commendName) {
-        case "addDelay":
-            state.delay = (state.delay as number) + (obj as number);
-            break;
-        case "setDelay":
-            state.delay = obj as number;
-            break;
-        case "complected":
-            break;
-case "playerWin":
-{
-    let fee = state.fee;
-    let gameData:LudoGameData = Object.assign(new LudoGameData(), state.gameData);
-    // Player we are rewarding
-    let p = obj as LudoPlayerData;
-    if (p.isBot) return;
-    if(gameData.gameMode==="wordo"){
-        // --- WORD PACK COMPLETION LOGIC ---
-        try {
-            const playerIndex = p.PlayerTurn;  // The player who won
-            const jsonString = gameData.CurrentPackWords[playerIndex];
 
-            // If no pack word was used for this player → skip
-            if (jsonString) {
-                const info = JSON.parse(jsonString);
-
-                const packId: string = info.packId;
-                const wordIndex: number = info.wordIndex;
-                const userId: string = p.UserId;
-
-                // Mark this word as completed
-                const result = completeSingleWord(nk, userId, packId, wordIndex);
-            }
-        } catch (err) {
-        }
-    }
-    // Assign rank to player
-    playerWin(nk, p, gameData);
-    if (p.rank <= 0) return;
-    const playerCount = gameData.players.length;
-    // Total Pool
-    const totalPool = fee * playerCount;
-    // =====================================================
-    // PAYOUT TABLES - EXACTLY FROM YOUR SHEET
-    // =====================================================
-    // 3-player payouts
-    const map3: Record<number, { r1: number; r2: number }> = {
-        500: { r1: 900, r2: 500 },
-        1000: { r1: 1800, r2: 1000 },
-        2000: { r1: 3400, r2: 2000 },
-        5000: { r1: 8000, r2: 5000 },
-        10000: { r1: 16000, r2: 10000 },
-        50000: { r1: 70000, r2: 50000 },
-    };
-
-    // 4-player payouts
-    const map4: Record<number, { r1: number; r2: number }> = {
-        500: { r1: 1400, r2: 500 },
-        1000: { r1: 2800, r2: 1000 },
-        2000: { r1: 5400, r2: 2000 },
-        5000: { r1: 13000, r2: 5000 },
-        10000: { r1: 26000, r2: 10000 },
-        50000: { r1: 120000, r2: 50000 },
-    };
-
-    let reward = 0;
-
-    // =====================================================
-    // 2 PLAYERS → 90% to Rank1, Rank2 = 0
-    // =====================================================
-    if (playerCount === 2)
-    {
-        if (p.rank === 1)
-            reward = Math.floor(totalPool * 0.90);
-    }
-
-    // =====================================================
-    // 3 PLAYERS → Use table
-    // =====================================================
-    else if (playerCount === 3)
-    {
-        const x = map3[fee];
-        if (x)
-        {
-            if (p.rank === 1) reward = x.r1;
-            else if (p.rank === 2) reward = x.r2;
-        }
-    }
-
-    // =====================================================
-    // 4 PLAYERS → Use table
-    // =====================================================
-    else if (playerCount === 4)
-    {
-        const x = map4[fee];
-        if (x)
-        {
-            if (p.rank === 1) reward = x.r1;
-            else if (p.rank === 2) reward = x.r2;
-        }
-    }
-
-    // =====================================================
-    // CREDIT PLAYER
-    // =====================================================
-    if (reward > 0)
-        playerCoins(nk, p.UserId, p.UserName, reward);
-}
-break;
-
-    }
-
-}
 const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
   logger.info("matchJoinAttempt called for user:", presence.userId);
 
@@ -2476,6 +2358,125 @@ const matchmakerMatched = function (ctx: any, logger: any, nk: any, matches: any
     throw err;
   }
 };
+function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any) {
+    const [commendName, obj] = commend;
+    if (commendName !== "addDelay" && commendName !== "setDelay") {
+        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
+        );
+    }
+    switch (commendName) {
+        case "addDelay":
+            state.delay = (state.delay as number) + (obj as number);
+            break;
+        case "setDelay":
+            state.delay = obj as number;
+            break;
+        case "complected":
+            break;
+case "playerWin":
+{
+    let fee = state.fee;
+    let gameData:LudoGameData = Object.assign(new LudoGameData(), state.gameData);
+    // Player we are rewarding
+    let p = obj as LudoPlayerData;
+    if (p.isBot) return;
+    if(gameData.gameMode==="wordo"){
+        // --- WORD PACK COMPLETION LOGIC ---
+        try {
+            const playerIndex = p.PlayerTurn;  // The player who won
+            const jsonString = gameData.CurrentPackWords[playerIndex];
+
+            // If no pack word was used for this player → skip
+            if (jsonString) {
+                const info = JSON.parse(jsonString);
+
+                const packId: string = info.packId;
+                const wordIndex: number = info.wordIndex;
+                const userId: string = p.UserId;
+
+                // Mark this word as completed
+                const result = completeSingleWord(nk, userId, packId, wordIndex);
+            }
+        } catch (err) {
+        }
+    }
+    // Assign rank to player
+    playerWin(nk, p, gameData);
+    if (p.rank <= 0) return;
+    const playerCount = gameData.players.length;
+    // Total Pool
+    const totalPool = fee * playerCount;
+    // =====================================================
+    // PAYOUT TABLES - EXACTLY FROM YOUR SHEET
+    // =====================================================
+    // 3-player payouts
+    const map3: Record<number, { r1: number; r2: number }> = {
+        500: { r1: 900, r2: 500 },
+        1000: { r1: 1800, r2: 1000 },
+        2000: { r1: 3400, r2: 2000 },
+        5000: { r1: 8000, r2: 5000 },
+        10000: { r1: 16000, r2: 10000 },
+        50000: { r1: 70000, r2: 50000 },
+    };
+
+    // 4-player payouts
+    const map4: Record<number, { r1: number; r2: number }> = {
+        500: { r1: 1400, r2: 500 },
+        1000: { r1: 2800, r2: 1000 },
+        2000: { r1: 5400, r2: 2000 },
+        5000: { r1: 13000, r2: 5000 },
+        10000: { r1: 26000, r2: 10000 },
+        50000: { r1: 120000, r2: 50000 },
+    };
+
+    let reward = 0;
+
+    // =====================================================
+    // 2 PLAYERS → 90% to Rank1, Rank2 = 0
+    // =====================================================
+    if (playerCount === 2)
+    {
+        if (p.rank === 1)
+            reward = Math.floor(totalPool * 0.90);
+    }
+
+    // =====================================================
+    // 3 PLAYERS → Use table
+    // =====================================================
+    else if (playerCount === 3)
+    {
+        const x = map3[fee];
+        if (x)
+        {
+            if (p.rank === 1) reward = x.r1;
+            else if (p.rank === 2) reward = x.r2;
+        }
+    }
+
+    // =====================================================
+    // 4 PLAYERS → Use table
+    // =====================================================
+    else if (playerCount === 4)
+    {
+        const x = map4[fee];
+        if (x)
+        {
+            if (p.rank === 1) reward = x.r1;
+            else if (p.rank === 2) reward = x.r2;
+        }
+    }
+
+    // =====================================================
+    // CREDIT PLAYER
+    // =====================================================
+    if (reward > 0)
+        playerCoins(nk, p.UserId, p.UserName, reward);
+}
+break;
+
+    }
+
+}
 const playerCoins =function(nk: any,userId:any,username:any,addMoney:any):number{
         const collection = "player_data";
         const key = "coins";

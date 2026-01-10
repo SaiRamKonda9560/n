@@ -140,6 +140,7 @@ const generateReferralCodeRpc = function (ctx: any, logger: any, nk: any, payloa
 };
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
   initializer.registerMatch('lobby', {matchInit,matchJoinAttempt,matchJoin,matchLeave,matchLoop,matchSignal,matchTerminate,});
+  initializer.registerMatch('tournament', {matchInit_Tournament,matchJoinAttempt_Tournament,matchJoin_Tournament,matchLeave_Tournament,matchLoop_Tournament,matchSignal_Tournament,matchTerminate_Tournament,});
 
   initLeaderBoards(logger,nk,'');
   initializer.registerRpc("GetTopPlayers", GetTopPlayers);
@@ -178,16 +179,6 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcGetWordPackStoreData", rpcGetWordPackStoreData);
     initializer.registerRpc("rpcSetActiveWordPack", rpcSetActiveWordPack);
     initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
-
-    initializer.registerRpc("tournament_create", rpcCreateTournament);
-    initializer.registerRpc("tournament_delete", rpcDeleteTournament);
-    initializer.registerRpc("tournament_join", rpcJoinTournament);
-    initializer.registerRpc("tournament_leave", rpcLeaveTournament);
-    initializer.registerRpc("tournament_write_score", rpcWriteTournamentScore);
-    initializer.registerRpc("tournament_records", rpcListTournamentRecords);
-    initializer.registerRpc("tournament_haystack", rpcTournamentHaystack);
-    initializer.registerRpc("tournaments_list", rpcListTournaments);
-    initializer.registerRpc("tournament_reset", rpcResetTournament);
 
 }
 const rpc = function (ctx: any, logger: any, nk: any, payload: string): string {
@@ -1388,222 +1379,680 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
    ============================ */
 
 // Create tournament
-function createTournament(
-    nk: any,
-    id: string,
-    resetSchedule: string,
-    authoritative: boolean,
-    sortOrder: "asc" | "desc",
-    operator: "best" | "set" | "incr" | "decr",
-    metadata?: any,
-    title?: string,
-    description?: string,
-    category?: number,
-    startTime?: number,
-    endTime?: number,
-    duration?: number,
-    maxSize?: number,
-    maxNumScore?: number,
-    joinRequired?: boolean
-) {
-    nk.tournamentCreate(
-        id,
-        authoritative,
-        sortOrder,
-        operator,
-        resetSchedule,
-        metadata,
-        title,
-        description,
-        category,
-        startTime,
-        endTime,
-        duration,
-        maxSize,
-        maxNumScore,
-        joinRequired
-    );
+
+const createTournament = function (ctx: any, logger: any, nk: any, payload: string): string {
+    //const matchId = nk.matchCreate("lobby", { boardIndex, numberOfPlayers, gameMode,fee, isPrivate: true,bots});
+    return "";
+
 }
+const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
+{
+    try {
+        // 🔹 Send the raw JSON signal to all connected players
+        dispatcher.broadcastMessage(1, data, null, null);
+        // 🔹 Re-create gameData and WordGameState classes (important for class methods)
+        let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);
+        gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+        // -------------------------------------------------------
+        // 1️⃣ Parse incoming JSON → create a Signal instance
+        // -------------------------------------------------------
+        let signalData: any;
+        try {
+            signalData = JSON.parse(data);
+        } catch (e) {
+            throw new Error("Invalid JSON in matchSignal: " + e);
+        }
+        const signal = new Signal(
+            signalData.type ?? "tick",
+            signalData.who ?? 0,
+            signalData.value ?? ""
+        );
+        // -------------------------------------------------------
+        // 2️⃣ GAME STARTED → process dice, pawn, and wordo signals
+        // -------------------------------------------------------
+        if (gameData.isGameStarted) {
+            const commends = state.commends as [string, any][];
+            // Handle dice/pawn/wordo signals
+            if (signal && (signal.type === "dice" || signal.type === "pawn" || signal.type.startsWith("wordo"))) {
+                const newCommends = gameData.GameLogic(logger, signal);
+                if (signal.type.startsWith("wordo")) {
+                  // 🔹 wordo commands are applied immediately
+                  while (newCommends.length > 0) {
+                    logger.info("😂 new commend: " + newCommends[0][0]);
+                    applyCommend(newCommends.shift()!, state, dispatcher, nk);
+                  }
+                }
+                else {
+                  // 🔹 dice and pawn commands go to state.commends queue
+                  commends.push(...newCommends);
+                }
+                // 🔹 Apply queued commends unless delay is active
+                while (commends.length > 0) {
+                    if (state.delay > 0) break;
+                    applyCommend(commends.shift()!, state, dispatcher, nk);
+                }
+            }
+            // -------------------------------------------------------
+            // 3️⃣ Handle lock / unlock requests for Audio + Meaning
+            // -------------------------------------------------------
+            if (signal && signal.type === "lock") {
 
-// Delete tournament
-function deleteTournament(nk: any, tournamentId: string) {
-    nk.tournamentDelete(tournamentId);
+                const player = gameData.players[signal.who];
+
+                // Ensure locks array matches number of players
+                if (player.locks.length !== gameData.players.length) {
+                    player.locks = Array(gameData.players.length)
+                        .fill(null)
+                        .map(() => [0, 0]);
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(signal.value);
+                } catch (e) {
+                    // Can't use return, so just skip everything else
+                    data = null;
+                }
+
+                if (data !== null) {
+                    const fee : number = state.fee;
+                    const type : unlockType =data.type;
+                    const whoms = data.whoms;
+                    const unlock_With:unlockWith = data.unlockWith;
+                    const AUDIO = 0;
+                    const MEANING = 1;
+                    let COST = 100;
+                    if (type===unlockType.audio) {
+                      COST = Math.round(fee * 0.2);   // 20%
+                    }
+                    if (type===unlockType.meaning) {
+                      COST = Math.round(fee * 0.1);   // 10%
+                    }
+                    // Validate whoms index
+                    if (whoms >= 0 && whoms < player.locks.length) {
+
+                        switch(unlock_With){
+                          case unlockWith.ad:
+                            if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
+                                player.locks[whoms][AUDIO] = 1;
+                                applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks,type,unlockWith:unlock_With }], state, dispatcher, nk);
+                            }
+                            if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
+                                player.locks[whoms][MEANING] = 1;
+                                applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk);
+                            }
+                            break;
+                          case unlockWith.card:
+                            let attendanceData= loadAttendanceData(player.UserId,nk);
+                            if(attendanceData!==null){
+                              let cardsData:cards = (attendanceData.cards ||  new cards());
+                              let SpeechCards = (cardsData.SpeechCards??0);
+                              let MeaningCards = (cardsData.MeaningCards??0);
+                              if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0 && SpeechCards>0) {
+                                  cardsData.SpeechCards = (SpeechCards-1); 
+                                  player.locks[whoms][AUDIO] = 1;
+                                  applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
+                              }
+                              if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0&& MeaningCards>0) {
+                                  cardsData.MeaningCards = (MeaningCards-1); 
+                                  player.locks[whoms][MEANING] = 1;
+                                  applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk);
+                              }
+                              attendanceData.cards = cardsData;
+                              saveAttendanceData(player.UserId,nk,attendanceData);
+                            }
+                            break;
+                          case unlockWith.coins:
+                             // ---- NON-AD (coins unlock) ----
+                            const coins = playerCoins(nk, player.UserId, player.UserName, 0);
+                            if (coins >= COST) {
+                                let unlocked = false;
+                                if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
+                                    player.locks[whoms][AUDIO] = 1;
+                                    unlocked = true;
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
+                                }
+                                if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
+                                    player.locks[whoms][MEANING] = 1;
+                                    unlocked = true;
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
+                                }
+                                // Deduct coins only once
+                                if (unlocked) {
+                                    playerCoins(nk, player.UserId, player.UserName, -COST);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        // -------------------------------------------------------
+        // 4️⃣ PRIVATE ROOM → handle updateRoom and startRoom
+        // -------------------------------------------------------
+        if (state.isPrivate && !gameData.isGameStarted) {
+
+            // -------- updateRoom --------
+            if (signal.type === "updateRoom") {
+
+                const values = signal.value.split(",");
+                if (values.length === 3) {
+                    state.boardIndex = parseInt(values[0]);
+                    state.gameMode = values[1];
+                    state.fee = values[2];
+                }
+
+                logger.info(`🛠 Room updated: boardIndex=${state.boardIndex}, gameMode=${state.gameMode}`);
+
+                // 🔥 Kick players with low coins
+                for (const pid of Object.keys(state.presences)) {
+
+                    const player = state.presences[pid];
+                    const coins = playerCoins(nk, player.userId, player.username, 0);
+
+                    if (coins < state.fee) {
+                        logger.info(`💸 Kicking ${player.username}, coins=${coins}`);
+                        
+                        const result = dispatcher.matchKick([player]);
+                        if (!result) delete state.presences[pid];
+                    }
+                }
+
+                // Broadcast updated room info
+                const roomInfo = {
+                    playerIds: Object.keys(state.presences).map(pid => state.presences[pid].userId),
+                    playerUserNames: Object.keys(state.presences).map(pid => state.presences[pid].username),
+                    boardIndex: state.boardIndex,
+                    gameMode: state.gameMode,
+                    fee: state.fee
+                };
+
+                applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
+            }
+
+            // -------- startRoom --------
+            if (signal.type === "startRoom") {
+
+                const playerCount = Object.keys(state.presences).length;
+
+                const values = signal.value.split(",");
+                if (values.length === 3) {
+                    state.boardIndex = parseInt(values[0]);
+                    state.gameMode = values[1];
+                    state.fee = values[2];
+                    let posMode = (state.gameMode === 'wordo'||state.gameMode === 'quick')?1:0;
+                        switch(state.gameMode){
+                          case "m1":
+                          state.gameMode = "wordo";
+                          posMode = 2;
+                          break;
+                          case "m2":
+                          state.gameMode = "wordo";
+                          posMode = 3;
+                          break;
+                          case "m3":
+                          state.gameMode = "wordo";
+                          break;
+                        }
+                      state.posMode = posMode;
+                }
+
+                logger.info(`🎮 StartRoom: players=${playerCount}`);
+
+                // AUTO MODE (all real players)
+                if (playerCount > 1) {
+
+                    state.gameData = genLudoGameData(state.posMode,state.boardIndex, playerCount, state.gameMode, 30);
+
+                    // Start when full
+                    if (playerCount === state.gameData.players.length) {
+
+                        logger.info("🔔 All players connected → starting match");
+
+                        const GameData = Object.assign(new LudoGameData(), state.gameData);
+
+                        Object.values(state.presences).forEach((p: any, idx: number) => {
+                            if (GameData.players[idx]) {
+                                GameData.players[idx].UserId = p.userId;
+                                GameData.players[idx].UserName = p.username;
+
+                                if (state.fee)
+                                    playerCoins(nk, p.userId, p.username, -state.fee);
+                            }
+                        });
+
+                        GameData.start(logger, nk);
+                        gameData = GameData;
+
+                        applyCommend(["roomStarted", gameData], state, dispatcher, nk);
+                    }
+                }
+                // BOT MODE
+                else {
+
+                    state.gameData = genLudoGameData(state.posMode,state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+
+                    if (state.numberOfPlayers === state.gameData.players.length) {
+
+                        logger.info("🔔 Starting bot match");
+
+                        const GameData = Object.assign(new LudoGameData(), state.gameData);
+
+                        for (let i = 0; i < state.numberOfPlayers; i++) {
+
+                            if (i === 0) {
+                                const p: any = Object.values(state.presences)[0];
+                                GameData.players[i].UserId = p.userId;
+                                GameData.players[i].UserName = p.username;
+
+                                if (state.fee)
+                                    playerCoins(nk, p.userId, p.username, -state.fee);
+                            } else {
+                                GameData.players[i].isBot = true;
+                            }
+                        }
+
+                        GameData.start(logger, nk);
+                        gameData = GameData;
+
+                        applyCommend(["roomStarted", gameData], state, dispatcher, nk);
+                    }
+                }
+            }
+        }
+        // Save updated gameData
+        state.gameData = gameData;
+        return { state };
+    }
+    catch (e) {
+        logger.error("matchSignal error: " + e);
+        throw e;
+    }
+};
+const getGameModeName_Tournament =function(mode:string):string{
+
+  return mode;
 }
-
-// Join tournament
-function joinTournament(nk: any, tournamentId: string, userId: string) {
-    nk.tournamentJoin(tournamentId, userId);
-}
-
-// Leave tournament
-function leaveTournament(nk: any, tournamentId: string, userId: string) {
-    nk.tournamentLeave(tournamentId, userId);
-}
-
-// Write score
-function writeTournamentScore(
-    nk: any,
-    tournamentId: string,
-    userId: string,
-    username: string,
-    score: number,
-    subscore?: number,
-    metadata?: any,
-    operator?: string
-) {
-    nk.tournamentRecordWrite(
-        tournamentId,
-        userId,
-        username,
-        score,
-        subscore,
-        metadata,
-        operator
-    );
-}
-
-// List records
-function listTournamentRecords(
-    nk: any,
-    tournamentId: string,
-    ownerIds?: string[],
-    limit?: number,
-    cursor?: string,
-    expiry?: number
-) {
-    return nk.tournamentRecordsList(
-        tournamentId,
-        ownerIds,
-        limit,
-        cursor,
-        expiry
-    );
-}
-
-// Haystack
-function tournamentHaystack(
-    nk: any,
-    tournamentId: string,
-    userId: string,
-    limit?: number,
-    expiry?: number
-) {
-    return nk.tournamentRecordsHaystack(
-        tournamentId,
-        userId,
-        limit,
-        expiry
-    );
-}
-
-// List tournaments
-function listTournaments(
-    nk: any,
-    categoryStart?: number,
-    categoryEnd?: number,
-    startTime?: number,
-    endTime?: number,
-    limit?: number,
-    cursor?: string
-) {
-    return nk.tournamentsList(
-        categoryStart,
-        categoryEnd,
-        startTime,
-        endTime,
-        limit,
-        cursor
-    );
-}
-
-// Reset tournament
-function resetTournament(nk: any, tournamentId: string) {
-    nk.tournamentReset(tournamentId);
-}
-
-/* ============================
-   RPC METHODS
-   ============================ */
-
-const rpcCreateTournament = (ctx: any, logger: any, nk: any, payload: string) => {
-    const p = JSON.parse(payload);
-    createTournament(
-        nk,
-        p.id,
-        p.resetSchedule,
-        p.authoritative ?? true,
-        p.sortOrder ?? "desc",
-        p.operator ?? "best",
-        p.metadata,
-        p.title,
-        p.description,
-        p.category,
-        p.startTime,
-        p.endTime,
-        p.duration,
-        p.maxSize,
-        p.maxNumScore,
-        p.joinRequired
-    );
-    return "{}";
+const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
+    let posMode = (params.gameMode === 'wordo'||params.gameMode === 'quick')?1:0;
+    switch(params.gameMode){
+      case "m1":
+      params.gameMode = "wordo";
+      posMode = 2;
+      break;
+      case "m2":
+      params.gameMode = "wordo";
+      posMode = 3;
+      break;
+      case "m3":
+      params.gameMode = "wordo";
+      break;
+    }
+    const state = {
+        presences: {} as Record<string, any>,
+        delay: 0,
+        tickCount: 0,
+        endGameTimeOut: 15,
+        commends: [] as [string, any][],
+        boardIndex:params.boardIndex,
+        bots:params.bots??false,
+        numberOfPlayers:params.numberOfPlayers,
+        gameMode:params.gameMode,
+        fee:params.fee,
+        posMode:posMode,
+        gameData: genLudoGameData(posMode,params.boardIndex, params.numberOfPlayers, params.gameMode,30),
+        isPrivate:params.isPrivate
+    }; 
+    return { state, tickRate: 1, label: JSON.stringify(params) };
 };
+const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
+  logger.info("matchJoinAttempt called for user:", presence.userId);
 
-const rpcDeleteTournament = (ctx: any, logger: any, nk: any, payload: string) => {
-    deleteTournament(nk, JSON.parse(payload).id);
-    return "{}";
+  if (state.gameData.isGameStarted) {
+    const players = state.gameData.players;
+    const matchedPlayer = players.find((player: any) => player.UserId === presence.userId);
+    if (matchedPlayer) {
+      return { state, accept: true };
+    }
+    return { state, accept: false }; // reject new players after game started
+  } else {
+      var coins = playerCoins(nk,presence.userId,presence.username,0);
+      if(coins<state.fee){
+      return { state, accept: false };
+    }
+    else{
+      return { state, accept: true }; // allow join before game starts
+    }
+  }
 };
+const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
+  // Store new presences
+  presences.forEach(p => {
+    state.presences[p.sessionId] = p;
+  });
 
-const rpcJoinTournament = (ctx: any, logger: any, nk: any, payload: string) => {
-    joinTournament(nk, JSON.parse(payload).id, ctx.userId);
-    return "{}";
+  logger.info("matchJoin called, players now:", Object.keys(state.presences));
+
+  if (state.gameData.isGameStarted) {
+    // Broadcast updated player info to joining players
+    let addP: any[]=[];
+    presences.forEach(p => {
+      const matchedPlayer = state.gameData.players.find((player: any) => player.UserId === p.userId);
+      if(matchedPlayer){
+      if(matchedPlayer.isOffline){
+        matchedPlayer.isOffline = false;
+        addP.push(p);
+      }
+      }
+    });
+    dispatcher.broadcastMessage(0,nk.stringToBinary(`startGame:${JSON.stringify(state.gameData)}`),Object.values(addP));
+  } 
+  else {
+    // Start game when all players are connected
+    if (state.bots) {
+                      // Create game data
+                      state.gameData = genLudoGameData(state.posMode,state.boardIndex, state.numberOfPlayers, state.gameMode, 30);
+                      // Start when enough players are connected
+                      if (state.numberOfPlayers === state.gameData.players.length) {
+                          logger.info("🔔✅ All players connected, starting private match...");
+                          const GameData = Object.assign(new LudoGameData(), state.gameData);
+                          // Assign user info to players
+                          for(let i =0;i<state.numberOfPlayers;i++){
+                                  if (GameData.players[i]) {
+                                    if(i===0){
+                                      let p :any= Object.values(state.presences)[0];
+                                      let userId = p.userId;
+                                      let username = p.username;
+                                      GameData.players[i].UserId = userId;
+                                      GameData.players[i].UserName = username;
+                                      //GameData.players[idx].isBot = state.bots;
+                                      if(state.fee)
+                                        playerCoins(nk,userId,username,-state.fee);
+                                    }
+                                    else{
+                                      GameData.players[i].isBot = true;
+
+                                    }
+                              }
+                          }
+                          GameData.start(logger, nk);
+                          state.gameData = GameData;
+                          applyCommend(["roomStarted", state.gameData], state, dispatcher, nk);
+                      } else {
+                      }
+    }
+    else{
+      if (Object.keys(state.presences).length === state.gameData.players.length && !state.isPrivate) {
+        const GameData = Object.assign(new LudoGameData(), state.gameData);
+        logger.info("🔔✅ All players connected 🎉");
+        Object.values(state.presences).forEach((p: any, idx: number) => {
+          if (state.gameData.players[idx]) 
+          {
+            state.gameData.players[idx].UserId = p.userId;
+            state.gameData.players[idx].UserName = p.username;
+            if(state.fee)
+            playerCoins(nk,p.userId,p.username,-state.fee);
+          }
+          
+        });
+        GameData.start(logger, nk);
+        state.gameData = GameData;
+      }
+    }
+
+  }
+
+  return { state };
 };
-
-const rpcLeaveTournament = (ctx: any, logger: any, nk: any, payload: string) => {
-    leaveTournament(nk, JSON.parse(payload).id, ctx.userId);
-    return "{}";
+const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
+  presences.forEach(p => {
+    // Find the player in gameData and mark as offline
+    const player = state.gameData.players.find((pl: any) => pl.UserId === p.userId || pl.id === p.userId);  
+    if (player) {
+      player.isOffline = true;
+    }
+    // Remove from active presences
+    delete state.presences[p.sessionId];
+  });
+  logger.info("matchLeave called, players now:", Object.keys(state.presences));
+  // Broadcast updated player status to all remaining players   
+  applyCommend(["UpdateMainPlayersData",{fun:"matchLeave",players:state.gameData.players}],state,dispatcher,nk);
+  return { state };
 };
+const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
 
-const rpcWriteTournamentScore = (ctx: any, logger: any, nk: any, payload: string) => {
-    const p = JSON.parse(payload);
-    writeTournamentScore(
-        nk,
-        p.id,
-        ctx.userId,
-        ctx.username,
-        p.score,
-        p.subscore,
-        p.metadata,
-        p.operator
-    );
-    return "{}";
+    // Convert presences dictionary → array
+    const presences: nkruntime.Presence[] = [];
+    for (const key in state.presences) {
+        if (state.presences.hasOwnProperty(key)) {
+            presences.push(state.presences[key]);
+        }
+    }
+
+    // ============================
+    // 🔵 GAME RUNNING SECTION
+    // ============================
+    if (state.gameData.isGameStarted) {
+
+        // Reconstruct class instance (required because Nakama serializes objects)
+        let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);
+        // Reconstruct WordGameState instance
+        gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+
+        // Auto terminate match if:
+        // 1. No players
+        // 2. Tick too high
+        // 3. End-game timeout finished
+        if (Object.keys(state.presences).length === 0 || state.tickCount > 3600 || state.endGameTimeOut <= 0) {
+            logger.info("⭐⭐matchTerminate Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0");
+            ctx.matchTerminate();
+        }
+
+        // ============================
+        // 🤖 WORDO BOT LOGIC (every 5 ticks)
+        // ============================
+        try{
+            if (state.bots &&gameData.gameMode === "wordo" && state.tickCount % 5 === 0 && !gameData.isGameComplected)
+            {
+                const players = gameData.players;
+                if (players) {
+                    players.forEach((player, index) => {
+
+                        // Skip non-bot players
+                        if (!player.isBot) return;
+
+                        const WordGameSt: WordGameState | null = gameData.WordGameState;
+                        if (!WordGameSt) return;
+
+                        const collection = WordGameSt.PlayerLetterCollections[index];
+                        const placement = WordGameSt.PlayerLetterPlacement[index];
+
+                        // Get missing letters to fill
+                        let missingLetters = WordGameSt.getMissingLettersListOfPlayer(index);
+
+                        let loopIndex = 0;
+                        for (let missingLetter of missingLetters.values()) {
+
+                            // If this placement spot is empty
+                            if ((placement[loopIndex]) < 0) {
+
+                                // Find letter in collection
+                                let indexInCollection = collection.findIndex(
+                                    c => c.toLowerCase() === missingLetter.toLowerCase()
+                                );
+
+                                if (indexInCollection !== -1) {
+
+                                    // Fill the placement
+                                    placement[loopIndex] = indexInCollection;
+
+                                    // Send update signal
+                                    const signal = new Signal("wordoPlaceLetters", index, JSON.stringify(placement));
+                                    matchSignal("", logger, nk, dispatcher, tick,state, JSON.stringify(signal));
+                                    gameData = Object.assign(new LudoGameData(), state.gameData);
+                                    gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+
+                                    break;
+                                }
+                            }
+                            loopIndex++;
+                        }
+                    });
+                }
+            }
+        }
+          catch (error){
+              logger.info( "WORDO BOT 🙊🙊🙊"+error);
+        }
+
+
+        // ============================
+        // 🕒 BOT ACTION DELAY SYSTEM
+        // ============================
+        if ((state.delay as number) > 0) {
+
+            // Bot only triggers on specific delay values
+            try{
+                let WhosTurn = gameData.WhosTurn;
+                let currentPlayer: LudoPlayerData = gameData.players[WhosTurn];
+                if (currentPlayer && currentPlayer.isBot && (state.delay === 25 || state.delay === 28) && !gameData.isGameComplected) {
+
+                    // If bot is stealing letters
+                    if (gameData.isWaitingForStealData) {
+
+                        let stealData: stealData | null = gameData.stealData;
+                        if (stealData) {
+
+                            let fromWhoIndex = stealData.fromWhoIndex ?? 0;
+                            let maxLettersToPick = stealData.maxLettersToPick;
+                            let whoStealingIndex = stealData.whoStealingIndex;
+
+                            // Only steal on bot's turn
+                            if (whoStealingIndex === WhosTurn) {
+
+                                let WordState: WordGameState = gameData.WordGameState;
+                                let collection: string[] = WordState.PlayerLetterCollections[fromWhoIndex];
+                                let missingLetters = WordState.getMissingLettersListOfPlayer(whoStealingIndex);
+
+                                let stealLetters: number[] = [];
+
+                                // Try to steal missing letters
+                                for (let missingLetter of missingLetters.values()) {
+                                    let indexInCollection = collection.findIndex(
+                                        c => c.toLowerCase() === missingLetter.toLowerCase()
+                                    );
+
+                                    if (indexInCollection !== -1) {
+                                        stealLetters.push(indexInCollection);
+                                        if (stealLetters.length === maxLettersToPick) break;
+                                    }
+                                }
+
+                                // If bot found letters OR it's forced by delay
+                                if (stealLetters.length > 0 || state.delay === 25) {
+                                  let isUpdate = (state.delay === 28) ;
+                                    let signal = new Signal((isUpdate?"wordoUpdateSteal":"wordoSaveSteal"), WhosTurn, JSON.stringify(stealLetters));
+                                    matchSignal("", logger, nk, dispatcher, tick, state, JSON.stringify(signal));
+                                    gameData = Object.assign(new LudoGameData(), state.gameData);
+                                    gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (error){
+              logger.info( "BOT ACTION 🙊🙊🙊"+error);
+
+            }
+
+            // decrease delay each tick
+            state.delay = (state.delay as number) - 1;
+        }
+
+        // ============================
+        // 🧠 GAME LOGIC EXECUTION
+        // ============================
+        else {
+            state.commends.push(
+                ...gameData.GameLogic(logger, new Signal("tick", 0, "0"))
+            );
+        }
+
+        // Execute commands from queue
+        while (state.commends.length > 0) {
+            if ((state.delay as number) > 0) break;
+
+            const commend = state.commends.shift()!;
+            applyCommend(commend, state, dispatcher, nk);
+        }
+
+        // Update tick count
+        state.tickCount++;
+
+        // Send tick counter to players
+        dispatcher.broadcastMessage( 0,nk.stringToBinary("tc:" + state.tickCount + "," + gameData.tickCount),Object.values(state.presences));
+        //applyCommend(["tc",(state.tickCount + "," + gameData.tickCount)],state,dispatcher,nk);
+        // Save updated game state
+        state.gameData = gameData;
+
+        // If game finished → decrease end timer
+        if (gameData.isGameComplected) {
+            state.endGameTimeOut--;
+            return { state };
+        }
+    }
+
+    // ============================
+    // 🔒 PRIVATE ROOM BEFORE GAME START
+    // ============================
+    if (state.isPrivate && !state.gameData.isGameStarted) {
+
+        if (Object.keys(state.presences).length === 0) {
+            logger.info("⭐⭐matchTerminate Object.keys(state.presences).length===0");
+            nk.matchTerminate();
+        }
+
+        // Send room info to players
+        const roomInfo = {
+            playerIds: Object.keys(state.presences).map(pid => state.presences[pid].userId),
+            playerUserNames: Object.keys(state.presences).map(pid => state.presences[pid].username),
+            boardIndex: state.boardIndex,
+            gameMode: state.gameMode,
+            fee: state.fee
+        };
+
+        applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
+    }
+
+    return { state };
 };
-
-const rpcListTournamentRecords = (ctx: any, logger: any, nk: any, payload: string) => {
-    const p = JSON.parse(payload);
-    return JSON.stringify(
-        listTournamentRecords(nk, p.id, p.ownerIds, p.limit, p.cursor, p.expiry)
-    );
+const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
+  logger.info("⭐⭐matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
+  return { state };
 };
+const matchmakerMatched_Tournament = function (ctx: any, logger: any, nk: any, matches: any[]): string {
+  matches.forEach((match) => {
+    logger.info("Matched user '%s' with username '%s'", match.presence.userId, match.presence.username);
+  });
 
-const rpcTournamentHaystack = (ctx: any, logger: any, nk: any, payload: string) => {
-    const p = JSON.parse(payload);
-    return JSON.stringify(
-        tournamentHaystack(nk, p.id, ctx.userId, p.limit, p.expiry)
-    );
+    // Access string_properties instead of properties
+    let boardIndex = matches[0].properties.boardIndex;
+    let numberOfPlayers = matches[0].properties.numberOfPlayers;
+    let gameMode = matches[0].properties.gameMode;
+    let fee = matches[0].properties.fee;
+    logger.info("⭐ "+(boardIndex+"❌"+numberOfPlayers+"❌"+gameMode));
+  try {
+    // Create match with label
+    const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false});
+    logger.info(`Match created successfully with ID: ${matchId}`);
+    return matchId;
+  } catch (err: any) {
+    logger.error("Error creating match:", err.message);
+    throw err;
+  }
 };
-
-const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => {
-    const p = payload ? JSON.parse(payload) : {};
-    return JSON.stringify(
-        listTournaments(nk, p.categoryStart, p.categoryEnd, p.startTime, p.endTime, p.limit, p.cursor)
-    );
-};
-
-const rpcResetTournament = (ctx: any, logger: any, nk: any, payload: string) => {
-    resetTournament(nk, JSON.parse(payload).id);
-    return "{}";
-};
-
 // ==============================
 // #endregion Tournament Support + RPCs
 // ==============================

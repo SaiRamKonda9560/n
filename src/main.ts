@@ -1406,7 +1406,7 @@ const createTournament = function (ctx: any, logger: any, nk: any, payload: stri
             } 
             throw err;
         }
-        return JSON.stringify({matchId});
+        return JSON.stringify({matchId:matchId});
     }
     catch(e){
         throw e;

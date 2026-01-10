@@ -1448,7 +1448,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
             presences.push(state.presences[key]);
         }
     }
-    if(ctx.tickCount>30){
+    if(tick>30){
         ctx.matchTerminate();
     }
     return { state };

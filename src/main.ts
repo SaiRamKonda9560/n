@@ -1456,7 +1456,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
 };
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
     try {
-        nk.storageDelete([{ collection: 'tournament', key: ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+        nk.storageDelete([{ collection: 'tournament', key: state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
     } catch (error) {
         // Handle error
     }

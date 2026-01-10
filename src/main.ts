@@ -140,7 +140,7 @@ const generateReferralCodeRpc = function (ctx: any, logger: any, nk: any, payloa
 };
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
   initializer.registerMatch('lobby', {matchInit,matchJoinAttempt,matchJoin,matchLeave,matchLoop,matchSignal,matchTerminate,});
-  //initializer.registerMatch('lobby', {matchInit_Tournament,matchJoinAttempt_Tournament,matchJoin_Tournament,matchLeave_Tournament,matchLoop_Tournament,matchSignal_Tournament,matchTerminate_Tournament,});
+  initializer.registerMatch('tournament', {matchInit:matchInit_Tournament,matchJoinAttempt:matchJoinAttempt_Tournament,matchJoin:matchJoin_Tournament,matchLeave:matchLeave_Tournament,matchLoop:matchLoop_Tournament,matchSignal:matchSignal_Tournament,matchTerminate:matchTerminate_Tournament,});
 
   initLeaderBoards(logger,nk,'');
   initializer.registerRpc("GetTopPlayers", GetTopPlayers);

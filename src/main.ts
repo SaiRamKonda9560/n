@@ -1450,16 +1450,18 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     }
     state.matchId=ctx.matchId;
     if(tick>30){
-        ctx.matchTerminate();
+        try {
+            nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+        } catch (error) {
+            state.error=error;
+        // Handle error
+        }
+        //ctx.matchTerminate();
     }
     return { state };
 };
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
-    try {
-        nk.storageDelete([{ collection: 'tournament', key: state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
-    } catch (error) {
-        // Handle error
-    }
+
   return { state };
 };
 const matchmakerMatched_Tournament = function (ctx: any, logger: any, nk: any, matches: any[]): string {

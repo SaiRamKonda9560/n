@@ -1448,13 +1448,14 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
             presences.push(state.presences[key]);
         }
     }
+    state.matchId=ctx.matchId;
     if(tick>30){
         ctx.matchTerminate();
     }
     return { state };
 };
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
-  logger.info("⭐⭐matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
+    logger.info("⭐⭐matchTerminate called, tick:", tick, "graceSeconds:", graceSeconds);
     let objectIds = [
     { collection: 'tournament', key: ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"},
     ];

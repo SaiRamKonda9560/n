@@ -140,9 +140,8 @@ const generateReferralCodeRpc = function (ctx: any, logger: any, nk: any, payloa
 };
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
   initializer.registerMatch('lobby', {matchInit,matchJoinAttempt,matchJoin,matchLeave,matchLoop,matchSignal,matchTerminate,});
-  //initializer.registerMatch('tournament', {matchInit_Tournament ,matchJoinAttempt_Tournament ,matchJoin_Tournament ,matchLeave_Tournament ,matchLoop_Tournament ,matchSignal_Tournament ,matchTerminate_Tournament});
-  initLeaderBoards(logger,nk,'');
 
+  initLeaderBoards(logger,nk,'');
   initializer.registerRpc("GetTopPlayers", GetTopPlayers);
 
   //UpdateCoinsAndWins("00000000-0000-0000-0000-000000000000","hi",nk,200,20);
@@ -189,6 +188,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("tournament_haystack", rpcTournamentHaystack);
     initializer.registerRpc("tournaments_list", rpcListTournaments);
     initializer.registerRpc("tournament_reset", rpcResetTournament);
+
 }
 const rpc = function (ctx: any, logger: any, nk: any, payload: string): string {
   try {
@@ -1387,21 +1387,6 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
    SUPPORTING METHODS
    ============================ */
 
-
-
-
-class cards{
-    public MeaningCards : number = 0;
-    public SpeechCards : number = 0;
-}
-// ==============================
-// #region Tournament Support + RPCs (Clean)
-// ==============================
-
-/* ============================
-   SUPPORTING METHODS
-   ============================ */
-
 // Create tournament
 function createTournament(
     nk: any,
@@ -1421,7 +1406,23 @@ function createTournament(
     maxNumScore?: number,
     joinRequired?: boolean
 ) {
-    nk.tournamentCreate(id,authoritative,sortOrder, operator,resetSchedule,metadata,title,description,category,startTime,endTime,duration, maxSize,maxNumScore,joinRequired);
+    nk.tournamentCreate(
+        id,
+        authoritative,
+        sortOrder,
+        operator,
+        resetSchedule,
+        metadata,
+        title,
+        description,
+        category,
+        startTime,
+        endTime,
+        duration,
+        maxSize,
+        maxNumScore,
+        joinRequired
+    );
 }
 
 // Delete tournament
@@ -1526,32 +1527,24 @@ function resetTournament(nk: any, tournamentId: string) {
 
 const rpcCreateTournament = (ctx: any, logger: any, nk: any, payload: string) => {
     const p = JSON.parse(payload);
-    let id = '4ec4f126-3f9d-11e7-84ef-b7c182b36521';
-    let authoritative = false
-    let sortOrder = "asc";
-    let operator = "best";
-    let duration = 3600;              // In seconds.
-    let resetSchedule = '0 12 * * *'; // Noon UTC each day.
-
-    let metadata = {
-        weatherConditions: 'rain',
-    };
-
-        let title = 'Daily Dash';
-        let description = "Dash past your opponents for high scores and big rewards!";
-        let category = 1;
-        let startTime = 0;       // Start now.
-        let endTime = 0;         // Never end, repeat the tournament each day forever.
-        let maxSize = 10000;     // First 10,000 players who join.
-        let maxNumScore = 3;     // Each player can have 3 attempts to score.
-        let joinRequired = true; // Must join to compete.
-        let enableRanks = true;  // Set to true to enable rank computation on leaderboard records.
-
-        try {
-        nk.tournamentCreate(id, authoritative, sortOrder, operator, duration, resetSchedule, metadata, title, description, category, startTime, endTime, maxSize, maxNumScore, joinRequired, enableRanks);
-        } catch (error) {
-        // Handle error
-        }
+    createTournament(
+        nk,
+        p.id,
+        p.resetSchedule,
+        p.authoritative ?? true,
+        p.sortOrder ?? "desc",
+        p.operator ?? "best",
+        p.metadata,
+        p.title,
+        p.description,
+        p.category,
+        p.startTime,
+        p.endTime,
+        p.duration,
+        p.maxSize,
+        p.maxNumScore,
+        p.joinRequired
+    );
     return "{}";
 };
 
@@ -1600,14 +1593,10 @@ const rpcTournamentHaystack = (ctx: any, logger: any, nk: any, payload: string) 
 };
 
 const rpcListTournaments = (ctx: any, logger: any, nk: any, payload: string) => {
-
-    const data = payload ? JSON.parse(payload) : {};
-    try {
-    return JSON.stringify(nk.tournamentList(data.categoryStart, data.categoryEnd, data.startTime, data.endTime, data.limit));
-    } catch (error) {
-        throw error;  
-    // Handle error
-    }
+    const p = payload ? JSON.parse(payload) : {};
+    return JSON.stringify(
+        listTournaments(nk, p.categoryStart, p.categoryEnd, p.startTime, p.endTime, p.limit, p.cursor)
+    );
 };
 
 const rpcResetTournament = (ctx: any, logger: any, nk: any, payload: string) => {
@@ -1618,3 +1607,9 @@ const rpcResetTournament = (ctx: any, logger: any, nk: any, payload: string) => 
 // ==============================
 // #endregion Tournament Support + RPCs
 // ==============================
+
+
+class cards{
+    public MeaningCards : number = 0;
+    public SpeechCards : number = 0;
+}

@@ -1389,7 +1389,7 @@ const createTournament = function (ctx: any, logger: any, nk: any, payload: stri
         const object= nk.StorageWrite = {
             collection:"tournament",
             key:matchId,
-            userId: ctx.userId,
+            userId: "00000000-0000-0000-0000-000000000000",
             value: {
                 matchId
             },

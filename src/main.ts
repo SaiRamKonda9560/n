@@ -1448,6 +1448,9 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
             presences.push(state.presences[key]);
         }
     }
+    if(ctx.tickCount>30){
+        ctx.matchTerminate();
+    }
     return { state };
 };
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {

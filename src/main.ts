@@ -1418,7 +1418,7 @@ const createTournament = function (ctx: any, logger: any, nk: any, payload: stri
 const readTournaments = function (ctx: any, logger: any, nk: any, payload: string): string {
     let user_id = '00000000-0000-0000-0000-000000000000';
     try {
-        return JSON.stringify({data:nk.storageList(user_id, 'collection', JSON.parse(payload).Limit??10)});
+        return JSON.stringify({data:nk.storageList(user_id, 'tournament', JSON.parse(payload).Limit??10)});
     } catch (error) {
         throw error;
     }

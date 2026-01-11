@@ -139,37 +139,40 @@ const generateReferralCodeRpc = function (ctx: any, logger: any, nk: any, payloa
     }
 };
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
-  initializer.registerMatch('lobby', {matchInit,matchJoinAttempt,matchJoin,matchLeave,matchLoop,matchSignal,matchTerminate,});
-  initializer.registerMatch('tournament', {matchInit:matchInit_Tournament,matchJoinAttempt:matchJoinAttempt_Tournament,matchJoin:matchJoin_Tournament,matchLeave:matchLeave_Tournament,matchLoop:matchLoop_Tournament,matchSignal:matchSignal_Tournament,matchTerminate:matchTerminate_Tournament,});
-  initializer.registerRpc("createTournament", createTournament);
+    initializer.registerMatch('lobby', {matchInit,matchJoinAttempt,matchJoin,matchLeave,matchLoop,matchSignal,matchTerminate,});
+    initializer.registerMatch('tournament', {matchInit:matchInit_Tournament,matchJoinAttempt:matchJoinAttempt_Tournament,matchJoin:matchJoin_Tournament,matchLeave:matchLeave_Tournament,matchLoop:matchLoop_Tournament,matchSignal:matchSignal_Tournament,matchTerminate:matchTerminate_Tournament,});
+    
+    initializer.registerRpc("createTournament", createTournament);
+    initializer.registerRpc("readTournaments", readTournaments);
 
 
-  initLeaderBoards(logger,nk,'');
-  initializer.registerRpc("GetTopPlayers", GetTopPlayers);
 
-  //UpdateCoinsAndWins("00000000-0000-0000-0000-000000000000","hi",nk,200,20);
-  //UpdateCoinsAndWins("07c20630-8898-42a5-9ae6-03c4a80fcb80","vivo",nk,200,20);
+    initLeaderBoards(logger,nk,'');
+    initializer.registerRpc("GetTopPlayers", GetTopPlayers);
 
-  initializer.registerMatchmakerMatched(matchmakerMatched);
+    //UpdateCoinsAndWins("00000000-0000-0000-0000-000000000000","hi",nk,200,20);
+    //UpdateCoinsAndWins("07c20630-8898-42a5-9ae6-03c4a80fcb80","vivo",nk,200,20);
 
-  initializer.registerRpc("signal", signal);
-  initializer.registerRpc("time", time);
-  initializer.registerRpc("create_private_room", rpcCreateRoom);
-  initializer.registerRpc("coinsHandler", coinsHandler);
-  initializer.registerRpc("dailyAttendance", dailyAttendance);
-  initializer.registerRpc("collectDailyReward", collectDailyReward);
-  initializer.registerRpc("spin", spin);
-  initializer.registerRpc("mystery", mystery);
+    initializer.registerMatchmakerMatched(matchmakerMatched);
 
-  initializer.registerRpc("rpc", rpc);
-  initializer.registerRpc("getLongIdRpc", getLongIdRpc);
-  initializer.registerRpc("generateShortIdRpc", generateShortIdRpc);
-  initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
-  initializer.registerRpc("wordo", wordo);
-  initializer.registerRpc("getPlayerCoins", getPlayerCoins);
-  initializer.registerRpc("rpcStoreWords", rpcStoreWords);
-  initializer.registerRpc("getCardsData", getCardsData);
-  
+    initializer.registerRpc("signal", signal);
+    initializer.registerRpc("time", time);
+    initializer.registerRpc("create_private_room", rpcCreateRoom);
+    initializer.registerRpc("coinsHandler", coinsHandler);
+    initializer.registerRpc("dailyAttendance", dailyAttendance);
+    initializer.registerRpc("collectDailyReward", collectDailyReward);
+    initializer.registerRpc("spin", spin);
+    initializer.registerRpc("mystery", mystery);
+
+    initializer.registerRpc("rpc", rpc);
+    initializer.registerRpc("getLongIdRpc", getLongIdRpc);
+    initializer.registerRpc("generateShortIdRpc", generateShortIdRpc);
+    initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
+    initializer.registerRpc("wordo", wordo);
+    initializer.registerRpc("getPlayerCoins", getPlayerCoins);
+    initializer.registerRpc("rpcStoreWords", rpcStoreWords);
+    initializer.registerRpc("getCardsData", getCardsData);
+    
     initializer.registerRpc("rpcAddWordPack", rpcAddWordPack);
     initializer.registerRpc("rpcUpdateWordPackProgress", rpcUpdateWordPackProgress);
     initializer.registerRpc("rpcGetWordPacks", rpcGetWordPacks);
@@ -973,7 +976,6 @@ function GetTopPlayers(ctx: any, logger: any, nk: any, payload: string): string 
     return JSON.stringify({success : false});
   }
 }
-
 function loadAttendanceData(userId: string, nk: any): any {
     try {
         const objects = nk.storageRead([{
@@ -991,7 +993,6 @@ function loadAttendanceData(userId: string, nk: any): any {
 
     return null; // not found
 }
-
 function saveAttendanceData(userId: string, nk: any, attendanceData: any): void {
     try {
         nk.storageWrite([{
@@ -1379,9 +1380,11 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
 /* ============================
    SUPPORTING METHODS
    ============================ */
-
+class tournament{
+    isStarted:boolean=false;
+    
+}
 // Create tournament
-
 const createTournament = function (ctx: any, logger: any, nk: any, payload: string): string {
     try{
         const data = JSON.parse(payload);
@@ -1410,6 +1413,14 @@ const createTournament = function (ctx: any, logger: any, nk: any, payload: stri
     }
     catch(e){
         throw e;
+    }
+}
+const readTournaments = function (ctx: any, logger: any, nk: any, payload: string): string {
+    let user_id = '00000000-0000-0000-0000-000000000000';
+    try {
+        return JSON.stringify({data:nk.storageList(user_id, 'collection', JSON.parse(payload).Limit??10)});
+    } catch (error) {
+        throw error;
     }
 }
 const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
@@ -1453,8 +1464,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
         try {
             nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
         } catch (error) {
-            state.error=error;
-        // Handle error
+            
         }
         //ctx.matchTerminate();
     }
@@ -1463,9 +1473,6 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
 
   return { state };
-};
-const matchmakerMatched_Tournament = function (ctx: any, logger: any, nk: any, matches: any[]): string {
-    return "{}";
 };
 // ==============================
 // #endregion Tournament Support + RPCs

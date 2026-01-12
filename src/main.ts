@@ -1384,6 +1384,13 @@ class tournament{
     isStarted:boolean=false;
     
 }
+enum tournamentSignalType{
+    quit
+}
+class tournamentSignal{
+    type:tournamentSignalType=tournamentSignalType.quit;
+    payload:string="";
+}
 // Create tournament
 const createTournament = function (ctx: any, logger: any, nk: any, payload: string): string {
     try{
@@ -1423,9 +1430,23 @@ const readTournaments = function (ctx: any, logger: any, nk: any, payload: strin
         throw error;
     }
 }
+const tournamentQuit = function(ctx:any,nk: any){
+    try {
+        nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+        ctx.matchTerminate();
+
+    } catch (error) {
+            
+    }
+}
 const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
     try {
+        const signal = JSON.parse(data);
+        switch(signal){
+            case tournamentSignalType.quit:
+            break;
+        }
         return { state };
     }
     catch (e) {
@@ -1461,12 +1482,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     }
     state.matchId=ctx.matchId;
     if(tick>30){
-        try {
-            nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
-        } catch (error) {
-            
-        }
-        //ctx.matchTerminate();
+        tournamentQuit(ctx,nk);
     }
     return { state };
 };

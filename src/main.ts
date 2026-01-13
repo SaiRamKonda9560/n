@@ -1456,7 +1456,7 @@ const deleteAllTournaments = function (nk: nkruntime.Nakama) {
                 userId: userId
             });
         }
-        if (deletes.length > 0) {
+        if (deletes.length > 0 && false) {
             nk.storageDelete(deletes);
         }
 

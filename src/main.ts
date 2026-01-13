@@ -1496,7 +1496,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     }
     state.matchId=ctx.matchId;
     if(tick>30){
-        tournamentQuit(ctx,nk);
+        tournamentQuit(ctx,nk); 
     }
     return { state };
 };

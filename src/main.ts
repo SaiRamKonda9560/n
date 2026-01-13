@@ -1518,10 +1518,21 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     }
     state.matchId=ctx.matchId;
     if(tick>30){
-        nk.storageDelete([{ collection: 'tournament', key:state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+        try{
+            nk.storageDelete([{ collection: 'tournament', key:state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+        }
+        catch(e){
+
+        }
     }
     if(tick>32){
-        ctx.matchTerminate();
+        try{
+                   ctx.matchTerminate();
+
+        }
+        catch(e){
+
+        }
     }
     return { state };
 };

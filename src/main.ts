@@ -1447,12 +1447,8 @@ const deleteAllTournaments = function (nk: nkruntime.Nakama) {
     const userId = "00000000-0000-0000-0000-000000000000";
     const collection = "tournament";
     const limit = 1000;
-        const result = nk.storageList(
-            userId,
-            collection,
-            limit
-        );
-        const deletes: nkruntime.StorageDeleteRequest[] = [];
+        const result = nk.storageList(userId,collection,limit);
+        const deletes:any = [];
         for (const obj of result.objects) {
             deletes.push({
                 collection: collection,

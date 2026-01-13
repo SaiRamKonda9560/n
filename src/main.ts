@@ -1447,23 +1447,12 @@ const deleteAllTournaments = function (ctx: nkruntime.Context, nk: nkruntime.Nak
     const userId = "00000000-0000-0000-0000-000000000000";
     const collection = "tournament";
     const limit = 1000;
-
-    let cursor: string | null = null;
-
-    do {
         const result = nk.storageList(
             userId,
             collection,
-            limit,
-            cursor
+            limit
         );
-
-        if (!result.objects || result.objects.length === 0) {
-            break;
-        }
-
         const deletes: nkruntime.StorageDeleteRequest[] = [];
-
         for (const obj of result.objects) {
             deletes.push({
                 collection: collection,
@@ -1471,14 +1460,10 @@ const deleteAllTournaments = function (ctx: nkruntime.Context, nk: nkruntime.Nak
                 userId: userId
             });
         }
-
         if (deletes.length > 0) {
             nk.storageDelete(deletes);
         }
 
-        cursor = result.cursor ?? null;
-
-    } while (cursor);
 };
 
 const tournamentQuit = function(ctx:any,nk: any){

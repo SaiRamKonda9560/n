@@ -184,7 +184,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcGetWordPackStoreData", rpcGetWordPackStoreData);
     initializer.registerRpc("rpcSetActiveWordPack", rpcSetActiveWordPack);
     initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
-    deleteAllTournaments(nk);
+    deleteAllTournaments(logger,nk);
 }
 const rpc = function (ctx: any, logger: any, nk: any, payload: string): string {
   try {
@@ -1443,13 +1443,16 @@ const readTournaments = function (ctx: any, logger: any, nk: any, payload: strin
         throw error;
     }
 }
-const deleteAllTournaments = function (nk: any) {
+const deleteAllTournaments = function (logger: any,nk: any) {
     const userId = "00000000-0000-0000-0000-000000000000";
     const collection = "tournament";
     const limit = 1000;
         const result = nk.storageList(userId,collection,limit);
         const deletes:any = [];
         for (const obj of result.objects) {
+            logger.info("💡"+obj);
+            logger.info("💡"+obj.key);
+            logger.info("💡"+obj.value.key);
             deletes.push({
                 collection: collection,
                 key: obj.value.id,

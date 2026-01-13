@@ -1444,20 +1444,7 @@ const readTournaments = function (ctx: any, logger: any, nk: any, payload: strin
     }
 }
 const deleteAllTournaments = function(nk: any){
-    let user_id = '00000000-0000-0000-0000-000000000000';
-    try {
-        let list = nk.storageList(user_id, 'tournament', 1000);
-        for(let i of list){
-            try{
-                nk.storageDelete([{ collection: 'tournament', key:i.value.id ,userId:"00000000-0000-0000-0000-000000000000"}]);
-            }
-            catch(e){
-            }
-        }
-        
-    } catch (error) {
-        throw error;
-    }
+
 }
 const tournamentQuit = function(ctx:any,nk: any){
     try {

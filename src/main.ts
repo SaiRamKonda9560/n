@@ -1382,7 +1382,20 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
    ============================ */
 class tournament{
     isStarted:boolean=false;
-    
+    fee:number =0;
+    win:number =0;
+    totalPlayers:number =0;
+    joinedPlayers:number =0;
+    name:string="";
+    description:string="";
+    constructor(isStarted:boolean,fee:number,win:number,totalPlayers:number,name:string,description:string){
+        this.isStarted=isStarted;
+        this.fee =fee;
+        this.win =win;
+        this.totalPlayers =totalPlayers;
+        this.name=name;
+        this.description=description;
+    }
 }
 enum tournamentSignalType{
     quit
@@ -1400,9 +1413,7 @@ const createTournament = function (ctx: any, logger: any, nk: any, payload: stri
             collection:"tournament",
             key:matchId,
             userId: "00000000-0000-0000-0000-000000000000",
-            value: {
-                matchId
-            },
+            value:new tournament(false,data.fee,data.win,data.totalPlayers,data.name,data.description),
             permissionRead: 0,
             permissionWrite: 0
         };
@@ -1445,6 +1456,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
         const signal = JSON.parse(data);
         switch(signal){
             case tournamentSignalType.quit:
+                tournamentQuit(ctx,nk);
             break;
         }
         return { state };

@@ -1443,7 +1443,7 @@ const readTournaments = function (ctx: any, logger: any, nk: any, payload: strin
         throw error;
     }
 }
-const deleteAllTournaments = function (nk: nkruntime.Nakama) {
+const deleteAllTournaments = function (nk: any) {
     const userId = "00000000-0000-0000-0000-000000000000";
     const collection = "tournament";
     const limit = 1000;

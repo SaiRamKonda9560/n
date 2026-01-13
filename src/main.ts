@@ -1388,13 +1388,15 @@ class tournament{
     joinedPlayers:number =0;
     name:string="";
     description:string="";
-    constructor(isStarted:boolean,fee:number,win:number,totalPlayers:number,name:string,description:string){
+    id:string="";
+    constructor(isStarted:boolean,fee:number,win:number,totalPlayers:number,name:string,description:string,id:string){
         this.isStarted=isStarted;
         this.fee =fee;
         this.win =win;
         this.totalPlayers =totalPlayers;
         this.name=name;
         this.description=description;
+        this.id=id;
     }
 }
 enum tournamentSignalType{
@@ -1413,7 +1415,7 @@ const createTournament = function (ctx: any, logger: any, nk: any, payload: stri
             collection:"tournament",
             key:matchId,
             userId: "00000000-0000-0000-0000-000000000000",
-            value:new tournament(false,data.fee,data.win,data.totalPlayers,data.name,data.description),
+            value:new tournament(false,data.fee,data.win,data.totalPlayers,data.name,data.description,matchId),
             permissionRead: 0,
             permissionWrite: 0
         };

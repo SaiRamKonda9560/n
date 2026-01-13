@@ -1407,34 +1407,73 @@ class tournamentSignal{
     payload:string="";
 }
 // Create tournament
-const createTournament = function (ctx: any, logger: any, nk: any, payload: string): string {
-    try{
+const createTournament = function (ctx: any,logger: any,nk: any,payload: string): string {
+    const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
+    let matchId: string | null = null;
+    try {
+        // 1️⃣ Parse payload
         const data = JSON.parse(payload);
-        const matchId = nk.matchCreate("tournament", {});
-        const object= nk.StorageWrite = {
-            collection:"tournament",
-            key:matchId,
-            userId: "00000000-0000-0000-0000-000000000000",
-            value:new tournament(false,data.fee,data.win,data.totalPlayers,data.name,data.description,matchId),
+        // 2️⃣ Validate required fields
+        if (typeof data.fee !== "number") {
+            throw "Invalid or missing field: fee";
+        }
+        if (typeof data.win !== "number") {
+            throw "Invalid or missing field: win";
+        }
+        if (typeof data.totalPlayers !== "number" || data.totalPlayers <= 0) {
+            throw "Invalid or missing field: totalPlayers";
+        }
+        if (typeof data.name !== "string" || data.name.trim() === "") {
+            throw "Invalid or missing field: name";
+        }
+        if (typeof data.description !== "string") {
+            throw "Invalid or missing field: description";
+        }
+        // 3️⃣ Create match
+        matchId = nk.matchCreate("tournament", {});
+        if (!matchId) {
+            throw "matchCreate failed: matchId is null";
+        }
+        // 4️⃣ Prepare storage object
+        const storageObject = {
+            collection: "tournament",
+            key: matchId,
+            userId: SYSTEM_USER_ID,
+            value: new tournament(
+                false,
+                data.fee,
+                data.win,
+                data.totalPlayers,
+                data.name,
+                data.description,
+                matchId
+            ),
             permissionRead: 0,
             permissionWrite: 0
         };
-        try {
-            nk.storageWrite([object]);
-        } catch (err) {
+
+        // 5️⃣ Write to storage
+        nk.storageWrite([storageObject]);
+
+        return JSON.stringify({ matchId });
+
+    } catch (error) {
+
+        // Cleanup only if match was created
+        if (matchId) {
             try {
-             nk.matchSignal(matchId, {});
-            } catch(error) {
-            // Handle error
-            } 
-            throw err;
+                nk.matchSignal(matchId, { action: "terminate" });
+            } catch (cleanupError) {
+                logger.error("Match cleanup failed: %s", cleanupError);
+            }
         }
-        return JSON.stringify({matchId});
+
+        logger.error("Create tournament failed: %s", error);
+        throw error;
     }
-    catch(e){
-        throw e;
-    }
-}
+};
+
+
 const readTournaments = function (ctx: any, logger: any, nk: any, payload: string): string {
     let user_id = '00000000-0000-0000-0000-000000000000';
     try {

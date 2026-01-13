@@ -1550,7 +1550,7 @@ const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: a
     return { state:{}, tickRate: 1};
 };
 const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
-    return { state, accept: true }; 
+    return { state }; 
 };
 const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
   // Store new presences

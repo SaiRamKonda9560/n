@@ -1452,7 +1452,7 @@ const deleteAllTournaments = function (nk: nkruntime.Nakama) {
         for (const obj of result.objects) {
             deletes.push({
                 collection: collection,
-                key: obj.key,
+                key: obj.value.id,
                 userId: userId
             });
         }

@@ -1527,8 +1527,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     }
     if(tick>32){
         try{
-                   ctx.matchTerminate();
-
+            dispatcher.matchTerminate(0,"Match finished");
         }
         catch(e){
             state.matchTerminateError = e;

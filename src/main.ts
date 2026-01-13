@@ -1455,11 +1455,11 @@ const deleteAllTournaments = function (logger: any,nk: any) {
             logger.info("💡"+obj.value.key);
             deletes.push({
                 collection: collection,
-                key: obj.value.id,
+                key: obj.key,
                 userId: userId
             });
         }
-        if (deletes.length > 0 && false) {
+        if (deletes.length > 0 ) {
             nk.storageDelete(deletes);
         }
 

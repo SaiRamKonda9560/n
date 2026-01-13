@@ -1443,9 +1443,44 @@ const readTournaments = function (ctx: any, logger: any, nk: any, payload: strin
         throw error;
     }
 }
-const deleteAllTournaments = function(nk: any){
+const deleteAllTournaments = function (ctx: nkruntime.Context, nk: nkruntime.Nakama) {
+    const userId = "00000000-0000-0000-0000-000000000000";
+    const collection = "tournament";
+    const limit = 1000;
 
-}
+    let cursor: string | null = null;
+
+    do {
+        const result = nk.storageList(
+            userId,
+            collection,
+            limit,
+            cursor
+        );
+
+        if (!result.objects || result.objects.length === 0) {
+            break;
+        }
+
+        const deletes: nkruntime.StorageDeleteRequest[] = [];
+
+        for (const obj of result.objects) {
+            deletes.push({
+                collection: collection,
+                key: obj.key,
+                userId: userId
+            });
+        }
+
+        if (deletes.length > 0) {
+            nk.storageDelete(deletes);
+        }
+
+        cursor = result.cursor ?? null;
+
+    } while (cursor);
+};
+
 const tournamentQuit = function(ctx:any,nk: any){
     try {
         nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);

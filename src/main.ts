@@ -1553,23 +1553,12 @@ const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, di
     return { state, accept: true }; 
 };
 const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
-  // Store new presences
-
   return { state };
 };
 const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
-  presences.forEach(p => {
-    delete state.presences[p.sessionId];
-  });
   return { state };
 };
 const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
-    const presences: nkruntime.Presence[] = [];
-    for (const key in state.presences) {
-        if (state.presences.hasOwnProperty(key)) {
-            presences.push(state.presences[key]);
-        }
-    }
     state.matchId=ctx.matchId;
     if(tick>30){
         try{

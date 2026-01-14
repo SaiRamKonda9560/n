@@ -1554,6 +1554,12 @@ const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, di
     return { state, accept: true }; 
 };
 const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
+    if(state.presences===null){
+        state.presences =[];
+    }
+    for(let p of presences){
+        state.presences.push(p);
+    }
   return { state };
 };
 const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){

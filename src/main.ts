@@ -416,7 +416,8 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                 killCount: 0,
                 wins: 0,
                 losses: 0,
-                houseOfWords: []
+                houseOfWords: [],
+                cards:new cards()
             };
             // Give initial coins
             try {
@@ -425,7 +426,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                 logger.error(`Failed to write initial coins: ${err}`);
             }
         }
-
+        attendanceData.cards = (attendanceData.cards ||  new cards());
         // ================= DAILY REWARD GENERATOR =================
         function shuffleArray<T>(array: T[]): T[] {
             for (let i = array.length - 1; i > 0; i--) {
@@ -1560,6 +1561,7 @@ const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher:
 };
 const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
     state.matchId=ctx.matchId;
+    sendMessage(["tick",tick],state,dispatcher,nk);
     if(tick>30){
         try{
             nk.storageDelete([{ collection: 'tournament', key:state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
@@ -1577,6 +1579,23 @@ const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, disp
 
   return { state };
 };
+function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
+    const [commendName, obj] = commend;
+    if (commendName !== "addDelay" && commendName !== "setDelay") {
+        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
+        );
+    }
+    switch (commendName) {
+        case "addDelay":
+            
+            break;
+        case "setDelay":
+            
+            break;
+        case "complected":
+            break;
+    }
+}
 // ==============================
 // #endregion Tournament Support + RPCs
 // ==============================

@@ -1569,13 +1569,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
         }
     }
     if(tick>32){
-        try{
-            ctx.matchTerminate(); 
-        }
-        catch(e){
-            state.matchTerminateError = e;
-
-        }
+        throw "";
     }
     return { state };
 };

@@ -1569,7 +1569,8 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     state.matchId=ctx.matchId;
     
     try{
-        sendMessage(["roomStarted", tick], state, dispatcher, nk);    }
+        sendMessage(["roomStarted", tick], state, dispatcher, nk);
+    }
     catch(e){
         state.sendMessageError = e;
     }
@@ -1592,7 +1593,7 @@ const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, disp
 };
 function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
     const [commendName, obj] = commend;
-    if (commendName !== "addDelay" && commendName !== "setDelay") {
+    if (commendName !== "addDelay" && commendName !== "setDelay" && state.presences!==null) {
         dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences)));
     }
     switch (commendName) {

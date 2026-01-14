@@ -1567,7 +1567,12 @@ const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher:
 };
 const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
     state.matchId=ctx.matchId;
-    sendMessage(["roomStarted", tick], state, dispatcher, nk);
+    
+    try{
+        sendMessage(["roomStarted", tick], state, dispatcher, nk);    }
+    catch(e){
+        state.sendMessageError = e;
+    }
     if(tick>30){
         try{
             nk.storageDelete([{ collection: 'tournament', key:state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
@@ -1588,12 +1593,10 @@ const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, disp
 function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
     const [commendName, obj] = commend;
     if (commendName !== "addDelay" && commendName !== "setDelay") {
-        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
-        );
+        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences)));
     }
     switch (commendName) {
         case "addDelay":
-            
             break;
         case "setDelay":
             

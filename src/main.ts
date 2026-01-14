@@ -1561,7 +1561,7 @@ const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher:
 };
 const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
     state.matchId=ctx.matchId;
-    sendMessage(["tick",tick],state,dispatcher,nk);
+    sendMessage(["roomStarted", tick], state, dispatcher, nk);
     if(tick>30){
         try{
             nk.storageDelete([{ collection: 'tournament', key:state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);

@@ -1554,11 +1554,13 @@ const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, di
     return { state, accept: true }; 
 };
 const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
-    if(state.presences===null){
-        state.presences =[];
+    if (!state.presences) {
+        state.presences = {};
     }
-    for(let p of presences){
-        state.presences.push(p);
+
+    for (const p of presences) {
+        state.presences[p.userId] = p;
+        logger.info(`Player joined: ${p.userId}`);
     }
   return { state };
 };

@@ -1571,7 +1571,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     state.matchId=ctx.matchId;
     
     try{
-        sendMessage(["roomStarted", {tick}], state, dispatcher, nk);
+        sendMessage(["tick", {tick}], state, dispatcher, nk);
     }
     catch(e){
         state.sendMessageError = e;

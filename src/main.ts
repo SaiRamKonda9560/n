@@ -1599,19 +1599,32 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
         if(!state.isStarted){
             //sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
             const length = Object.keys(state.presences).length;
-            if(length>0){
+            if (length > 0) {
                 const p: any = Object.values(state.presences)[0];
-                state.channelId = '2...chat_'+ p.userId;
-                state.content = { message: 'Hello world' };
-                state.senderId = '';
-                state.senderUsername = '';
                 try {
-                nk.channelMessageSend(state.channelId, state.content, state.senderId, state.senderUsername);
+                    const channel = nk.channelJoin(
+                        p.userId,
+                        'chat_' + p.userId,
+                        1,      // ROOM
+                        true,   // persist
+                        false   // hidden
+                    );
+
+                    state.channelId = channel.id;
+
+                    nk.channelMessageSend(
+                        state.channelId,
+                        { message: 'Hello world' },
+                        "",
+                        "",
+                        true
+                    );
+
                 } catch (error) {
                     state.channelMessageSend = error;
-                // Handle error
                 }
             }
+
 
 
 

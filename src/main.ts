@@ -1542,6 +1542,24 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
 {
     try {
         const signal = JSON.parse(data);
+        if(signal&&signal.type){
+        switch(signal.type){
+            case "complected":
+                const presences = Object.values(state.presences) as any[];
+                // Access string_properties instead of properties
+                let boardIndex = 0; 
+                let numberOfPlayers = 2;  
+                let gameMode = "wordo";
+                let fee = 0;
+                // Create match with label
+                const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});
+                //sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
+                for(let p of presences){
+                    sendNote(["startMatch",{matchId}],p.userId,state,dispatcher,nk);
+                }
+            break;
+        }
+        }
 
         return { state };
     }

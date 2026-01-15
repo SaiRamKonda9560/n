@@ -1596,42 +1596,32 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
   state.matchId = ctx.matchId;
   try {
     if (!state.isStarted && state.presences) {
-
       const presences = Object.values(state.presences) as any[];
       const length = presences.length;
-
       // ✅ SEND NOTIFICATION TO FIRST PLAYER
       if (length > 0) {
         const presence = presences[0];
         const userId = presence.userId; // ✅ FIX
         //nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0,null, true);
       }
-
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
       if (length === state.data.totalPlayers) {
         const data = storageReadTournament(nk, ctx);
-
         if (data) {
           data.value.isStarted = true;
           storageWriteTournament(nk, ctx, data.value);
-        }
-
-        // Access string_properties instead of properties
-        let boardIndex = 0;
-        let numberOfPlayers = 2;
-        let gameMode = "wordo";
-        let fee = 0;
-        logger.info("⭐ "+(boardIndex+"❌"+numberOfPlayers+"❌"+gameMode));
-        try {
+           // Access string_properties instead of properties
+            let boardIndex = 0;
+            let numberOfPlayers = 2;
+            let gameMode = "wordo";
+            let fee = 0;
             // Create match with label
             const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false});
             sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
-            logger.info(`Match created successfully with ID: ${matchId}`);
             state.isStarted = true;
-        } catch (err: any) {
-            logger.error("Error creating match:", err.message);
-            throw err;
         }
+
+
       }
     }
   } catch (e) {

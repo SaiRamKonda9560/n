@@ -1564,13 +1564,6 @@ const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatche
 
     for (const p of presences) {
         state.presences[p.userId] = p;
-        logger.info(`Player joined: ${p.userId}`);
-        try{
-          nk.notificationSend(p.userId, "{}", {}, 0,null, true);
-        }
-        catch(e){
-            throw e;
-        }
     }
     
     try{
@@ -1611,7 +1604,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
       if (length > 0) {
         const presence = presences[0];
         const userId = presence.userId; // ✅ FIX
-        nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0,null, true);
+        //nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0,null, true);
       }
 
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
@@ -1623,14 +1616,23 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
           storageWriteTournament(nk, ctx, data.value);
         }
 
-        dispatcher.broadcastMessage(
-          1,
-          JSON.stringify({ type: "start" }),
-          null,
-          null
-        );
-
-        state.isStarted = true;
+        // Access string_properties instead of properties
+        let boardIndex = 0;
+        let numberOfPlayers = 2;
+        let gameMode = "wordo";
+        let fee = 0;
+        logger.info("⭐ "+(boardIndex+"❌"+numberOfPlayers+"❌"+gameMode));
+        try {
+            // Create match with label
+            const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false});
+            sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
+            logger.info(`Match created successfully with ID: ${matchId}`);
+            state.isStarted = true;
+            return matchId;
+        } catch (err: any) {
+            logger.error("Error creating match:", err.message);
+            throw err;
+        }
       }
     }
   } catch (e) {

@@ -1448,7 +1448,7 @@ const createTournament = function (ctx: any,logger: any,nk: any,payload: string)
             throw "Invalid or missing field: description";
         }
         // 3️⃣ Create match
-        matchId = nk.matchCreate("tournament", {});
+        matchId = nk.matchCreate("tournament", {data});
         if (!matchId) {
             throw "matchCreate failed: matchId is null";
         }
@@ -1552,7 +1552,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
     }
 };
 const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
-    return { state:{}, tickRate: 1};
+    return { state:{isStarted:false,data:params.data}, tickRate: 1};
 };
 const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
     return { state, accept: true }; 
@@ -1595,18 +1595,29 @@ const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher:
 };
 const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
     state.matchId=ctx.matchId;
-    
     try{
-        sendMessage(["tick", {ctx,nk,dispatcher,logger}], state, dispatcher, nk);
+        if(!state.isStarted){
+            sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
+            const length = Object.keys(state.presences).length;
+            if(length===state.data.totalPlayers){
+                let data =  storageReadTournament(nk,ctx);
+                if(data){
+                    data.value.isStarted=true;
+                    storageWriteTournament(nk,ctx,data.value);
+                }
+                sendMessage(["start", {ctx,nk,dispatcher,logger}], state, dispatcher, nk);
+                state.isStarted = true;
+            }
+        }
     }
     catch(e){
         state.sendMessageError = e;
     }
     if(tick>30){
-        tournamentQuit(ctx,nk)
+        //tournamentQuit(ctx,nk)
     }
     if(tick>32){
-        return null;
+        //return null;
     }
     return { state };
 };

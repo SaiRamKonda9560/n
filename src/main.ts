@@ -1565,6 +1565,7 @@ const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     for (const p of presences) {
         state.presences[p.userId] = p;
         logger.info(`Player joined: ${p.userId}`);
+        nk.notificationSend(p.userId, "hello", {rewardCoins: 1000,}, 0,null, true);
     }
     
     try{
@@ -1605,7 +1606,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
       if (length > 0) {
         const presence = presences[0];
         const userId = presence.userId; // ✅ FIX
-        nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0,'00000000-0000-0000-0000-000000000000', false);
+        nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0,null, true);
       }
 
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED

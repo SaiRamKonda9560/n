@@ -1602,8 +1602,8 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
                 let result: nkruntime.ChannelMessageSendAck;
                 let channelId = 'chat_'+ p.userId;
                 let content = { message: 'Hello world' };
-                let senderId = '00000000-0000-0000-0000-000000000000';
-                let senderUsername = 'server';
+                let senderId = '';
+                let senderUsername = '';
                 let persist = true;
                 try {
                 result = nk.channelMessageSend(channelId, content, senderId, senderUsername, persist);

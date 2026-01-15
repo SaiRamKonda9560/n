@@ -1424,6 +1424,9 @@ class tournamentSignal{
     type:tournamentSignalType=tournamentSignalType.quit;
     payload:string="";
 }
+class matchComplectSignal{
+    matchId:string="";
+}
 // Create tournament
 const createTournament = function (ctx: any,logger: any,nk: any,payload: string): string {
     const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -1539,9 +1542,10 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
 {
     try {
         const signal = JSON.parse(data);
-        switch(signal){
-            case tournamentSignalType.quit:
-                tournamentQuit(ctx,nk);
+        if(signal.type)
+        switch(signal.type){
+            case "complected":
+                
             break;
         }
         return { state };
@@ -1598,11 +1602,12 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
     if (!state.isStarted && state.presences) {
       const presences = Object.values(state.presences) as any[];
       const length = presences.length;
+
       // ✅ SEND NOTIFICATION TO FIRST PLAYER
       if (length > 0) {
-        const presence = presences[0];
-        const userId = presence.userId; // ✅ FIX
-        //nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0,null, true);
+        for(let p of presences){
+            nk.notificationSend(p.userId, "hello", {rewardCoins: 1000,}, 0,null, true);
+        }
       }
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
       if (length === state.data.totalPlayers) {
@@ -1616,7 +1621,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
             let gameMode = "wordo";
             let fee = 0;
             // Create match with label
-            const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false});
+            const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});
             sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
             state.isStarted = true;
         }

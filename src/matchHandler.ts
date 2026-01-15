@@ -2213,6 +2213,7 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
         gameMode:params.gameMode,
         fee:params.fee,
         posMode:posMode,
+        matchComplectSignal:params.matchComplectSignal??null,
         gameData: genLudoGameData(posMode,params.boardIndex, params.numberOfPlayers, params.gameMode,30),
         isPrivate:params.isPrivate
     }; 
@@ -2372,6 +2373,14 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             state.delay = obj as number;
             break;
         case "complected":
+            if(state.matchComplectSignal){
+              try{
+                nk.matchSignal(state.matchComplectSignal,{type:"complected",gameData:state.gameData});
+              }
+              catch(e){
+
+              }
+            }
             break;
 case "playerWin":
 {

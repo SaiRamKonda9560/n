@@ -1607,8 +1607,9 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
                 let persist = true;
                 try {
                 result = nk.channelMessageSend(channelId, content, senderId, senderUsername, persist);
-                
+
                 } catch (error) {
+                    state.channelMessageSend = error;
                 // Handle error
                 }
             }

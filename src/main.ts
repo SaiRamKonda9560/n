@@ -1593,17 +1593,8 @@ const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher:
 
   return { state };
 };
-const matchLoop_Tournament = function (
-  ctx: any,
-  logger: any,
-  nk: any,
-  dispatcher: any,
-  tick: number,
-  state: any,
-  messages: any[]
-) {
+const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
   state.matchId = ctx.matchId;
-
   try {
     if (!state.isStarted && state.presences) {
 
@@ -1614,19 +1605,7 @@ const matchLoop_Tournament = function (
       if (length > 0) {
         const presence = presences[0];
         const userId = presence.userId; // ✅ FIX
-
-        nk.notificationsSend(
-          [userId],
-          {
-            subject: "You've unlocked level 100!",
-            content: {
-              rewardCoins: 1000
-            },
-            code: 101,
-            senderId: "",     // server
-            persistent: true
-          }
-        );
+        nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0, "", false);
       }
 
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED

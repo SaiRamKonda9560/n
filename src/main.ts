@@ -1547,7 +1547,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
             case "complected":
                 const presences = Object.values(state.presences) as any[];
                 // Access string_properties instead of properties
-                let boardIndex = 0;
+                let boardIndex = 0; 
                 let numberOfPlayers = 2;  
                 let gameMode = "wordo";
                 let fee = 0;

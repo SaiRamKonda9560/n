@@ -1570,8 +1570,9 @@ const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     try{
         let data =  storageReadTournament(nk,ctx);
         if(data){
-            data.value.joinedPlayers = state.presences.length;
-            storageWriteTournament(nk,ctx,data);
+            const length = Object.keys(state.presences).length;
+            data.value.joinedPlayers = length;
+            storageWriteTournament(nk,ctx,data.value);
         }
         
     }

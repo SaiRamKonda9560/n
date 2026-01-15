@@ -1598,8 +1598,9 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     try{
         if(!state.isStarted){
             //sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
-            if(state.presences)
-            for(let p of Object.values(state.presences) as any[]){
+            const length = Object.keys(state.presences).length;
+            if(length>0){
+                const p: any = Object.values(state.presences)[0];
                 let channelId = 'chat_'+ p.userId;
                 let content = { message: 'Hello world' };
                 let senderId = '';
@@ -1616,7 +1617,6 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
 
 
 
-            const length = Object.keys(state.presences).length;
             if(length===state.data.totalPlayers){
                 let data =  storageReadTournament(nk,ctx);
                 if(data){

@@ -1606,7 +1606,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
       // ✅ SEND NOTIFICATION TO FIRST PLAYER
       if (length > 0) {
         for(let p of presences){
-            nk.notificationSend(p.userId, "hello", {rewardCoins: 1000,}, 0,null, true);
+            nk.notificationSend(p.userId,"hello", 0);
         }
       }
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED

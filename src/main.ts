@@ -1598,6 +1598,22 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     try{
         if(!state.isStarted){
             sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
+            for(let p of state.presences){
+                let result: nkruntime.ChannelMessageSendAck;
+                let channelId = 'chat_'+ p.userId;
+                let content = { message: 'Hello world' };
+                let senderId = '00000000-0000-0000-0000-000000000000';
+                let senderUsername = 'server';
+                let persist = true;
+                try {
+                result = nk.channelMessageSend(channelId, content, senderId, senderUsername, persist);
+                } catch (error) {
+                // Handle error
+                }
+            }
+
+
+
             const length = Object.keys(state.presences).length;
             if(length===state.data.totalPlayers){
                 let data =  storageReadTournament(nk,ctx);
@@ -1606,7 +1622,9 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
                     storageWriteTournament(nk,ctx,data.value);
                 }
                 sendMessage(["start", {ctx,nk,dispatcher,logger}], state, dispatcher, nk);
+
                 state.isStarted = true;
+
             }
         }
     }

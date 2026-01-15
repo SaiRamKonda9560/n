@@ -1565,7 +1565,12 @@ const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     for (const p of presences) {
         state.presences[p.userId] = p;
         logger.info(`Player joined: ${p.userId}`);
-        nk.notificationSend(p.userId, "{}", {}, 0,null, true);
+        try{
+          nk.notificationSend(p.userId, "{}", {}, 0,null, true);
+        }
+        catch(e){
+            throw e;
+        }
     }
     
     try{

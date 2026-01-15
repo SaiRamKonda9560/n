@@ -1605,15 +1605,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
 
       // ✅ SEND NOTIFICATION TO FIRST PLAYER
       if (length > 0) {
-        for(let p of presences){
-            let subject = JSON.stringify("A new friend!");
-            let content = { reward: 1000 };
-            let code = 1;
-            let senderId = null; // Server sent
-            let persistent = true;
 
-            nk.notificationSend(p.userId, subject, content, code, senderId, persistent);
-        }
       }
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
       if (length === state.data.totalPlayers) {
@@ -1628,7 +1620,10 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
             let fee = 0;
             // Create match with label
             const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});
-            sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
+            //sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
+            for(let p of presences){
+                sendNote(["startMatch",{matchId}],p.userId,state,dispatcher,nk);
+            }
             state.isStarted = true;
         }
 
@@ -1647,7 +1642,15 @@ const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, disp
 
   return { state };
 };
-function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
+function sendNote(commend: [string, any],userId:string, state: any, dispatcher: any, nk: any) {
+    const [commendName, obj] = commend;
+    let subject = JSON.stringify(`${commendName}:${JSON.stringify(obj)}`);
+    let content = {};
+    let code = 1;
+    let senderId = null; // Server sent
+    let persistent = true;
+    nk.notificationSend(userId, subject, content, code, senderId, persistent);
+}function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
     const [commendName, obj] = commend;
     if (commendName !== "addDelay" && commendName !== "setDelay" && state.presences!==null) {
         dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences)));

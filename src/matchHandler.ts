@@ -2375,7 +2375,7 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
         case "complected":
             if(state.matchComplectSignal){
               try{
-                nk.matchSignal(state.matchComplectSignal,{type:"complected",gameData:state.gameData});
+                nk.matchSignal(state.matchComplectSignal,JSON.stringify({type:"complected",gameData:state.gameData}));
               }
               catch(e){
 

@@ -1549,7 +1549,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 // Access string_properties instead of properties
                 let boardIndex = 0; 
                 let numberOfPlayers = 2;  
-                let gameMode = "wordo";
+                let gameMode = "quick";
                 let fee = 0;
                 // Create match with label
                 const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});
@@ -1629,7 +1629,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
            // Access string_properties instead of properties
             let boardIndex = 0;
             let numberOfPlayers = 2;
-            let gameMode = "wordo";
+            let gameMode = "quick";
             let fee = 0;
             // Create match with label
             const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});

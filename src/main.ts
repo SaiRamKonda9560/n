@@ -1599,7 +1599,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
         if(!state.isStarted){
             //sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
             if(state.presences)
-            for(let p of Object.values(state.presences) as any){
+            for(let p of Object.values(state.presences) as any[]){
                 let channelId = 'chat_'+ p.userId;
                 let content = { message: 'Hello world' };
                 let senderId = '';

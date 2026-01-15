@@ -1606,7 +1606,13 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
       // ✅ SEND NOTIFICATION TO FIRST PLAYER
       if (length > 0) {
         for(let p of presences){
-            nk.notificationSend(p.userId);
+            let subject = JSON.stringify("A new friend!");
+            let content = { reward: 1000 };
+            let code = 1;
+            let senderId = null; // Server sent
+            let persistent = true;
+
+            nk.notificationSend(p.userId, subject, content, code, senderId, persistent);
         }
       }
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED

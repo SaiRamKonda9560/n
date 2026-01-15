@@ -1597,7 +1597,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     state.matchId=ctx.matchId;
     try{
         if(!state.isStarted){
-            sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
+            //sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
             for(let p of state.presences){
                 let result: nkruntime.ChannelMessageSendAck;
                 let channelId = 'chat_'+ p.userId;
@@ -1607,6 +1607,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
                 let persist = true;
                 try {
                 result = nk.channelMessageSend(channelId, content, senderId, senderUsername, persist);
+                
                 } catch (error) {
                 // Handle error
                 }

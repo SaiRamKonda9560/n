@@ -1523,13 +1523,17 @@ const deleteAllTournaments = function (logger: any,nk: any) {
 };
 
 const tournamentQuit = function(ctx:any,nk: any){
-    try {
-        nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
-        ctx.matchTerminate();
-
-    } catch (error) {
-            
+    nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+    ctx.matchTerminate();
+}
+const storageReadTournament = function(nk:any,ctx:any){
+    const r = nk.storageRead([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+    if(r){
+        return r[0];
     }
+}
+const storageWriteTournament = function(nk:any,ctx:any,value:any){
+    nk.storageWrite([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000",value}]);
 }
 const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
@@ -1562,9 +1566,30 @@ const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatche
         state.presences[p.userId] = p;
         logger.info(`Player joined: ${p.userId}`);
     }
+    
+    try{
+        let data =  storageReadTournament(nk,ctx);
+        if(data){
+            data.value.joinedPlayers = state.presences.length;
+            storageWriteTournament(nk,ctx,data);
+        }
+        
+    }
+    catch{
+
+    }
   return { state };
 };
 const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
+    if (!state.presences) {
+    return { state };
+  }
+
+  for (const p of presences) {
+    delete state.presences[p.userId];
+    logger.info(`Player left: ${p.userId}`);
+  }
+
   return { state };
 };
 const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
@@ -1577,12 +1602,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
         state.sendMessageError = e;
     }
     if(tick>30){
-        try{
-            nk.storageDelete([{ collection: 'tournament', key:state.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
-        }
-        catch(e){
-            state.storageDeleteError = e;
-        }
+        tournamentQuit(ctx,nk)
     }
     if(tick>32){
         return null;

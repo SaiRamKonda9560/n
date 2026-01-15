@@ -1593,59 +1593,69 @@ const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher:
 
   return { state };
 };
-const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
-    state.matchId=ctx.matchId;
-    try{
-        if(!state.isStarted){
-            //sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
-            const length = Object.keys(state.presences).length;
-            if (length > 0) {
-                const receiverId: any = Object.values(state.presences)[0];
-                try {
-                let subject = "You've unlocked level 100!";
-                let content = {
-                rewardCoins: 1000,
-                }
-                let code = 101;
-                let senderId = 'dcb891ea-a311-4681-9213-6741351c9994'
-                let persistent = true;
-                try {
-                nk.notificationSend(receiverId, subject, content, code, "", persistent);
-                } catch (error) {
-                // Handle error
-                }
-                } catch (error) {
-                    state.channelMessageSend = error;
-                }
-            }
+const matchLoop_Tournament = function (
+  ctx: any,
+  logger: any,
+  nk: any,
+  dispatcher: any,
+  tick: number,
+  state: any,
+  messages: any[]
+) {
+  state.matchId = ctx.matchId;
 
+  try {
+    if (!state.isStarted && state.presences) {
 
+      const presences = Object.values(state.presences) as any[];
+      const length = presences.length;
 
+      // ✅ SEND NOTIFICATION TO FIRST PLAYER
+      if (length > 0) {
+        const presence = presences[0];
+        const userId = presence.userId; // ✅ FIX
 
-            if(length===state.data.totalPlayers){
-                let data =  storageReadTournament(nk,ctx);
-                if(data){
-                    data.value.isStarted=true;
-                    storageWriteTournament(nk,ctx,data.value);
-                }
-                sendMessage(["start", {ctx,nk,dispatcher,logger}], state, dispatcher, nk);
+        nk.notificationsSend(
+          [userId],
+          {
+            subject: "You've unlocked level 100!",
+            content: {
+              rewardCoins: 1000
+            },
+            code: 101,
+            senderId: "",     // server
+            persistent: true
+          }
+        );
+      }
 
-                state.isStarted = true;
+      // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
+      if (length === state.data.totalPlayers) {
+        const data = storageReadTournament(nk, ctx);
 
-            }
+        if (data) {
+          data.value.isStarted = true;
+          storageWriteTournament(nk, ctx, data.value);
         }
+
+        dispatcher.broadcastMessage(
+          1,
+          JSON.stringify({ type: "start" }),
+          null,
+          null
+        );
+
+        state.isStarted = true;
+      }
     }
-    catch(e){
-        state.sendMessageError = e;
-    }
-    if(tick>30){
-        //tournamentQuit(ctx,nk)
-    }
-    if(tick>32){
-        //return null;
-    }
-    return { state };
+  } catch (e) {
+    logger.error("matchLoop_Tournament error: %s", e);
+    state.sendMessageError = e;
+  }
+
+  return { state };
 };
+
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
 
   return { state };

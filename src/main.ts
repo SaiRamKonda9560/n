@@ -1600,26 +1600,20 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
             //sendMessage(["TournamentTick", {tick}], state, dispatcher, nk);
             const length = Object.keys(state.presences).length;
             if (length > 0) {
-                const p: any = Object.values(state.presences)[0];
+                const receiverId: any = Object.values(state.presences)[0];
                 try {
-                    const channel = nk.channelJoin(
-                        p.userId,
-                        'chat_' + p.userId,
-                        1,      // ROOM
-                        true,   // persist
-                        false   // hidden
-                    );
-
-                    state.channelId = channel.id;
-
-                    nk.channelMessageSend(
-                        state.channelId,
-                        { message: 'Hello world' },
-                        "",
-                        "",
-                        true
-                    );
-
+                let subject = "You've unlocked level 100!";
+                let content = {
+                rewardCoins: 1000,
+                }
+                let code = 101;
+                let senderId = 'dcb891ea-a311-4681-9213-6741351c9994'
+                let persistent = true;
+                try {
+                nk.notificationSend(receiverId, subject, content, code, "", persistent);
+                } catch (error) {
+                // Handle error
+                }
                 } catch (error) {
                     state.channelMessageSend = error;
                 }

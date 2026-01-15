@@ -1554,8 +1554,8 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 // Create match with label
                 const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});
                 //sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
-                for(let p of presences){
-                    sendNote(["startMatch",{matchId}],p.userId,state,dispatcher,nk);
+                for(let p of signal.gameData.players){
+                    sendNote(["startMatch",{matchId}],p.UserId,state,dispatcher,nk);
                 }
             break;
         }

@@ -1605,7 +1605,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
       if (length > 0) {
         const presence = presences[0];
         const userId = presence.userId; // ✅ FIX
-        nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0, "", false);
+        nk.notificationSend(userId, "hello", {rewardCoins: 1000,}, 0,'00000000-0000-0000-0000-000000000000', false);
       }
 
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED

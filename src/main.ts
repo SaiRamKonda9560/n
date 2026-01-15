@@ -1557,7 +1557,7 @@ const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: a
 const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
     return { state, accept: true }; 
 };
-const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
+const matchJoin_Tournament = function (ctx: any, logger: any, nk: nkruntime.Nakama, dispatcher: any, tick: number, state: any, presences: any[]) {
     if (!state.presences) {
         state.presences = {};
     }
@@ -1565,7 +1565,7 @@ const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     for (const p of presences) {
         state.presences[p.userId] = p;
         logger.info(`Player joined: ${p.userId}`);
-        nk.notificationSend(p.userId, "hello", {rewardCoins: 1000,}, 0,null, true);
+        nk.notificationSend(p.userId, "hello", {}, 0,null, true);
     }
     
     try{

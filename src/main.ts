@@ -1628,7 +1628,6 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
             sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
             logger.info(`Match created successfully with ID: ${matchId}`);
             state.isStarted = true;
-            return matchId;
         } catch (err: any) {
             logger.error("Error creating match:", err.message);
             throw err;

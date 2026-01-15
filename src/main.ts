@@ -1601,14 +1601,12 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
             const length = Object.keys(state.presences).length;
             if(length>0){
                 const p: any = Object.values(state.presences)[0];
-                let channelId = 'chat_'+ p.userId;
-                let content = { message: 'Hello world' };
-                let senderId = '';
-                let senderUsername = '';
-                let persist = true;
+                state.channelId = 'chat_'+ p.userId;
+                state.content = { message: 'Hello world' };
+                state.senderId = '';
+                state.senderUsername = '';
                 try {
-                let result = nk.channelMessageSend(channelId, content, senderId, senderUsername, persist);
-
+                nk.channelMessageSend(state.channelId, state.content, state.senderId, state.senderUsername);
                 } catch (error) {
                     state.channelMessageSend = error;
                 // Handle error

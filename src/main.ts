@@ -1601,7 +1601,7 @@ const matchLoop_Tournament = function (ctx: any, logger: any, nk: any, dispatche
             const length = Object.keys(state.presences).length;
             if(length>0){
                 const p: any = Object.values(state.presences)[0];
-                state.channelId = 'chat_'+ p.userId;
+                state.channelId = '2...chat_'+ p.userId;
                 state.content = { message: 'Hello world' };
                 state.senderId = '';
                 state.senderUsername = '';

@@ -1615,6 +1615,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
     if (!state.isStarted && state.presences) {
       const presences = Object.values(state.presences) as any[];
       const length = presences.length;
+      if(length>0)
         for(let p of presences){
             sendNote(["tournamentDashbord",{state}],p.userId,state,dispatcher,nk);
         }

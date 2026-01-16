@@ -1617,7 +1617,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
       const length = presences.length;
       if(length>0)
         for(let p of presences){
-            sendNote(["tournamentDashbord",{state}],p.userId,state,dispatcher,nk);
+            //sendNote(["tournamentDashbord",{state}],p.userId,state,dispatcher,nk);
         }
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
       if (length === state.data.totalPlayers) {

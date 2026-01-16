@@ -1615,11 +1615,9 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
     if (!state.isStarted && state.presences) {
       const presences = Object.values(state.presences) as any[];
       const length = presences.length;
-
-      // ✅ SEND NOTIFICATION TO FIRST PLAYER
-      if (length > 0) {
-
-      }
+        for(let p of presences){
+            sendNote(["tournamentDashbord",{state}],p.userId,state,dispatcher,nk);
+        }
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
       if (length === state.data.totalPlayers) {
         const data = storageReadTournament(nk, ctx);
@@ -1639,9 +1637,10 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
             }
             state.isStarted = true;
         }
-
-
       }
+    }
+    else{
+
     }
   } catch (e) {
     logger.error("matchLoop_Tournament error: %s", e);
@@ -1663,7 +1662,9 @@ function sendNote(commend: [string, any],userId:string, state: any, dispatcher: 
     let senderId = null; // Server sent
     let persistent = true;
     nk.notificationSend(userId, subject, content, code, senderId, persistent);
-}function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
+}
+
+function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
     const [commendName, obj] = commend;
     if (commendName !== "addDelay" && commendName !== "setDelay" && state.presences!==null) {
         dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences)));

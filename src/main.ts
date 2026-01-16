@@ -1669,8 +1669,8 @@ const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, disp
 };
 function sendNote(commend: [string, any],userId:string, state: any, dispatcher: any, nk: any) {
     const [commendName, obj] = commend;
-    let subject = `${commendName}:${JSON.stringify(obj)}`;
-    let content = {};
+    let subject = commendName;
+    let content = obj;
     let code = 1;
     let senderId = null; // Server sent
     let persistent = true;

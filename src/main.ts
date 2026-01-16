@@ -1606,7 +1606,18 @@ const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher:
     delete state.presences[p.userId];
     logger.info(`Player left: ${p.userId}`);
   }
+    try{
+        let data =  storageReadTournament(nk,ctx);
+        if(data){
+            const length = Object.keys(state.presences).length;
+            data.value.joinedPlayers = length;
+            storageWriteTournament(nk,ctx,data.value);
+        }
+        
+    }
+    catch{
 
+    }
   return { state };
 };
 const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {

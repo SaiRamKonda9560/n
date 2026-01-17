@@ -2373,6 +2373,11 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             state.delay = obj as number;
             break;
         case "complected":
+          for(let player of state.gameData.players){
+            if(!player.isWin){
+
+            }
+          }
             if(state.matchComplectSignal){
               try{
                 nk.matchSignal(state.matchComplectSignal,JSON.stringify({type:"complected",gameData:state.gameData}));
@@ -2581,6 +2586,88 @@ const playerWin = function (nk: any, player: LudoPlayerData, gameData: LudoGameD
       }
       else{
 
+      }
+    } catch (wordError) {
+      
+    }
+  } else {
+    attendanceData.losses++;
+  }
+
+  // --- SAVE UPDATED DATA BACK TO STORAGE ---
+  try {
+    nk.storageWrite([
+      {
+        collection,
+        key,
+        userId,
+        value: attendanceData,
+        permissionRead: 1,
+        permissionWrite: 1
+      }
+    ]);
+  } catch (writeError) {
+    nk.logger.error("Error writing storage: " + writeError);
+  }
+};
+const playerLost = function (nk: any, player: LudoPlayerData, gameData: LudoGameData) {
+  const userId: string = player.UserId;
+  const UserName: string = player.UserName;
+  if(player.isBot){
+    return;
+  }
+  const isWin: boolean = player.rank > 0 && player.rank < gameData.players.length;
+  const killCount: number = player.killCount;
+  const PlayerTurn: number = player.PlayerTurn;
+  const collection = "player_data";
+  const key = "daily_attendance";
+
+  // --- READ EXISTING PLAYER DATA ---
+  let attendanceData: any = null;
+  try {
+    const objects = nk.storageRead([{ collection, key, userId }]);
+    if (objects && objects.length > 0 && objects[0].value) {
+      attendanceData = objects[0].value;
+    }
+  } catch (readError) {
+    nk.logger.error("Error reading storage: " + readError);
+  }
+
+  // --- IF DATA DOESN’T EXIST, CREATE DEFAULT STRUCTURE ---
+  if (!attendanceData) {
+    attendanceData = {
+      wins: 0,
+      losses: 0,
+      killCount: 0
+    };
+  }
+
+  // --- ENSURE REQUIRED FIELDS EXIST ---
+  attendanceData.wins = attendanceData.wins ?? 0;
+  attendanceData.losses = attendanceData.losses ?? 0;
+  attendanceData.killCount = attendanceData.killCount ?? 0;
+  attendanceData.words = attendanceData.words ?? [];
+  
+  // --- UPDATE STATS ---
+  attendanceData.killCount = (attendanceData.killCount+killCount);
+  // Update win/loss counts
+  if (isWin) {
+    attendanceData.wins++;
+    UpdateWins(userId,UserName,nk,attendanceData.wins);
+
+    // Add a new word (if available in gameData)
+    try {
+      const WordGameState: WordGameState | null = gameData?.WordGameState ?? null;
+      if(WordGameState!=null){
+          if(WordGameState.PlayersFullWordsData!=null && WordGameState.PlayersFullWordsData[PlayerTurn].EnglishWord){
+            let EnglishWord = WordGameState.PlayersFullWordsData[PlayerTurn].EnglishWord;
+            let words : string[] = attendanceData.words;
+            words.push(EnglishWord);
+            attendanceData.words = words;
+          }
+      }
+      else{
+        attendanceData.losses++;
       }
     } catch (wordError) {
       

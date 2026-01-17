@@ -2373,9 +2373,9 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             state.delay = obj as number;
             break;
         case "complected":
-          for(let player of state.gameData.players){
+          for(let player of state.gameData.players as LudoPlayerData[]){
               const isWin: boolean = player.rank > 0 && player.rank < state.gameData.players.length;
-              if(!isWin){
+              if(!isWin && !player.isBot){
                 playerLost(nk,player,state.gameData);
               }
           }

@@ -2374,9 +2374,10 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
             break;
         case "complected":
           for(let player of state.gameData.players){
-            if(!player.isWin){
-
-            }
+              const isWin: boolean = player.rank > 0 && player.rank < state.gameData.players.length;
+              if(!isWin){
+                playerLost(nk,player,state.gameData);
+              }
           }
             if(state.matchComplectSignal){
               try{

@@ -1853,7 +1853,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             if ((state.delay as number) > 0) break;
 
             const commend = state.commends.shift()!;
-            applyCommend(commend, state, dispatcher, nk);
+            applyCommend(commend, state, dispatcher, nk,ctx);
         }
 
         // Update tick count
@@ -1891,7 +1891,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             fee: state.fee
         };
 
-        applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
+        applyCommend(["roomInfo", roomInfo], state, dispatcher, nk,ctx);
     }
 
     return { state };
@@ -1931,7 +1931,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                   // 🔹 wordo commands are applied immediately
                   while (newCommends.length > 0) {
                     logger.info("😂 new commend: " + newCommends[0][0]);
-                    applyCommend(newCommends.shift()!, state, dispatcher, nk);
+                    applyCommend(newCommends.shift()!, state, dispatcher, nk,ctx);
                   }
                 }
                 else {
@@ -1941,7 +1941,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                 // 🔹 Apply queued commends unless delay is active
                 while (commends.length > 0) {
                     if (state.delay > 0) break;
-                    applyCommend(commends.shift()!, state, dispatcher, nk);
+                    applyCommend(commends.shift()!, state, dispatcher, nk,ctx);
                 }
             }
             // -------------------------------------------------------
@@ -1987,11 +1987,11 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                           case unlockWith.ad:
                             if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
                                 player.locks[whoms][AUDIO] = 1;
-                                applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks,type,unlockWith:unlock_With }], state, dispatcher, nk);
+                                applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks,type,unlockWith:unlock_With }], state, dispatcher, nk,ctx);
                             }
                             if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
                                 player.locks[whoms][MEANING] = 1;
-                                applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk);
+                                applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk,ctx);
                             }
                             break;
                           case unlockWith.card:
@@ -2003,12 +2003,12 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                               if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0 && SpeechCards>0) {
                                   cardsData.SpeechCards = (SpeechCards-1); 
                                   player.locks[whoms][AUDIO] = 1;
-                                  applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
+                                  applyCommend(["unLock", { whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk,ctx);
                               }
                               if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0&& MeaningCards>0) {
                                   cardsData.MeaningCards = (MeaningCards-1); 
                                   player.locks[whoms][MEANING] = 1;
-                                  applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk);
+                                  applyCommend(["unLock", {whoms:whoms, who: signal.who, locks:player.locks,type,unlockWith:unlock_With}], state, dispatcher, nk,ctx);
                               }
                               attendanceData.cards = cardsData;
                               saveAttendanceData(player.UserId,nk,attendanceData);
@@ -2022,12 +2022,12 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                                 if ((type===unlockType.audio) && player.locks[whoms][AUDIO] === 0) {
                                     player.locks[whoms][AUDIO] = 1;
                                     unlocked = true;
-                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk,ctx);
                                 }
                                 if ((type===unlockType.meaning) && player.locks[whoms][MEANING] === 0) {
                                     player.locks[whoms][MEANING] = 1;
                                     unlocked = true;
-                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk);
+                                    applyCommend(["unLock", {whoms:whoms, who: signal.who,locks:player.locks, type,unlockWith:unlock_With }], state, dispatcher, nk,ctx);
                                 }
                                 // Deduct coins only once
                                 if (unlocked) {
@@ -2080,7 +2080,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                     fee: state.fee
                 };
 
-                applyCommend(["roomInfo", roomInfo], state, dispatcher, nk);
+                applyCommend(["roomInfo", roomInfo], state, dispatcher, nk,ctx);
             }
 
             // -------- startRoom --------
@@ -2137,7 +2137,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                         GameData.start(logger, nk);
                         gameData = GameData;
 
-                        applyCommend(["roomStarted", gameData], state, dispatcher, nk);
+                        applyCommend(["roomStarted", gameData], state, dispatcher, nk,ctx);
                     }
                 }
                 // BOT MODE
@@ -2168,7 +2168,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                         GameData.start(logger, nk);
                         gameData = GameData;
 
-                        applyCommend(["roomStarted", gameData], state, dispatcher, nk);
+                        applyCommend(["roomStarted", gameData], state, dispatcher, nk,ctx);
                     }
                 }
             }
@@ -2292,7 +2292,7 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
                           }
                           GameData.start(logger, nk);
                           state.gameData = GameData;
-                          applyCommend(["roomStarted", state.gameData], state, dispatcher, nk);
+                          applyCommend(["roomStarted", state.gameData], state, dispatcher, nk,ctx);
                       } else {
                       }
     }
@@ -2331,7 +2331,7 @@ const matchLeave = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: 
   });
   logger.info("matchLeave called, players now:", Object.keys(state.presences));
   // Broadcast updated player status to all remaining players   
-  applyCommend(["UpdateMainPlayersData",{fun:"matchLeave",players:state.gameData.players}],state,dispatcher,nk);
+  applyCommend(["UpdateMainPlayersData",{fun:"matchLeave",players:state.gameData.players}],state,dispatcher,nk,ctx);
   return { state };
 };
 const matchTerminate = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
@@ -2359,7 +2359,7 @@ const matchmakerMatched = function (ctx: any, logger: any, nk: any, matches: any
     throw err;
   }
 };
-function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any) {
+function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any,ctx:any) {
     const [commendName, obj] = commend;
     if (commendName !== "addDelay" && commendName !== "setDelay") {
         dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences))
@@ -2381,7 +2381,7 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
           }
             if(state.matchToMatchSignal){
               try{
-                nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"complected",gameData:state.gameData}));
+                nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"complected",gameData:state.gameData,matchId:ctx.matchId}));
               }
               catch(e){
 
@@ -2490,7 +2490,7 @@ case "playerWin":
     }
     if(state.matchToMatchSignal){
       try{
-        nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"playerWin",player:obj,gameData:state.gameData}));
+        nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"playerWin",player:p,gameData:state.gameData,matchId:ctx.matchId}));
       }
         catch(e){
       }
@@ -2505,6 +2505,9 @@ const playerCoins =function(nk: any,userId:any,username:any,addMoney:any):number
         const collection = "player_data";
         const key = "coins";
         let currentCoins = 0;
+        if(userId!==""&&username===""){
+          username = nk.usersGetId([userId])[0].username;
+        }
         if(userId===""||username === ""){
           return 0;
         }

@@ -1510,35 +1510,7 @@ const readTournament = function(nk:any,matchId:any){
 const writeTournament = function(nk:any,matchId:any,value:any){
     nk.storageWrite([{ collection: 'tournament', key:matchId ,userId:"00000000-0000-0000-0000-000000000000",value}]);
 }
-const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
-{
-    try {
-        const signal = JSON.parse(data);
-        if(signal&&signal.type){
-        switch(signal.type){
-            case "complected":
-                const presences = Object.values(state.presences) as any[];
-                // Access string_properties instead of properties
-                let boardIndex = 0; 
-                let numberOfPlayers = 2;  
-                let gameMode = "quick";
-                let fee = 0;
-                // Create match with label
-                const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchToMatchSignal:ctx.matchId});
-                //sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
-                for(let p of signal.gameData.players){
-                    notificationSend(["startMatch",{matchId}],p.UserId,nk);
-                }
-            break;
-        }
-        }
-        return { state };
-    }
-    catch (e) {
-        logger.error("matchSignal error: " + e);
-        throw e;
-    }
-};
+
 const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
     return { state:{isStarted:false,data:params.data},presences :{}, tickRate: 1};
 };
@@ -1546,8 +1518,13 @@ const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, di
     if(state.presences){
         const length = Object.keys(state.presences).length;
         const data = state.data as tournament;
+        let fee = data.fee;
+        let Coins = playerCoins(nk,presence.userId,presence.username,0);
         if(length>=data.totalPlayers){
             return { state, accept: false }; 
+        }
+        if(Coins<fee){
+            return { state, accept: false };
         }
     }
     return { state, accept: true }; 
@@ -1584,43 +1561,174 @@ const updateTournamentPlayers=function(nk:any,matchId:any,state:any){
 const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
   try {
     if (!state.isStarted) {
-      const presences = Object.values(state.presences) as any[];
-      const length = presences.length;
-      if(length>0){
+        const presences = Object.values(state.presences) as any[];
+        const length = presences.length;
+        if(length>0){
             for(let p of presences){
                 notificationSend(["tournamentDashbord",{presences}],p.userId,nk);
             }
-      }
-      // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
-      if (length === state.data.totalPlayers) {
-        const data = readTournament(nk, ctx.matchId);
-        if (data) {
-          data.value.isStarted = true;
-          writeTournament(nk, ctx.matchId, data.value);
-           // Access string_properties instead of properties
-            let boardIndex = 0;
-            let numberOfPlayers = 2;
-            let gameMode = "quick";
-            let fee = 0;
-            // Create match with label
-            const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchToMatchSignal:ctx.matchId});
-            //sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
-            for(let p of presences){
-                notificationSend(["startMatch",{matchId}],p.userId,nk);
-            }
-            state.isStarted = true;
         }
-      }
+        // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
+        if (length === state.data.totalPlayers) {
+            const createdMatchs: string[] = [];
+            const winners: string[] = [];
+
+            let currentMatchId: string | null = null;
+            let count = 0;
+            for (const p of presences) {
+                // create new match every 4 players
+                if (count === 0) {
+                    currentMatchId = nk.matchCreate("lobby", {
+                        boardIndex: 0,
+                        numberOfPlayers: 4,
+                        gameMode: "quick",
+                        fee: 0,
+                        isPrivate: false,
+                        matchToMatchSignal: ctx.matchId
+                    }) as string;
+
+                    createdMatchs.push(currentMatchId);
+                    count = 4;
+                }
+                notificationSend(
+                    ["startMatch", { matchId: currentMatchId }],
+                    p.userId,
+                    nk
+                );
+                count--;
+            }
+            const data = readTournament(nk, ctx.matchId);
+            if (!data) return;
+            data.value.isStarted = true;
+            writeTournament(nk, ctx.matchId, data.value);
+            state.isStarted = true;
+            state.createdMatchs = createdMatchs;
+            state.winners=winners;
+        }
     }
     else{
+        const createdMatchs = state.createdMatchs as string[];
+        const winners = state.winners as string[];
+        if (createdMatchs.length === 0) {
+            if(winners.length === 0){
+                return null;
+            }
+            // 🏆 TOURNAMENT COMPLETE
+            if (winners.length === 1) {
+                let winner = winners[0];
+                playerCoins(nk,winner,"",state.data.win);
+                // send winner notification here
+                logger.info("Tournament winner: %s", winner);
+                return null;
+            }
+            // ▶ NEXT ROUND or FINAL
+            if (winners.length > 1) {
+
+                const presences = winners.map((userId: string) => ({ userId }));
+                state.createdMatchs = [];
+                state.winners = [];
+
+                // 🔴 FINAL MATCH (2 / 3 / 4 players)
+                if (presences.length <= 4) {
+
+                    const matchId = nk.matchCreate("lobby", {
+                        boardIndex: 0,
+                        numberOfPlayers: presences.length,
+                        gameMode: "quick",
+                        fee: 0,
+                        isPrivate: false,
+                        matchToMatchSignal: ctx.matchId
+                    }) as string;
+
+                    state.createdMatchs.push(matchId);
+
+                    for (const p of presences) {
+                        notificationSend(
+                            ["startMatch", { matchId }],
+                            p.userId,
+                            nk
+                        );
+                    }
+
+                    return { state };
+                }
+
+                // 🟡 MULTI MATCH ROUND (4 + remainder 2/3)
+                let index = 0;
+
+                while (index < presences.length) {
+
+                    let remaining = presences.length - index;
+                    let matchSize = 4;
+
+                    if (remaining < 4) {
+                        matchSize = remaining; // 2 or 3
+                    }
+
+                    const matchId = nk.matchCreate("lobby", {
+                        boardIndex: 0,
+                        numberOfPlayers: matchSize,
+                        gameMode: "quick",
+                        fee: 0,
+                        isPrivate: false,
+                        matchToMatchSignal: ctx.matchId
+                    }) as string;
+
+                    state.createdMatchs.push(matchId);
+
+                    for (let i = 0; i < matchSize; i++) {
+                        notificationSend(
+                            ["startMatch", { matchId }],
+                            presences[index + i].userId,
+                            nk
+                        );
+                    }
+
+                    index += matchSize;
+                }
+            }
+
+        }
 
     }
   } catch (e) {
     logger.error("matchLoop_Tournament error: %s", e);
     state.sendMessageError = e;
   }
-
   return { state };
+};
+const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
+{
+    try {
+        const signal = JSON.parse(data);
+        if(signal&&signal.type){
+        switch(signal.type){
+            case "complected":
+                break;
+            case "playerWin": {
+                const player = signal.player as LudoPlayerData;
+                const matchId = signal.matchId as string;
+                const createdMatchs = state.createdMatchs as string[];
+                const winners = state.winners as string[];
+                // store winner
+                winners.push(player.UserId);
+                // remove completed matchId correctly
+                const index = createdMatchs.indexOf(matchId);
+                if (index !== -1) {
+                    createdMatchs.splice(index, 1);
+                }
+                state.createdMatchs = createdMatchs;
+                state.winners = winners;
+                break;
+            }
+        }
+        }
+        return { state };
+    }
+    catch (e) {
+        logger.error("matchSignal error: " + e);
+        throw e;
+    }
 };
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
   return { state };

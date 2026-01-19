@@ -2484,8 +2484,17 @@ case "playerWin":
     // =====================================================
     // CREDIT PLAYER
     // =====================================================
-    if (reward > 0)
+    if (reward > 0){
         playerCoins(nk, p.UserId, p.UserName, reward);
+
+    }
+    if(state.matchToMatchSignal){
+      try{
+        nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"playerWin",player:obj,gameData:state.gameData}));
+      }
+        catch(e){
+      }
+    }
 }
 break;
 

@@ -1434,7 +1434,7 @@ const createTournament = function (ctx: any,logger: any,nk: any,payload: string)
         if (typeof data.win !== "number") {
             throw "Invalid or missing field: win";
         }
-        if (typeof data.totalPlayers !== "number" || data.totalPlayers <= 0 || fixedNumberOfplayer.includes(data.totalPlayers)) {
+        if (typeof data.totalPlayers !== "number" || data.totalPlayers <= 0 || !fixedNumberOfplayer.includes(data.totalPlayers)) {
             throw "Invalid or missing field: totalPlayers";
         }
         if (typeof data.name !== "string" || data.name.trim() === "") {

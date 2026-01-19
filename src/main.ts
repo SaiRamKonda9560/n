@@ -1399,15 +1399,16 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
    SUPPORTING METHODS
    ============================ */
 class tournament{
-    isStarted:boolean=false;
-    fee:number =0;
-    win:number =0;
-    totalPlayers:number =0;
-    joinedPlayers:number =0;
-    name:string="";
-    description:string="";
-    id:string="";
-    constructor(isStarted:boolean,fee:number,win:number,totalPlayers:number,name:string,description:string,id:string){
+    public isStarted:boolean=false;
+    public fee:number =0;
+    public win:number =0;
+    public totalPlayers:number =0;
+    public joinedPlayers:number =0;
+    public name:string="";
+    public description:string="";
+    public id:string="";//tournament match id
+    public adminId:string="";//admin user id
+    constructor(isStarted:boolean,fee:number,win:number,totalPlayers:number,name:string,description:string,id:string,adminId:string){
         this.isStarted=isStarted;
         this.fee =fee;
         this.win =win;
@@ -1415,18 +1416,10 @@ class tournament{
         this.name=name;
         this.description=description;
         this.id=id;
+        this.adminId=adminId;
     }
 }
-enum tournamentSignalType{
-    quit
-}
-class tournamentSignal{
-    type:tournamentSignalType=tournamentSignalType.quit;
-    payload:string="";
-}
-class matchComplectSignal{
-    matchId:string="";
-}
+const fixedNumberOfplayer=[8, 16, 32, 64, 128, 256]
 // Create tournament
 const createTournament = function (ctx: any,logger: any,nk: any,payload: string): string {
     const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
@@ -1441,7 +1434,7 @@ const createTournament = function (ctx: any,logger: any,nk: any,payload: string)
         if (typeof data.win !== "number") {
             throw "Invalid or missing field: win";
         }
-        if (typeof data.totalPlayers !== "number" || data.totalPlayers <= 0) {
+        if (typeof data.totalPlayers !== "number" || data.totalPlayers <= 0 || fixedNumberOfplayer.includes(data.totalPlayers)) {
             throw "Invalid or missing field: totalPlayers";
         }
         if (typeof data.name !== "string" || data.name.trim() === "") {
@@ -1450,36 +1443,19 @@ const createTournament = function (ctx: any,logger: any,nk: any,payload: string)
         if (typeof data.description !== "string") {
             throw "Invalid or missing field: description";
         }
+        let t:tournament = new tournament(false,data.fee,data.win,data.totalPlayers,data.name,data.description,"",ctx.userId);
         // 3️⃣ Create match
-        matchId = nk.matchCreate("tournament", {data});
+        matchId = nk.matchCreate("tournament", {data:t});
         if (!matchId) {
             throw "matchCreate failed: matchId is null";
         }
+        t.id = matchId; 
         // 4️⃣ Prepare storage object
-        const storageObject = {
-            collection: "tournament",
-            key: matchId,
-            userId: SYSTEM_USER_ID,
-            value: new tournament(
-                false,
-                data.fee,
-                data.win,
-                data.totalPlayers,
-                data.name,
-                data.description,
-                matchId
-            ),
-            permissionRead: 0,
-            permissionWrite: 0
-        };
-
+        const storageObject = {collection: "tournament",key: matchId,userId: SYSTEM_USER_ID,value:t,permissionRead: 0,permissionWrite: 0};
         // 5️⃣ Write to storage
         nk.storageWrite([storageObject]);
-
         return JSON.stringify({ matchId });
-
     } catch (error) {
-
         // Cleanup only if match was created
         if (matchId) {
             try {
@@ -1488,13 +1464,10 @@ const createTournament = function (ctx: any,logger: any,nk: any,payload: string)
                 logger.error("Match cleanup failed: %s", cleanupError);
             }
         }
-
         logger.error("Create tournament failed: %s", error);
         throw error;
     }
 };
-
-
 const readTournaments = function (ctx: any, logger: any, nk: any, payload: string): string {
     let user_id = '00000000-0000-0000-0000-000000000000';
     try {
@@ -1524,19 +1497,18 @@ const deleteAllTournaments = function (logger: any,nk: any) {
         }
 
 };
-
 const tournamentQuit = function(ctx:any,nk: any){
     nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
     ctx.matchTerminate();
 }
-const storageReadTournament = function(nk:any,ctx:any){
-    const r = nk.storageRead([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
+const readTournament = function(nk:any,matchId:any){
+    const r = nk.storageRead([{ collection: 'tournament', key:matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
     if(r){
         return r[0];
     }
 }
-const storageWriteTournament = function(nk:any,ctx:any,value:any){
-    nk.storageWrite([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000",value}]);
+const writeTournament = function(nk:any,matchId:any,value:any){
+    nk.storageWrite([{ collection: 'tournament', key:matchId ,userId:"00000000-0000-0000-0000-000000000000",value}]);
 }
 const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
 {
@@ -1552,15 +1524,14 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 let gameMode = "quick";
                 let fee = 0;
                 // Create match with label
-                const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});
+                const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchToMatchSignal:ctx.matchId});
                 //sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
                 for(let p of signal.gameData.players){
-                    sendNote(["startMatch",{matchId}],p.UserId,state,dispatcher,nk);
+                    notificationSend(["startMatch",{matchId}],p.UserId,nk);
                 }
             break;
         }
         }
-
         return { state };
     }
     catch (e) {
@@ -1569,84 +1540,73 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
     }
 };
 const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
-    return { state:{isStarted:false,data:params.data}, tickRate: 1};
+    return { state:{isStarted:false,data:params.data},presences :{}, tickRate: 1};
 };
 const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
+    if(state.presences){
+        const length = Object.keys(state.presences).length;
+        const data = state.data as tournament;
+        if(length>=data.totalPlayers){
+            return { state, accept: false }; 
+        }
+    }
     return { state, accept: true }; 
 };
 const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presences: any[]) {
     if (!state.presences) {
         state.presences = {};
     }
-
     for (const p of presences) {
         state.presences[p.userId] = p;
     }
-    
-    try{
-        let data =  storageReadTournament(nk,ctx);
-        if(data){
-            const length = Object.keys(state.presences).length;
-            data.value.joinedPlayers = length;
-            storageWriteTournament(nk,ctx,data.value);
-        }
-        
-    }
-    catch{
-
-    }
-  return { state };
+    updateTournamentPlayers(nk,ctx.matchId,state);
+    return { state };
 };
 const matchLeave_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,presences: any[]){
     if (!state.presences) {
-    return { state };
-  }
-
-  for (const p of presences) {
-    delete state.presences[p.userId];
-    logger.info(`Player left: ${p.userId}`);
-  }
-    try{
-        let data =  storageReadTournament(nk,ctx);
-        if(data){
-            const length = Object.keys(state.presences).length;
-            data.value.joinedPlayers = length;
-            storageWriteTournament(nk,ctx,data.value);
-        }
-        
+        return { state };
     }
-    catch{
-
+    for (const p of presences) {
+        delete state.presences[p.userId];
+        logger.info(`Player left: ${p.userId}`);
     }
+    updateTournamentPlayers(nk,ctx.matchId,state);
   return { state };
 };
+const updateTournamentPlayers=function(nk:any,matchId:any,state:any){
+    let data =  readTournament(nk,matchId);
+    if(data){
+        const length = Object.keys(state.presences).length;
+        data.value.joinedPlayers = length;
+        writeTournament(nk,matchId,data.value);
+    }
+}
 const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
-  state.matchId = ctx.matchId;
   try {
-    if (!state.isStarted && state.presences) {
+    if (!state.isStarted) {
       const presences = Object.values(state.presences) as any[];
       const length = presences.length;
       if(length>0){
             for(let p of presences){
-                sendNote(["tournamentDashbord",{presences}],p.userId,state,dispatcher,nk);
+                notificationSend(["tournamentDashbord",{presences}],p.userId,nk);
             }
       }
       // ✅ START TOURNAMENT WHEN ALL PLAYERS JOINED
       if (length === state.data.totalPlayers) {
-        const data = storageReadTournament(nk, ctx);
+        const data = readTournament(nk, ctx.matchId);
         if (data) {
           data.value.isStarted = true;
-          storageWriteTournament(nk, ctx, data.value);
+          writeTournament(nk, ctx.matchId, data.value);
            // Access string_properties instead of properties
             let boardIndex = 0;
             let numberOfPlayers = 2;
             let gameMode = "quick";
             let fee = 0;
             // Create match with label
-            const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchComplectSignal:ctx.matchId});
+            const matchId = nk.matchCreate("lobby", {boardIndex,numberOfPlayers,gameMode,fee,isPrivate: false,matchToMatchSignal:ctx.matchId});
             //sendMessage(["startMatch",{matchId}],state,dispatcher,nk);
             for(let p of presences){
-                sendNote(["startMatch",{matchId}],p.userId,state,dispatcher,nk);
+                notificationSend(["startMatch",{matchId}],p.userId,nk);
             }
             state.isStarted = true;
         }
@@ -1662,12 +1622,10 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
 
   return { state };
 };
-
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
-
   return { state };
 };
-function sendNote(commend: [string, any],userId:string, state: any, dispatcher: any, nk: any) {
+function notificationSend(commend: [string, any],userId:string,nk: any) {
     const [commendName, obj] = commend;
     let subject = commendName;
     let content = obj;
@@ -1676,27 +1634,9 @@ function sendNote(commend: [string, any],userId:string, state: any, dispatcher: 
     let persistent = true;
     nk.notificationSend(userId, subject, content, code, senderId, persistent);
 }
-
-function sendMessage(commend: [string, any], state: any, dispatcher: any, nk: any) {
-    const [commendName, obj] = commend;
-    if (commendName !== "addDelay" && commendName !== "setDelay" && state.presences!==null) {
-        dispatcher.broadcastMessage(0,nk.stringToBinary(`${commendName}:${JSON.stringify(obj)}`, Object.values(state.presences)));
-    }
-    switch (commendName) {
-        case "addDelay":
-            break;
-        case "setDelay":
-            
-            break;
-        case "complected":
-            break;
-    }
-}
 // ==============================
 // #endregion Tournament Support + RPCs
 // ==============================
-
-
 class cards{
     public MeaningCards : number = 0;
     public SpeechCards : number = 0;

@@ -2213,7 +2213,7 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
         gameMode:params.gameMode,
         fee:params.fee,
         posMode:posMode,
-        matchComplectSignal:params.matchComplectSignal??null,
+        matchToMatchSignal:params.matchToMatchSignal??null,
         gameData: genLudoGameData(posMode,params.boardIndex, params.numberOfPlayers, params.gameMode,30),
         isPrivate:params.isPrivate
     }; 
@@ -2379,9 +2379,9 @@ function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: a
                 playerLost(nk,player,state.gameData);
               }
           }
-            if(state.matchComplectSignal){
+            if(state.matchToMatchSignal){
               try{
-                nk.matchSignal(state.matchComplectSignal,JSON.stringify({type:"complected",gameData:state.gameData}));
+                nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"complected",gameData:state.gameData}));
               }
               catch(e){
 

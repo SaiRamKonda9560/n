@@ -1710,16 +1710,16 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // ============================
     if (state.gameData.isGameStarted) {
         if(tick===5 ){
-          const userId = "97d43a1b-178f-4bcc-9f4e-b74af2b7a2e3";
-          const players = state.gameData.players as LudoPlayerData[];
-          const player = players.find(p => p.UserId === userId);
-          if (!player) {
-              throw new Error("Player not found in gameData.players");
+          let selectedPlayer = 0;
+          for(let p of state.gameData.players as LudoPlayerData[]){
+            if(p.UserId==="97d43a1b-178f-4bcc-9f4e-b74af2b7a2e3"){
+              selectedPlayer = p.PlayerTurn;
+            }
           }
-          // player is now the correct one
+          let player = state.gameData.players[selectedPlayer] as LudoPlayerData;
           //player.rank = 1;
           //applyCommend(["playerWin",p],state,dispatcher,nk,ctx); 
-          nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"playerWin",player,gameData:state.gameData,matchId:ctx.matchId}));
+          //nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"playerWin",player,gameData:state.gameData,matchId:ctx.matchId}));
         }
         // Reconstruct class instance (required because Nakama serializes objects)
         let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);

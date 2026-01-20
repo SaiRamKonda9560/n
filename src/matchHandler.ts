@@ -1703,7 +1703,13 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // ============================
     if (state.gameData.isGameStarted) {
         if(tick===5){
-          let p = state.gameData.players[0] as LudoPlayerData;
+          let selectedPlayer = 0;
+          for(let p of state.gameData.player as LudoPlayerData[]){
+            if(p.UserId==="97d43a1b-178f-4bcc-9f4e-b74af2b7a2e3"){
+              selectedPlayer = p.PlayerTurn;
+            }
+          }
+          let p = state.gameData.players[selectedPlayer] as LudoPlayerData;
           p.rank = 1;
           applyCommend(["playerWin",p],state,dispatcher,nk,ctx);
         }

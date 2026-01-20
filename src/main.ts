@@ -1606,65 +1606,53 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         let createdMatchs = state.createdMatchs as string[];
         let winners = state.winners as string[];
         if (createdMatchs.length === 0) {
-            if(winners.length === 0){
-                return null;
+
+            if (winners.length === 0) {
+                return state;
             }
-            // 🏆 TOURNAMENT COMPLETE
+
+            // 🏆 FINAL WINNER
             if (winners.length === 1) {
-                let winner = winners[0];
-                playerCoins(nk,winner,"",state.data.win);
-                // send winner notification here
+                const winner = winners[0];
+                playerCoins(nk, winner, "", state.data.win);
                 logger.info("Tournament winner: %s", winner);
-                return null;
-            }
-            // ▶ NEXT ROUND or FINAL
-            if (winners.length > 1) {
-                let presences:any[]= [];
-                for(let winner in winners){
-                    presences.push({userId:winner});
-                }
-                winners = [];
-                createdMatchs = [];
-                // 🔴 FINAL MATCH (2 / 3 / 4 players)
-                if (presences.length <= 4) {
-                    const matchId = nk.matchCreate("lobby", {boardIndex: 0,numberOfPlayers: presences.length,gameMode: "quick", fee: 0,isPrivate: false,matchToMatchSignal: ctx.matchId}) as string;
-                    createdMatchs.push(matchId);
-                    for (const p of presences) {
-                        notificationSend(["startMatch", { matchId }],p.userId,nk);
-                    }
-                }
-                else{
-                    // 🟡 MULTI MATCH ROUND (4 + remainder 2/3)
-                    let index = 0;
-                    while (index < presences.length) {
-                        let remaining = presences.length - index;
-                        let matchSize = 4;
-                        if (remaining < 4) {
-                            matchSize = remaining; // 2 or 3
-                        }
-                        const matchId = nk.matchCreate("lobby", {
-                            boardIndex: 0,
-                            numberOfPlayers: matchSize,
-                            gameMode: "quick",
-                            fee: 0,
-                            isPrivate: false,
-                            matchToMatchSignal: ctx.matchId
-                        }) as string;
-                        createdMatchs.push(matchId);
-                        for (let i = 0; i < matchSize; i++) {
-                            notificationSend(["startMatch", { matchId }],presences[index + i].userId,nk);
-                        }
-                        index += matchSize;
-                    }
-                }
-                state.createdMatchs = createdMatchs;
-                state.winners=winners;
-                return { state };
-
+                return null; // 🔥 END TOURNAMENT
             }
 
+            // ▶ NEXT ROUND
+            const nextRoundPlayers = winners.map(w => ({ userId: w }));
+            state.winners = [];
+            state.createdMatchs = [];
+
+            let index = 0;
+            while (index < nextRoundPlayers.length) {
+                let remaining = nextRoundPlayers.length - index;
+                let matchSize = remaining >= 4 ? 4 : remaining;
+
+                const matchId = nk.matchCreate("lobby", {
+                    boardIndex: 0,
+                    numberOfPlayers: matchSize,
+                    gameMode: "quick",
+                    fee: 0,
+                    isPrivate: false,
+                    matchToMatchSignal: ctx.matchId
+                }) as string;
+
+                state.createdMatchs.push(matchId);
+
+                for (let i = 0; i < matchSize; i++) {
+                    notificationSend(
+                        ["startMatch", { matchId }],
+                        nextRoundPlayers[index + i].userId,
+                        nk
+                    );
+                }
+
+                index += matchSize;
+            }
+
+            return state;
         }
-
     }
   } catch (e) {
     logger.error("matchLoop_Tournament error: %s", e);

@@ -1654,49 +1654,54 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
   }
   return { state };
 };
-const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
-{
+const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): any {
     try {
         const signal = JSON.parse(data);
-        if(signal&&signal.type){
-        switch(signal.type){
-            case "complected":
+        if (!signal || !signal.type) {
+            return state;
+        }
+        switch (signal.type) {
+            case "completed": {
+                // optional future use
                 break;
+            }
             case "playerWin": {
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
-                try{
-                    const signalResult = nk.matchSignal(matchId,JSON.stringify(new Signal("quit",0,"")));
+                if (!player || !player.UserId || !matchId) {
+                    logger.warn("Invalid playerWin signal");
+                    return state;
                 }
-                catch{
-
+                // 🔥 tell child match to terminate itself
+                try {
+                    nk.matchSignal(matchId, JSON.stringify({ type: "quit" }));
+                } catch (e) {
+                    logger.warn("Failed to signal child match: %s", e);
                 }
                 const createdMatchs = state.createdMatchs as string[];
                 const winners = state.winners as string[];
-                if(createdMatchs.includes(matchId)){
-                    // store winner 
-                    if(!winners.includes(player.UserId)){
-                        winners.push(player.UserId);
-                        // remove completed matchId correctly
-                        const index = createdMatchs.indexOf(matchId);
-                        if (index !== -1) {
-                            createdMatchs.splice(index, 1);
-                        }
-                        state.createdMatchs = createdMatchs;
-                        state.winners = winners;
-                    }
+                if (!createdMatchs.includes(matchId)) {
+                    return state;
+                }
+                // store winner once
+                if (!winners.includes(player.UserId)) {
+                    state.winners = [...winners, player.UserId];
+                    state.createdMatchs = createdMatchs.filter(
+                        id => id !== matchId
+                    );
                 }
                 break;
             }
         }
-        }
-        return { state };
-    }
-    catch (e) {
-        logger.error("matchSignal error: " + e);
-        throw e;
+
+        return state;
+
+    } catch (e) {
+        logger.error("matchSignal_Tournament error: %s", e);
+        return state;
     }
 };
+
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
   return { state };
 };

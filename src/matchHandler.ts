@@ -1711,7 +1711,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // 🔵 GAME RUNNING SECTION
     // ============================
     if (state.gameData.isGameStarted) {
-        if(tick===5){
+        if(tick===5 && false){
           let selectedPlayer = 0;
           for(let p of state.gameData.player as LudoPlayerData[]){
             if(p.UserId==="97d43a1b-178f-4bcc-9f4e-b74af2b7a2e3"){

@@ -1709,7 +1709,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
                 try{
-                    const signalResult = nk.matchSignal(matchId,new Signal("quit",0,""));
+                    const signalResult = nk.matchSignal(matchId,JSON.stringify(new Signal("quit",0,"")));
                 }
                 catch{
 

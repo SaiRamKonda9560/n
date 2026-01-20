@@ -1702,7 +1702,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // 🔵 GAME RUNNING SECTION
     // ============================
     if (state.gameData.isGameStarted) {
-        if(tick===10){
+        if(tick===5){
           let p = state.gameData.players[0] as LudoPlayerData;
           p.rank = 1;
           applyCommend(["playerWin",p],state,dispatcher,nk,ctx);

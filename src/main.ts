@@ -1608,11 +1608,9 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         let createdMatchs = state.createdMatchs as string[];
         let winners = state.winners as string[];
         if (createdMatchs.length === 0) {
-
             if (winners.length === 0) {
                 return {state};
             }
-
             // 🏆 FINAL WINNER
             if (winners.length === 1) {
                 const winner = winners[0];
@@ -1620,12 +1618,10 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 logger.info("Tournament winner: %s", winner);
                 return null; // 🔥 END TOURNAMENT
             }
-
             // ▶ NEXT ROUND
             const nextRoundPlayers = winners.map(w => ({ userId: w }));
             state.winners = [];
             state.createdMatchs = [];
-
             let index = 0;
             while (index < nextRoundPlayers.length) {
                 let remaining = nextRoundPlayers.length - index;
@@ -1639,17 +1635,10 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                     isPrivate: false,
                     matchToMatchSignal: ctx.matchId
                 }) as string;
-
                 state.createdMatchs.push(matchId);
-
                 for (let i = 0; i < matchSize; i++) {
-                    notificationSend(
-                        ["startMatch", { matchId }],
-                        nextRoundPlayers[index + i].userId,
-                        nk
-                    );
+                    notificationSend(["startMatch", { matchId }],nextRoundPlayers[index + i].userId,nk);
                 }
-
                 index += matchSize;
             }
 

@@ -1668,7 +1668,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
             case "playerWin": {
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
-                if(!state.sg){
+                if(state.sg===null){
                     state.sg=[];
                 }
                 state.sg.push(data);

@@ -1594,7 +1594,9 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 count--;
             }
             const data = readTournament(nk, ctx.matchId);
-            if (!data) return;
+            if (!data) {
+                return null;
+            }
             data.value.isStarted = true;
             writeTournament(nk, ctx.matchId, data.value);
             state.isStarted = true;
@@ -1608,7 +1610,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         if (createdMatchs.length === 0) {
 
             if (winners.length === 0) {
-                return state;
+                return {state};
             }
 
             // 🏆 FINAL WINNER
@@ -1651,7 +1653,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 index += matchSize;
             }
 
-            return state;
+            return {state};
         }
     }
   } catch (e) {

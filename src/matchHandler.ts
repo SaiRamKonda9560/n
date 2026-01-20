@@ -1715,8 +1715,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
         // 2. Tick too high
         // 3. End-game timeout finished
         if (Object.keys(state.presences).length === 0 || state.tickCount > 3600 || state.endGameTimeOut <= 0) {
-            logger.info("⭐⭐matchTerminate Object.keys(state.presences).length === 0 || state.tickCount>3600 || state.endGameTimeOut<=0");
-            ctx.matchTerminate();
+          return null;
         }
 
         // ============================

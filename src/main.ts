@@ -1658,7 +1658,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
     try {
         const signal = JSON.parse(data);
         if (!signal || !signal.type) {
-            return state;
+            return {state};
         }
         switch (signal.type) {
             case "completed": {
@@ -1670,7 +1670,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 const matchId = signal.matchId as string;
                 if (!player || !player.UserId || !matchId) {
                     logger.warn("Invalid playerWin signal");
-                    return state;
+                    return {state};
                 }
                 // 🔥 tell child match to terminate itself
                 try {
@@ -1681,7 +1681,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 const createdMatchs = state.createdMatchs as string[];
                 const winners = state.winners as string[];
                 if (!createdMatchs.includes(matchId)) {
-                    return state;
+                    return {state};
                 }
                 // store winner once
                 if (!winners.includes(player.UserId)) {
@@ -1694,11 +1694,11 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
             }
         }
 
-        return state;
+        return {state};
 
     } catch (e) {
         logger.error("matchSignal_Tournament error: %s", e);
-        return state;
+        return {state};
     }
 };
 

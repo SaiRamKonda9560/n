@@ -1674,7 +1674,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 const createdMatchs = state.createdMatchs as string[];
                 const winners = state.winners as string[];
                 if(createdMatchs.includes(matchId)){
-                    // store winner
+                    // store winner 
                     if(!winners.includes(player.UserId)){
                         winners.push(player.UserId);
                         // remove completed matchId correctly

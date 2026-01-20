@@ -1897,7 +1897,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     return { state };
 };
 // Handles any signal coming from players/bots and updates game state.
-const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string): { state: any } 
+const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string)
 {
     try {
         // 🔹 Send the raw JSON signal to all connected players
@@ -1911,6 +1911,9 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         let signalData: any;
         try {
             signalData = JSON.parse(data);
+            if(signalData.type === "quit"){
+              return null;
+            }
         } catch (e) {
             throw new Error("Invalid JSON in matchSignal: " + e);
         }

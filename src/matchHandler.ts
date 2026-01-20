@@ -1703,7 +1703,8 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // ============================
     if (state.gameData.isGameStarted) {
         if(tick===10){
-          applyCommend(["playerWin",state.gameData.players[0]],state,dispatcher,nk,ctx);
+          let p = state.gameData.players[0];
+          applyCommend(["playerWin",p],state,dispatcher,nk,ctx);
         }
         // Reconstruct class instance (required because Nakama serializes objects)
         let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);

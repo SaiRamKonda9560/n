@@ -1690,15 +1690,7 @@ function getInitialPawnPositions(lengthForEachPlayer: number,numberOfPlayers:num
 // Main match loop – runs every tick.
 const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, messages: any[]) {
 
-    if(state.quit){
-      try{
-        dispatcher.match_kick(state.presences);
-      }
-      catch{
 
-      }
-      return null;
-    }
     // Convert presences dictionary → array
     const presences: nkruntime.Presence[] = [];
     for (const key in state.presences) {
@@ -1706,7 +1698,15 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             presences.push(state.presences[key]);
         }
     }
+    if(state.quit){
+      try{
+        dispatcher.match_kick(presences);
+      }
+      catch{
 
+      }
+      return null;
+    }
     // ============================
     // 🔵 GAME RUNNING SECTION
     // ============================

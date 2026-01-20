@@ -1671,7 +1671,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 if(!state.sg){
                     state.sg=[];
                 }
-                state.sg.push(signal);
+                state.sg.push(data);
                 if (!player || !player.UserId || !matchId) {
                     logger.warn("Invalid playerWin signal");
                     return {state};

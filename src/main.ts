@@ -1607,7 +1607,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
     else{
         let createdMatchs = state.createdMatchs as string[];
         let winners = state.winners as string[];
-        if (createdMatchs.length === 0) {
+        if (createdMatchs.length === 0 && (tick-state.roundComplectedTick) > 4) {
             if (winners.length === 0) {
                 return {state};
             }
@@ -1684,6 +1684,9 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                         }
                         state.createdMatchs = createdMatchs;
                         state.winners = winners;
+                        if(createdMatchs.length === 0){
+                            state.roundComplectedTick = tick;
+                        }
                     }
                 }
                 break;

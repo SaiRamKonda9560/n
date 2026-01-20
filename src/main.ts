@@ -1623,6 +1623,8 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
             state.winners = [];
             state.createdMatchs = [];
             let index = 0;
+                state.newRound = "";
+
             while (index < nextRoundPlayers.length) {
                 let remaining = nextRoundPlayers.length - index;
                 let matchSize = remaining >= 4 ? 4 : remaining;
@@ -1638,6 +1640,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 state.createdMatchs.push(matchId);
                 for (let i = 0; i < matchSize; i++) {
                     notificationSend(["startMatch", { matchId }],nextRoundPlayers[index + i].userId,nk);
+                    state.newRound += "id "+nextRoundPlayers[index + i].userId + " match id "+matchId;
                 }
                 index += matchSize;
             }

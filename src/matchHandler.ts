@@ -1920,7 +1920,14 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         let signalData: any;
         try {
             signalData = JSON.parse(data);
+            
             if(signalData.type === "quit"){
+              try{
+                dispatcher.match_kick(state.presences);
+              }
+              catch{
+
+              }
               return null;
             }
         } catch (e) {

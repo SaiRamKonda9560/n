@@ -1590,11 +1590,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                     createdMatchs.push(currentMatchId);
                     count = 4;
                 }
-                notificationSend(
-                    ["startMatch", { matchId: currentMatchId }],
-                    p.userId,
-                    nk
-                );
+                notificationSend(["startMatch", { matchId: currentMatchId }],p.userId,nk);
                 count--;
             }
             const data = readTournament(nk, ctx.matchId);
@@ -1607,8 +1603,8 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         }
     }
     else{
-        const createdMatchs = state.createdMatchs as string[];
-        const winners = state.winners as string[];
+        let createdMatchs = state.createdMatchs as string[];
+        let winners = state.winners as string[];
         if (createdMatchs.length === 0) {
             if(winners.length === 0){
                 return null;
@@ -1623,69 +1619,48 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
             }
             // ▶ NEXT ROUND or FINAL
             if (winners.length > 1) {
-
-                const presences = winners.map((userId: string) => ({ userId }));
-                state.createdMatchs = [];
-                state.winners = [];
-
+                let presences:any[]= [];
+                for(let winner in winners){
+                    presences.push({userId:winner});
+                }
+                winners = [];
+                createdMatchs = [];
                 // 🔴 FINAL MATCH (2 / 3 / 4 players)
                 if (presences.length <= 4) {
-
-                    const matchId = nk.matchCreate("lobby", {
-                        boardIndex: 0,
-                        numberOfPlayers: presences.length,
-                        gameMode: "quick",
-                        fee: 0,
-                        isPrivate: false,
-                        matchToMatchSignal: ctx.matchId
-                    }) as string;
-
-                    state.createdMatchs.push(matchId);
-
+                    const matchId = nk.matchCreate("lobby", {boardIndex: 0,numberOfPlayers: presences.length,gameMode: "quick", fee: 0,isPrivate: false,matchToMatchSignal: ctx.matchId}) as string;
+                    createdMatchs.push(matchId);
                     for (const p of presences) {
-                        notificationSend(
-                            ["startMatch", { matchId }],
-                            p.userId,
-                            nk
-                        );
+                        notificationSend(["startMatch", { matchId }],p.userId,nk);
                     }
-
-                    return { state };
                 }
-
-                // 🟡 MULTI MATCH ROUND (4 + remainder 2/3)
-                let index = 0;
-
-                while (index < presences.length) {
-
-                    let remaining = presences.length - index;
-                    let matchSize = 4;
-
-                    if (remaining < 4) {
-                        matchSize = remaining; // 2 or 3
+                else{
+                    // 🟡 MULTI MATCH ROUND (4 + remainder 2/3)
+                    let index = 0;
+                    while (index < presences.length) {
+                        let remaining = presences.length - index;
+                        let matchSize = 4;
+                        if (remaining < 4) {
+                            matchSize = remaining; // 2 or 3
+                        }
+                        const matchId = nk.matchCreate("lobby", {
+                            boardIndex: 0,
+                            numberOfPlayers: matchSize,
+                            gameMode: "quick",
+                            fee: 0,
+                            isPrivate: false,
+                            matchToMatchSignal: ctx.matchId
+                        }) as string;
+                        createdMatchs.push(matchId);
+                        for (let i = 0; i < matchSize; i++) {
+                            notificationSend(["startMatch", { matchId }],presences[index + i].userId,nk);
+                        }
+                        index += matchSize;
                     }
-
-                    const matchId = nk.matchCreate("lobby", {
-                        boardIndex: 0,
-                        numberOfPlayers: matchSize,
-                        gameMode: "quick",
-                        fee: 0,
-                        isPrivate: false,
-                        matchToMatchSignal: ctx.matchId
-                    }) as string;
-
-                    state.createdMatchs.push(matchId);
-
-                    for (let i = 0; i < matchSize; i++) {
-                        notificationSend(
-                            ["startMatch", { matchId }],
-                            presences[index + i].userId,
-                            nk
-                        );
-                    }
-
-                    index += matchSize;
                 }
+                state.createdMatchs = createdMatchs;
+                state.winners=winners;
+                return { state };
+
             }
 
         }
@@ -1716,15 +1691,19 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                 }
                 const createdMatchs = state.createdMatchs as string[];
                 const winners = state.winners as string[];
-                // store winner
-                winners.push(player.UserId);
-                // remove completed matchId correctly
-                const index = createdMatchs.indexOf(matchId);
-                if (index !== -1) {
-                    createdMatchs.splice(index, 1);
+                if(createdMatchs.includes(matchId)){
+                    // store winner
+                    if(!winners.includes(player.UserId)){
+                        winners.push(player.UserId);
+                        // remove completed matchId correctly
+                        const index = createdMatchs.indexOf(matchId);
+                        if (index !== -1) {
+                            createdMatchs.splice(index, 1);
+                        }
+                        state.createdMatchs = createdMatchs;
+                        state.winners = winners;
+                    }
                 }
-                state.createdMatchs = createdMatchs;
-                state.winners = winners;
                 break;
             }
         }

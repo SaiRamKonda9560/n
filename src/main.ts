@@ -1639,7 +1639,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 }) as string;
                 state.createdMatchs.push(matchId);
                 for (let i = 0; i < matchSize; i++) {
-                    //notificationSend(["startMatch", { matchId }],nextRoundPlayers[index + i].userId,nk);
+                    notificationSend(["startMatch", { matchId }],nextRoundPlayers[index + i].userId,nk);
                     state.newRound += "id "+nextRoundPlayers[index + i].userId + " match id "+matchId;
                 }
                 index += matchSize;

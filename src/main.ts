@@ -29,6 +29,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
         matchSignal: matchSignal_Tournament,
         matchTerminate: matchTerminate_Tournament,
     });
+    
     initializer.registerMatchmakerMatched(matchmakerMatched);
     initLeaderBoards(logger,nk,'');
 

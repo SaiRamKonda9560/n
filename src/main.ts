@@ -1661,17 +1661,13 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
             return {state};
         }
         switch (signal.type) {
-            case "completed": {
-                // optional future use
-                break;
-            }
             case "playerWin": {
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
                 if(state.sg===null){
-                    state.sg=[];
+                    state.sg=0;
                 }
-                state.sg.push(data);
+                state.sg++;
                 if (!player || !player.UserId || !matchId) {
                     logger.warn("Invalid playerWin signal");
                     return {state};

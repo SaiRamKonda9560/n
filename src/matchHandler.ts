@@ -1718,7 +1718,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
           }
           let player = state.gameData.players[selectedPlayer] as LudoPlayerData;
           //player.rank = 1;
-          //applyCommend(["playerWin",p],state,dispatcher,nk,ctx); 
+          //applyCommend(["playerWin",p],state,dispatcher,nk,ctx);  
           nk.matchSignal(state.matchToMatchSignal,JSON.stringify({type:"playerWin",player,gameData:state.gameData,matchId:ctx.matchId}));
         }
         // Reconstruct class instance (required because Nakama serializes objects)

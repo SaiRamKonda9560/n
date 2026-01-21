@@ -1431,6 +1431,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                     }
                 }
         }
+        state.playersWinSignal = [];
         let createdMatchs = state.createdMatchs as string[];
         let winners = state.winners as string[];
         if (createdMatchs.length === 0) {

@@ -1695,6 +1695,9 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             presences.push(state.presences[key]);
         }
     }
+    if (state.quit === true) {
+        throw "quit";
+    }
     // ============================
     // 🔵 GAME RUNNING SECTION
     // ============================
@@ -1924,9 +1927,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         state.quit = true;
     }
     const signal = new Signal(type, who, value);
-    if (state.quit === true) {
-        throw "quit";
-    }
+
 
     try {
         // 🔹 Send the raw JSON signal to all connected players

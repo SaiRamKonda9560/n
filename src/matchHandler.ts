@@ -1925,7 +1925,6 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     const value = signalData?.value ?? "";
     if (type === "quit") {
         state.quit = true;
-        throw "e";
     }
     const signal = new Signal(type, who, value);
 
@@ -2375,6 +2374,7 @@ const matchmakerMatched = function (ctx: any, logger: any, nk: any, matches: any
     return matchId;
   } catch (err: any) {
     logger.error("Error creating match:", err.message);
+    throw err;
   }
 };
 function applyCommend(commend: [string, any], state: any, dispatcher: any, nk: any,ctx:any) {

@@ -1695,22 +1695,10 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
             presences.push(state.presences[key]);
         }
     }
-    if(state.quit){
-      try{
-        dispatcher.match_kick(presences);
-      }
-      catch (error){
-        logger.info( "dispatcher.match_kick error"+error);
-      }
-      return null;
-    }
     // ============================
     // 🔵 GAME RUNNING SECTION
     // ============================
     if (state.gameData.isGameStarted) {
-        if(tick===10){
-          throw "quit"
-        }
         if(tick===30 ){
           let selectedPlayer = 0;
           for(let p of state.gameData.players as LudoPlayerData[]){
@@ -1930,13 +1918,14 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
         let signalData: any;
         try {
             signalData = JSON.parse(data);
-            
             if(signalData.type === "quit"){
               state.quit = true;
-              return null;
             }
         } catch (e) {
-            throw new Error("Invalid JSON in matchSignal: " + e);
+           // throw new Error("Invalid JSON in matchSignal: " + e);
+        }
+        if(state.quit){
+          throw "quit";
         }
         const signal = new Signal(
             signalData.type ?? "tick",

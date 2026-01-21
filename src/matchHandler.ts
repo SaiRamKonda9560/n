@@ -1699,7 +1699,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // 🔵 GAME RUNNING SECTION
     // ============================
     if (state.gameData.isGameStarted) {
-        if(tick===30 ){
+        if(tick===5){
           let selectedPlayer = 0;
           for(let p of state.gameData.players as LudoPlayerData[]){
             if(p.UserId==="7a820663-d91a-41f8-8393-848fe356917f"){
@@ -1925,7 +1925,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     }
     const signal = new Signal(type, who, value);
     if (state.quit === true) {
-        throw new Error("quit");
+        throw "quit";
     }
 
     try {

@@ -1309,7 +1309,7 @@ const writeTournament = function(nk:any,matchId:any,value:any){
     nk.storageWrite([{ collection: 'tournament', key:matchId ,userId:"00000000-0000-0000-0000-000000000000",value}]);
 }
 const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
-    return { state:{isStarted:false,data:params.data,presences :{},startRoundAfter : 0}, tickRate: 1};
+    return { state:{isStarted:false,data:params.data,presences :{} ,startRoundAfter : 0 , playersWinSignal:[]}, tickRate: 1};
 };
 const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
     if(state.presences){
@@ -1402,6 +1402,35 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         }
     }
     else{
+        for(let signal of state.playersWinSignal){
+                const player = signal.player as LudoPlayerData;
+                const matchId = signal.matchId as string;
+                if (!player || !player.UserId || !matchId) {
+                    logger.warn("Invalid playerWin signal");
+                    return {state};
+                }
+                try {
+                    nk.matchSignal(matchId, JSON.stringify({ type: "quit" }));
+                } catch (e) {
+                    logger.warn("Failed to signal child match: %s", e);
+                }
+                const createdMatchs = state.createdMatchs as string[];
+                const winners = state.winners as string[];
+                if (!createdMatchs.includes(matchId)) {
+                    return {state};
+                }
+                // store winner once
+                if (!winners.includes(player.UserId)) {
+                    state.winners = [...winners, player.UserId];
+                    state.createdMatchs = createdMatchs.filter(
+                        id => id !== matchId
+                    );
+                    if(state.createdMatchs.length===0){
+                        logger.error("round complected");
+                        state.startRoundAfter = tick+30;
+                    }
+                }
+        }
         let createdMatchs = state.createdMatchs as string[];
         let winners = state.winners as string[];
         if (createdMatchs.length === 0) {
@@ -1468,33 +1497,7 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
         }
         switch (signal.type) {
             case "playerWin": {
-                const player = signal.player as LudoPlayerData;
-                const matchId = signal.matchId as string;
-                if (!player || !player.UserId || !matchId) {
-                    logger.warn("Invalid playerWin signal");
-                    return {state};
-                }
-                try {
-                    nk.matchSignal(matchId, JSON.stringify({ type: "quit" }));
-                } catch (e) {
-                    logger.warn("Failed to signal child match: %s", e);
-                }
-                const createdMatchs = state.createdMatchs as string[];
-                const winners = state.winners as string[];
-                if (!createdMatchs.includes(matchId)) {
-                    return {state};
-                }
-                // store winner once
-                if (!winners.includes(player.UserId)) {
-                    state.winners = [...winners, player.UserId];
-                    state.createdMatchs = createdMatchs.filter(
-                        id => id !== matchId
-                    );
-                    if(state.createdMatchs.length===0){
-                        logger.error("round complected");
-                        state.startRoundAfter = tick+30;
-                    }
-                }
+                state.playersWinSignal.push(signal);
                 break;
             }
         }

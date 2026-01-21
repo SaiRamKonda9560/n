@@ -1925,7 +1925,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     const value = signalData?.value ?? "";
     if (type === "quit") {
         state.quit = true;
-        throw "";
+        throw "e";
     }
     const signal = new Signal(type, who, value);
 

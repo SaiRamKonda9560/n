@@ -1,4 +1,3 @@
-
 interface Vector2Int {
   x: number;
   y: number;
@@ -1931,6 +1930,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
             
             if(signalData.type === "quit"){
               state.quit = true;
+              return null;
             }
         } catch (e) {
             throw new Error("Invalid JSON in matchSignal: " + e);
@@ -2240,7 +2240,6 @@ const matchInit = function (ctx: any, logger: any, nk: any, params: any) {
     }; 
     return { state, tickRate: 1, label: JSON.stringify(params) };
 };
-
 const matchJoinAttempt = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
   logger.info("matchJoinAttempt called for user:", presence.userId);
 

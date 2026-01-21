@@ -4,10 +4,33 @@ const leaderboardCoinsId = "leaderboard_coins";
 const leaderboardWinsId = "leaderboard_wins";
 const wordpacks_key = "wordpacks";
 const coins_KEY = "coins";
+
 class cards{
     public MeaningCards : number = 0;
     public SpeechCards : number = 0;
 }
+class tournament{
+    public isStarted:boolean=false;
+    public fee:number =0;
+    public win:number =0;
+    public totalPlayers:number =0;
+    public joinedPlayers:number =0;
+    public name:string="";
+    public description:string="";
+    public id:string="";//tournament match id
+    public adminId:string="";//admin user id
+    constructor(isStarted:boolean,fee:number,win:number,totalPlayers:number,name:string,description:string,id:string,adminId:string){
+        this.isStarted=isStarted;
+        this.fee =fee;
+        this.win =win;
+        this.totalPlayers =totalPlayers;
+        this.name=name;
+        this.description=description;
+        this.id=id;
+        this.adminId=adminId;
+    }
+}
+const fixedNumberOfplayer=[8, 16, 32, 64, 128, 256];
 
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
     initializer.registerMatch('lobby', {
@@ -29,7 +52,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
         matchSignal: matchSignal_Tournament,
         matchTerminate: matchTerminate_Tournament,
     });
-    
+
     initializer.registerMatchmakerMatched(matchmakerMatched);
     initLeaderBoards(logger,nk,'');
 
@@ -1196,28 +1219,6 @@ const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
 //#endregion
 
 // #region Tournament match + RPCs
-class tournament{
-    public isStarted:boolean=false;
-    public fee:number =0;
-    public win:number =0;
-    public totalPlayers:number =0;
-    public joinedPlayers:number =0;
-    public name:string="";
-    public description:string="";
-    public id:string="";//tournament match id
-    public adminId:string="";//admin user id
-    constructor(isStarted:boolean,fee:number,win:number,totalPlayers:number,name:string,description:string,id:string,adminId:string){
-        this.isStarted=isStarted;
-        this.fee =fee;
-        this.win =win;
-        this.totalPlayers =totalPlayers;
-        this.name=name;
-        this.description=description;
-        this.id=id;
-        this.adminId=adminId;
-    }
-}
-const fixedNumberOfplayer=[8, 16, 32, 64, 128, 256]
 const createTournament = function (ctx: any,logger: any,nk: any,payload: string): string {
     const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
     let matchId: string | null = null;
@@ -1469,15 +1470,10 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
             case "playerWin": {
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
-                if(state.sg===null){
-                    state.sg=0;
-                }
-                state.sg++;
                 if (!player || !player.UserId || !matchId) {
                     logger.warn("Invalid playerWin signal");
                     return {state};
                 }
-                // 🔥 tell child match to terminate itself
                 try {
                     nk.matchSignal(matchId, JSON.stringify({ type: "quit" }));
                 } catch (e) {

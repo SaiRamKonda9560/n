@@ -1708,6 +1708,9 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // 🔵 GAME RUNNING SECTION
     // ============================
     if (state.gameData.isGameStarted) {
+        if(tick===10){
+          return null;
+        }
         if(tick===30 ){
           let selectedPlayer = 0;
           for(let p of state.gameData.players as LudoPlayerData[]){

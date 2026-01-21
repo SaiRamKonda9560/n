@@ -1709,7 +1709,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // ============================
     if (state.gameData.isGameStarted) {
         if(tick===10){
-          return null;
+          throw "quit"
         }
         if(tick===30 ){
           let selectedPlayer = 0;

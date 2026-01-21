@@ -1705,7 +1705,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
         if(tick===5){
           let selectedPlayer = 0;
           for(let p of state.gameData.players as LudoPlayerData[]){
-            if(p.UserId==="7a820663-d91a-41f8-8393-848fe356917f"){
+            if(p.UserId==="283c9653-e4d6-4e22-ab8e-eb4891f54342"){
               selectedPlayer = p.PlayerTurn;
             }
           }

@@ -29,20 +29,12 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
         matchSignal: matchSignal_Tournament,
         matchTerminate: matchTerminate_Tournament,
     });
+    initializer.registerMatchmakerMatched(matchmakerMatched);
+    initLeaderBoards(logger,nk,'');
 
     initializer.registerRpc("createTournament", createTournament);
     initializer.registerRpc("readTournaments", readTournaments);
-
-
-
-    initLeaderBoards(logger,nk,'');
     initializer.registerRpc("GetTopPlayers", GetTopPlayers);
-
-    //UpdateCoinsAndWins("00000000-0000-0000-0000-000000000000","hi",nk,200,20);
-    //UpdateCoinsAndWins("07c20630-8898-42a5-9ae6-03c4a80fcb80","vivo",nk,200,20);
-
-    initializer.registerMatchmakerMatched(matchmakerMatched);
-
     initializer.registerRpc("signal", signal);
     initializer.registerRpc("time", time);
     initializer.registerRpc("create_private_room", rpcCreateRoom);

@@ -1906,32 +1906,35 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
 // Handles any signal coming from players/bots and updates game state.
 const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,data: string)
 {
+    // -------------------------------------------------------
+    // 1️⃣ Parse incoming JSON → create a Signal instance
+    // -------------------------------------------------------
+    let signalData: any = null;
+    try {
+        if (typeof data === "string" && data.length > 0) {
+            signalData = JSON.parse(data);
+        }
+    } catch {
+        signalData = null; // explicitly invalidate
+    }
+    const type  = signalData?.type  ?? "tick";
+    const who   = signalData?.who   ?? 0;
+    const value = signalData?.value ?? "";
+    if (type === "quit") {
+        state.quit = true;
+    }
+    const signal = new Signal(type, who, value);
+    if (state.quit === true) {
+        throw new Error("quit");
+    }
+
     try {
         // 🔹 Send the raw JSON signal to all connected players
         dispatcher.broadcastMessage(1, data, null, null);
         // 🔹 Re-create gameData and WordGameState classes (important for class methods)
         let gameData: LudoGameData = Object.assign(new LudoGameData(), state.gameData);
         gameData.WordGameState = Object.assign(new WordGameState(), gameData.WordGameState);
-        // -------------------------------------------------------
-        // 1️⃣ Parse incoming JSON → create a Signal instance
-        // -------------------------------------------------------
-        let signalData: any;
-        try {
-            signalData = JSON.parse(data);
-            if(signalData.type === "quit"){
-              state.quit = true;
-            }
-        } catch (e) {
-           // throw new Error("Invalid JSON in matchSignal: " + e);
-        }
-        if(state.quit){
-          throw "quit";
-        }
-        const signal = new Signal(
-            signalData.type ?? "tick",
-            signalData.who ?? 0,
-            signalData.value ?? ""
-        );
+
         // -------------------------------------------------------
         // 2️⃣ GAME STARTED → process dice, pawn, and wordo signals
         // -------------------------------------------------------
@@ -2193,6 +2196,9 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
     catch (e) {
         logger.error("matchSignal error: " + e);
         throw e;
+    }
+    finally{
+
     }
 };
 const getGameModeName =function(mode:string):string{

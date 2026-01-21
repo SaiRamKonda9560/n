@@ -1309,7 +1309,7 @@ const writeTournament = function(nk:any,matchId:any,value:any){
     nk.storageWrite([{ collection: 'tournament', key:matchId ,userId:"00000000-0000-0000-0000-000000000000",value}]);
 }
 const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
-    return { state:{isStarted:false,data:params.data},presences :{}, tickRate: 1,startRoundAfter : 0};
+    return { state:{isStarted:false,data:params.data,presences :{},startRoundAfter : 0}, tickRate: 1};
 };
 const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
     if(state.presences){

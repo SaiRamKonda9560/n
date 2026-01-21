@@ -1512,7 +1512,7 @@ const writeTournament = function(nk:any,matchId:any,value:any){
 }
 
 const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
-    return { state:{isStarted:false,data:params.data},presences :{}, tickRate: 1};
+    return { state:{isStarted:false,data:params.data},presences :{}, tickRate: 1,startRoundAfter : 0};
 };
 const matchJoinAttempt_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, presence: any, metadata: any) {
     if(state.presences){
@@ -1560,8 +1560,9 @@ const updateTournamentPlayers=function(nk:any,matchId:any,state:any){
 }
 const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
   try {
+    if(state.presences){
     if (!state.isStarted) {
-        const presences = Object.values(state.presences) as any[];
+        const presences : any[] = Object.values(state.presences);
         const length = presences.length;
         if(length>0){
             for(let p of presences){
@@ -1572,7 +1573,6 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         if (length === state.data.totalPlayers) {
             const createdMatchs: string[] = [];
             const winners: string[] = [];
-
             let currentMatchId: string | null = null;
             let count = 0;
             for (const p of presences) {
@@ -1608,8 +1608,13 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         let createdMatchs = state.createdMatchs as string[];
         let winners = state.winners as string[];
         if (createdMatchs.length === 0) {
+            let delay = state.startRoundAfter-tick;
+            if(delay<=0){
+            logger.error("winners :"+ winners);
             if (winners.length === 0) {
-                return {state};
+                //no winners
+                logger.error("no winners");
+                return null;
             }
             // 🏆 FINAL WINNER
             if (winners.length === 1) {
@@ -1623,8 +1628,6 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
             state.winners = [];
             state.createdMatchs = [];
             let index = 0;
-                state.newRound = "";
-
             while (index < nextRoundPlayers.length) {
                 let remaining = nextRoundPlayers.length - index;
                 let matchSize = remaining >= 4 ? 4 : remaining;
@@ -1637,20 +1640,26 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                     isPrivate: false,
                     matchToMatchSignal: ctx.matchId
                 }) as string;
+                logger.error("match created : "+matchId);
                 state.createdMatchs.push(matchId);
                 for (let i = 0; i < matchSize; i++) {
                     notificationSend(["startMatch", { matchId }],nextRoundPlayers[index + i].userId,nk);
-                    state.newRound += "id "+nextRoundPlayers[index + i].userId + " match id "+matchId;
                 }
                 index += matchSize;
             }
+            }else{
+                logger.error("delay :"+ delay);
+                for(let p of winners){
+                    notificationSend(["delay", { delay }],p,nk);
+                }
 
+            }
             return {state};
         }
     }
+    }
   } catch (e) {
     logger.error("matchLoop_Tournament error: %s", e);
-    state.sendMessageError = e;
   }
   return { state };
 };
@@ -1689,6 +1698,10 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
                     state.createdMatchs = createdMatchs.filter(
                         id => id !== matchId
                     );
+                    if(state.createdMatchs.length===0){
+                        logger.error("round complected");
+                        state.startRoundAfter = tick+30;
+                    }
                 }
                 break;
             }

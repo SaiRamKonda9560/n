@@ -1700,8 +1700,8 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
       try{
         dispatcher.match_kick(presences);
       }
-      catch{
-
+      catch (error){
+        logger.info( "dispatcher.match_kick error"+error);
       }
       return null;
     }
@@ -1709,10 +1709,10 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
     // 🔵 GAME RUNNING SECTION
     // ============================
     if (state.gameData.isGameStarted) {
-        if(tick===5 ){
+        if(tick===30 ){
           let selectedPlayer = 0;
           for(let p of state.gameData.players as LudoPlayerData[]){
-            if(p.UserId==="97d43a1b-178f-4bcc-9f4e-b74af2b7a2e3"){
+            if(p.UserId==="7a820663-d91a-41f8-8393-848fe356917f"){
               selectedPlayer = p.PlayerTurn;
             }
           }
@@ -1787,8 +1787,8 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
                 }
             }
         }
-          catch (error){
-              logger.info( "WORDO BOT 🙊🙊🙊"+error);
+        catch (error){
+          logger.info( "WORDO BOT 🙊🙊🙊"+error);
         }
 
 

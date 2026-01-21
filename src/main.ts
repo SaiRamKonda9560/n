@@ -1,143 +1,14 @@
-const generateShortIdRpc =  function (ctx: any, logger: any, nk: any, payload: string): string {
-    // Parse incoming payload safely
-    let data: { longId: string };
-    try {
-        data = JSON.parse(payload);
-    } catch (err) {
-        logger.error("Invalid JSON payload: %v", err);
-        return JSON.stringify({ success: false, error: "Invalid JSON" });
-    }
-
-    if (!data || !data.longId) {
-        return JSON.stringify({ success: false, error: "Missing longId" });
-    }
-
-    // Create short ID (6 random characters)
-    const shortId = Math.random().toString(36).substring(2, 8);
-
-    // Prepare storage record
-    const collection = "short_ids";
-    const key = ctx.userId; // Each user has their own record
-    
-    const object= nk.StorageWrite = {
-        collection,
-        key,
-        userId: ctx.userId,
-        value: {
-            longId: data.longId,
-            shortId: shortId,
-            updatedAt: Date.now()
-        },
-        permissionRead: 1,
-        permissionWrite: 1
-    };
-
-    try {
-        nk.storageWrite([object]);
-        logger.info(`Stored shortId for user ${ctx.userId}: ${shortId}`);
-        return JSON.stringify({ success: true, shortId });
-    } catch (err) {
-        logger.error("Error writing storage: %v", err);
-        return JSON.stringify({ success: false, error: "Storage write failed" });
-    }
-};
-const getLongIdRpc = function (ctx: any, logger: any, nk: any, payload: string): string {
-    // Parse input
-    let data: { shortId: string };
-    try {
-        data = JSON.parse(payload);
-    } catch (err) {
-        logger.error("Invalid JSON payload: %v", err);
-        return JSON.stringify({ success: false, error: "Invalid JSON" });
-    }
-
-    if (!data || !data.shortId) {
-        return JSON.stringify({ success: false, error: "Missing shortId" });
-    }
-
-    const collection = "short_ids";
-    const key = "global_map"; // one global mapping key
-    const userId = "00000000-0000-0000-0000-000000000000"; // empty = system-level object
-
-    try {
-        // Read the shared mapping object
-        const result = nk.storageRead([{ collection, key, userId }]);
-
-        if (!result || result.length === 0 || !result[0].value) {
-            return JSON.stringify({ success: false, error: "No mapping data available." });
-        }
-
-        const map = result[0].value as Record<string, string>;
-        const longId = map[data.shortId];
-
-        if (!longId) {
-            return JSON.stringify({ success: false, error: "Short ID not found." });
-        }
-
-        return JSON.stringify({ success: true, longId });
-    } catch (err) {
-        logger.error("Error reading storage: %v", err);
-        return JSON.stringify({ success: false, error: "Storage read failed" });
-    }
-};
-// --- Utility: generate unique short referral code ---
-function generateReferralCode(length = 6): string {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
+const playerData_collection = "player_data";
+const dailyAttendance_key = "daily_attendance";
+const leaderboardCoinsId = "leaderboard_coins";
+const leaderboardWinsId = "leaderboard_wins";
+const wordpacks_key = "wordpacks";
+const coins_KEY = "coins";
+class cards{
+    public MeaningCards : number = 0;
+    public SpeechCards : number = 0;
 }
-// --- RPC: generate or retrieve referral code ---
-const generateReferralCodeRpc = function (ctx: any, logger: any, nk: any, payload: string): string {
-    const collection = "referral_codes";
-    const userId = ctx.userId;
-    const key = userId; // One record per user
 
-    try {
-        // Step 1 — Check if user already has a referral code
-        const existing = nk.storageRead([{ collection, key, userId }]);
-        if (existing && existing.length > 0 && existing[0].value && existing[0].value.code) {
-            logger.info(`Referral code already exists for ${userId}: ${existing[0].value.code}`);
-            return JSON.stringify({ success: true, referralCode: existing[0].value.code });
-        }
-
-        // Step 2 — Generate unique referral code (check for duplicates)
-        let referralCode: string="";
-        let isUnique = false;
-
-        while (!isUnique) {
-            referralCode = generateReferralCode(8);
-            const result = nk.storageList(collection, 100, "");
-            isUnique = !result.objects.some((obj: nkruntime.StorageObject) => {
-                return obj.value && obj.value.code === referralCode;
-            });
-        }
-
-
-        // Step 3 — Store permanently for this user
-        const record = {
-            collection,
-            key,
-            userId,
-            value: {
-                code: referralCode,
-                createdAt: Date.now()
-            },
-            permissionRead: 2, // Public read (optional)
-            permissionWrite: 0 // No client write
-        };
-
-        nk.storageWrite([record]);
-
-        logger.info(`✅ Created referral code for ${userId}: ${referralCode}`);
-        return JSON.stringify({ success: true, referralCode });
-    } catch (err) {
-        logger.error("Error in referral code generation: %v", err);
-        return JSON.stringify({ success: false, error: "Internal server error" });
-    }
-};
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
     initializer.registerMatch('lobby', {
         matchInit,
@@ -181,10 +52,6 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("spin", spin);
     initializer.registerRpc("mystery", mystery);
 
-    initializer.registerRpc("rpc", rpc);
-    initializer.registerRpc("getLongIdRpc", getLongIdRpc);
-    initializer.registerRpc("generateShortIdRpc", generateShortIdRpc);
-    initializer.registerRpc("generateReferralCodeRpc", generateReferralCodeRpc);
     initializer.registerRpc("wordo", wordo);
     initializer.registerRpc("getPlayerCoins", getPlayerCoins);
     initializer.registerRpc("rpcStoreWords", rpcStoreWords);
@@ -203,21 +70,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
     deleteAllTournaments(logger,nk);
 }
-const rpc = function (ctx: any, logger: any, nk: any, payload: string): string {
-  try {
-    const res = nk.httpRequest(
-      "http://127.0.0.1:8000/ping",
-      "get",
-      { "Accept": "application/json" }
-    )
 
-    logger.info("Ping server response: " + res.body);
-    return res.body; // returns {"reply":"pong"}
-  } catch (error) {
-    logger.error("Ping RPC error: " + error);
-    throw new Error("Ping failed");
-  }
-}
+//#region  rpcs
 const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
         logger.debug(`Received payload: ${payload}, Type: ${typeof payload}`);
@@ -244,8 +98,8 @@ const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string):
         // --- READ CURRENT DATA ---
         let attendanceData: any = null;
         try {
-            const collection = "player_data";
-            const key = "daily_attendance";
+            const collection = playerData_collection;
+            const key = dailyAttendance_key;
             const objects = nk.storageRead([{ collection, key, userId }]);
             if (objects && objects.length > 0 && objects[0].value) {
                 attendanceData = objects[0].value;
@@ -269,7 +123,7 @@ const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string):
             throw new Error(`Unknown action: ${action}`);
         }
 
-        const collection = "player_data";
+        const collection = playerData_collection;
         const key = "coins";
         let currentCoins = 0;
 
@@ -344,7 +198,7 @@ const getPlayerCoins = function (ctx: any, logger: any, nk: any, payload: string
         }
 
         const userId = data.userId;
-        const collection = "player_data";
+        const collection = playerData_collection;
         const key = "coins";
 
         let currentCoins = 0;
@@ -382,8 +236,6 @@ const getPlayerCoins = function (ctx: any, logger: any, nk: any, payload: string
         });
     }
 };
-const player_data = "player_data";
-const daily_attendance = "daily_attendance";
 const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string): string {
     try {
         const userId = ctx.userId;
@@ -393,7 +245,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         // ================= READ EXISTING DATA =================
         let attendanceData: any = null;
         try {
-            const objects = nk.storageRead([{ collection: player_data, key: daily_attendance, userId }]);
+            const objects = nk.storageRead([{ collection: playerData_collection, key: dailyAttendance_key, userId }]);
             if (objects?.length && objects[0].value) {
                 attendanceData = objects[0].value;
             }
@@ -503,7 +355,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         }
         attendanceData.lastLogin = now.getTime();
         // ================= SAVE BACK =================
-        nk.storageWrite([{collection: player_data,key: daily_attendance,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
+        nk.storageWrite([{collection: playerData_collection,key: dailyAttendance_key,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
     return JSON.stringify({success: true, isNewPlayer,firstLoginToday,data: attendanceData,dayIndex: attendanceData.dayIndex,dailyReward: attendanceData.dailyReward,todayReward: attendanceData.dailyRewards?.[0] || null});
     } catch (e) {
         const msg = e instanceof Error ? e.message : JSON.stringify(e);
@@ -521,7 +373,7 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         const read = request.read;
         // ================= READ ATTENDANCE =================
         const attendanceObjects = nk.storageRead([
-            { collection: player_data, key: daily_attendance, userId }
+            { collection: playerData_collection, key: dailyAttendance_key, userId }
         ]);
         if (!attendanceObjects?.length || !attendanceObjects[0].value) {
             throw new Error("No attendance data found");
@@ -545,7 +397,7 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         const rewardAmount = todayReward.amount;
         const newBalance = playerCoins(nk,userId,username, rewardAmount);
         todayReward.isCollected = true;
-        nk.storageWrite([{collection: player_data,key: daily_attendance,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
+        nk.storageWrite([{collection: playerData_collection,key: dailyAttendance_key,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);
         return JSON.stringify({success: true,message: "Reward collected successfully",coinsAdded: rewardAmount,currentCoins: newBalance,attendanceData});
 
     } catch (e) {
@@ -611,8 +463,8 @@ const spin = function (ctx: any, logger: any, nk: any, payload: string): string 
         const username = ctx.username;
 
         if (!userId) throw new Error("User ID missing from context");
-        const collection = "player_data";
-        const attendanceKey = "daily_attendance";
+        const collection = playerData_collection;
+        const attendanceKey = dailyAttendance_key;
         const coinsKey = "coins";
         // --- PARSE PAYLOAD ---
         const request = payload ? JSON.parse(payload) : {};
@@ -723,8 +575,8 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         const userId = ctx.userId;
         const username = ctx.username;
         if (!userId) throw new Error("User ID missing from context");
-        const collection = "player_data";
-        const attendanceKey = "daily_attendance";
+        const collection = playerData_collection;
+        const attendanceKey = dailyAttendance_key;
         const coinsKey = "coins";
         // --- PARSE PAYLOAD ---
         const request = payload ? JSON.parse(payload) : {};
@@ -807,7 +659,7 @@ const wordo = function (ctx: any, logger: any, nk: any, payload: string): string
     try {
         const userId = "00000000-0000-0000-0000-000000000000";
         if (!userId) throw new Error("User ID missing from context");
-        const collection = "player_data";
+        const collection = playerData_collection;
         const key = "wordo";
         const request = payload ? JSON.parse(payload) : {};
         if(request.read){
@@ -902,8 +754,8 @@ const rpcCreateRoom = function (ctx: any, logger: any, nk: any, payload: string)
   }
 };
 const addWord = function (nk: any, userId: string, word: string) {
-  const collection = "player_data";
-  const key = "daily_attendance";
+  const collection = playerData_collection;
+  const key = dailyAttendance_key;
 
   let attendanceData: any = { houseOfWords: [] };
 
@@ -938,9 +790,6 @@ const addWord = function (nk: any, userId: string, word: string) {
     nk.logger.error("Error writing storage: " + writeError);
   }
 };
-const leaderboardCoinsId = "leaderboard_coins";
-const leaderboardWinsId = "leaderboard_wins";
-// RPC function to initialize both leaderboards
 const initLeaderBoards = function (logger: any,nk: any,payload: string): string {
   try {
     // Create "coins" leaderboard (set = replaces score)
@@ -997,8 +846,8 @@ function GetTopPlayers(ctx: any, logger: any, nk: any, payload: string): string 
 function loadAttendanceData(userId: string, nk: any): any {
     try {
         const objects = nk.storageRead([{
-            collection: player_data,
-            key: daily_attendance,
+            collection: playerData_collection,
+            key: dailyAttendance_key,
             userId
         }]);
 
@@ -1014,8 +863,8 @@ function loadAttendanceData(userId: string, nk: any): any {
 function saveAttendanceData(userId: string, nk: any, attendanceData: any): void {
     try {
         nk.storageWrite([{
-            collection: player_data,
-            key: daily_attendance,
+            collection: playerData_collection,
+            key: dailyAttendance_key,
             userId,
             value: attendanceData,
             permissionRead: 1,  // public read (ok for client)
@@ -1037,8 +886,8 @@ const getCardsData = function (ctx: any, logger: any, nk: any, payload: string) 
 function loadCardsData(userId: string, nk: any): any {
     try {
         const objects = nk.storageRead([{
-            collection: player_data,
-            key: daily_attendance,
+            collection: playerData_collection,
+            key: dailyAttendance_key,
             userId
         }]);
 
@@ -1054,8 +903,8 @@ function loadCardsData(userId: string, nk: any): any {
 function saveCardsData(userId: string, nk: any, cardsdata: any): void {
     try {
             const objects = nk.storageRead([{
-            collection: player_data,
-            key: daily_attendance,
+            collection: playerData_collection,
+            key: dailyAttendance_key,
             userId
         }]);
 
@@ -1063,8 +912,8 @@ function saveCardsData(userId: string, nk: any, cardsdata: any): void {
             let data = objects[0].value;
             data.cards = cardsdata;
             nk.storageWrite([{
-            collection: player_data,
-            key: daily_attendance,
+            collection: playerData_collection,
+            key: dailyAttendance_key,
             userId,
             value: data,
             permissionRead: 1,  // public read (ok for client)
@@ -1076,54 +925,37 @@ function saveCardsData(userId: string, nk: any, cardsdata: any): void {
         nk.logger.error("saveAttendanceData error: %s", err);
     }
 }
+//#endregion
+
 //#region words pack
-// --------------------------------------------------------
-// TYPES
-// --------------------------------------------------------
 interface WordPack {
     packId: string;
     boughtOn: number;
     completed: number[];
 }
-
 interface WordPackData {
     activePack: string;
     packs: WordPack[]; 
 }
-
-const COLLECTION = "player_data";
-const KEY = "wordpacks";
-const COINS_KEY = "coins"; // optional for buyPackWithCoins
-
-// --------------------------------------------------------
-// STORAGE HELPERS
-// --------------------------------------------------------
 function loadWordPacks(nk: any, userId: string): WordPackData {
     try {
-        const objs = nk.storageRead([{ collection: COLLECTION, key: KEY, userId }]);
+        const objs = nk.storageRead([{ collection: playerData_collection, key: wordpacks_key, userId }]);
         if (objs.length > 0 && objs[0].value) {
             return objs[0].value as WordPackData;
         }
     } catch (_) {}
     return { packs: [] ,activePack:""};
 }
-
 function saveWordPacks(nk: any, userId: string, data: WordPackData) {
     nk.storageWrite([{
-        collection: COLLECTION,
-        key: KEY,
+        collection: playerData_collection,
+        key: wordpacks_key,
         userId,
         value: data,
         permissionRead: 1,
         permissionWrite: 1
     }]);
 }
-
-// --------------------------------------------------------
-// HELPER METHODS (REAL LOGIC)
-// --------------------------------------------------------
-
-// 1. Add pack
 function addWordPack(nk: any, userId: string, packId: string) {
     const packData = loadWordPacks(nk, userId);
 
@@ -1140,8 +972,6 @@ function addWordPack(nk: any, userId: string, packId: string) {
     saveWordPacks(nk, userId, packData);
     return { success: true,  packId };
 }
-
-// 2. Update completed array fully
 function updateWordPackProgress(nk: any, userId: string, packId: string, completed: number[]) {
     const packData = loadWordPacks(nk, userId);
     const pack = packData.packs.find(p => p.packId === packId);
@@ -1153,13 +983,9 @@ function updateWordPackProgress(nk: any, userId: string, packId: string, complet
 
     return { success: true };
 }
-
-// 3. Get all packs
 function getWordPacks(nk: any, userId: string) {
     return loadWordPacks(nk, userId);
 }
-
-// 4. Remove pack
 function removeWordPack(nk: any, userId: string, packId: string) {
     const packData = loadWordPacks(nk, userId);
     const before = packData.packs.length;
@@ -1173,8 +999,6 @@ function removeWordPack(nk: any, userId: string, packId: string) {
     saveWordPacks(nk, userId, packData);
     return { success: true, removed: true };
 }
-
-// 5. Buy pack with coins
 function buyPackWithCoins(nk: any, userId: string,username:string, packId: string, price: number) {
     // read coins
     let coins = playerCoins(nk,userId,username,0);
@@ -1191,8 +1015,6 @@ function buyPackWithCoins(nk: any, userId: string,username:string, packId: strin
     // add pack
     return addWordPack(nk, userId, packId);
 }
-
-// 6. Reset progress
 function resetProgress(nk: any, userId: string, packId: string) {
     const packData = loadWordPacks(nk, userId);
     const pack = packData.packs.find(p => p.packId === packId);
@@ -1203,8 +1025,6 @@ function resetProgress(nk: any, userId: string, packId: string) {
 
     return { success: true };
 }
-
-// 7. Complete single index
 function completeSingleWord(nk: any, userId: string, packId: string, index: number) {
     const packData = loadWordPacks(nk, userId);
     const pack = packData.packs.find(p => p.packId === packId);
@@ -1217,8 +1037,6 @@ function completeSingleWord(nk: any, userId: string, packId: string, index: numb
     saveWordPacks(nk, userId, packData);
     return { success: true };
 }
-
-// 8. Check if unlocked
 function checkIfUnlocked(nk: any, userId: string, packId: string) {
     const packData = loadWordPacks(nk, userId);
     const pack = packData.packs.find(p => p.packId === packId);
@@ -1332,12 +1150,6 @@ function getActiveWordPack(nk: any, userId: string) {
         activePack: data.activePack
     };
 }
-
-
-
-// --------------------------------------------------------
-// RPC WRAPPERS (Use helper functions only)
-// --------------------------------------------------------
 const rpcAddWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
     const { packId } = JSON.parse(payload);
     return JSON.stringify(addWordPack(nk, ctx.userId, packId));
@@ -1388,16 +1200,9 @@ const rpcGetActiveWordPackWithData = (ctx: any,logger: any,nk: any,payload: stri
 const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
     return JSON.stringify(getActiveWordPack(nk, ctx.userId));
 };
-
 //#endregion
 
-// ==============================
-// #region Tournament Support + RPCs (Clean)
-// ==============================
-
-/* ============================
-   SUPPORTING METHODS
-   ============================ */
+// #region Tournament match + RPCs
 class tournament{
     public isStarted:boolean=false;
     public fee:number =0;
@@ -1420,7 +1225,6 @@ class tournament{
     }
 }
 const fixedNumberOfplayer=[8, 16, 32, 64, 128, 256]
-// Create tournament
 const createTournament = function (ctx: any,logger: any,nk: any,payload: string): string {
     const SYSTEM_USER_ID = "00000000-0000-0000-0000-000000000000";
     let matchId: string | null = null;
@@ -1510,7 +1314,6 @@ const readTournament = function(nk:any,matchId:any){
 const writeTournament = function(nk:any,matchId:any,value:any){
     nk.storageWrite([{ collection: 'tournament', key:matchId ,userId:"00000000-0000-0000-0000-000000000000",value}]);
 }
-
 const matchInit_Tournament = function (ctx: any, logger: any, nk: any, params: any) {
     return { state:{isStarted:false,data:params.data},presences :{}, tickRate: 1,startRoundAfter : 0};
 };
@@ -1714,7 +1517,6 @@ const matchSignal_Tournament = function (ctx: any,logger: any,nk: any,dispatcher
         return {state};
     }
 };
-
 const matchTerminate_Tournament = function (ctx: any, logger: any, nk: any, dispatcher: any, tick: number, state: any, graceSeconds: number) {
   return { state };
 };
@@ -1727,10 +1529,4 @@ function notificationSend(commend: [string, any],userId:string,nk: any) {
     let persistent = true;
     nk.notificationSend(userId, subject, content, code, senderId, persistent);
 }
-// ==============================
-// #endregion Tournament Support + RPCs
-// ==============================
-class cards{
-    public MeaningCards : number = 0;
-    public SpeechCards : number = 0;
-}
+// #endregion

@@ -1303,7 +1303,11 @@ const deleteTournament = function (ctx: any, logger: any, nk: any, payload: stri
     if(data.matchId){
        let r = readTournament(nk,data.matchId);
        if(r){
-        nk.storageDelete(r);
+             nk.storageDelete(r);
+             return JSON.stringify({success : true});
+       }
+       else{
+        throw new Error("match not found");
        }
     }else{
         throw new Error("matchId not found");

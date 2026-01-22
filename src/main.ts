@@ -58,6 +58,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
 
     initializer.registerRpc("createTournament", createTournament);
     initializer.registerRpc("readTournaments", readTournaments);
+    initializer.registerRpc("deleteTournament", deleteTournament);
     initializer.registerRpc("GetTopPlayers", GetTopPlayers);
     initializer.registerRpc("signal", signal);
     initializer.registerRpc("time", time);
@@ -1293,6 +1294,20 @@ const deleteAllTournaments = function (logger: any,nk: any) {
         if (deletes.length > 0 ) {
             nk.storageDelete(deletes);
         }
+
+};
+const deleteTournament = function (ctx: any, logger: any, nk: any, payload: string): string{
+    const userId = "00000000-0000-0000-0000-000000000000";
+    const collection = "tournament";
+    let data = JSON.parse(payload);
+    if(data.matchId){
+       let r = readTournament(nk,data.matchId);
+       if(r){
+        nk.storageDelete(r);
+       }
+    }else{
+        throw new Error("matchId not found");
+    }
 
 };
 const removeTournament = function(ctx:any,nk: any){

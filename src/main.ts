@@ -1296,14 +1296,8 @@ const deleteAllTournaments = function (logger: any,nk: any) {
         }
 
 };
-const deleteTournament = function (
-  ctx: any,
-  logger: any,
-  nk: any,
-  payload: string
-): string {
+const deleteTournament = function (ctx: any,logger: any,nk: any,payload: string): string {
   let data: any;
-
   try {
     data = JSON.parse(payload);
   } catch {

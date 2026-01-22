@@ -1330,16 +1330,20 @@ const deleteTournament = function (
   if (!result || result.length === 0) {
     throw new Error("match not found");
   }
-
-  // Delete requires THIS format
-  nk.storageDelete([
-    {
-      collection: collection,
-      key: key,
-      userId: userId
-    }
-  ]);
-
+  let t = result.value as tournament;
+  if(t.adminId===ctx.userId){
+    // Delete requires THIS format
+    nk.storageDelete([
+        {
+        collection: collection,
+        key: key,
+        userId: userId
+        }
+    ]);
+  }
+  else{
+    throw new Error("your not admin");
+  }
   return JSON.stringify({ success: true });
 };
 

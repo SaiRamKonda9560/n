@@ -1296,24 +1296,53 @@ const deleteAllTournaments = function (logger: any,nk: any) {
         }
 
 };
-const deleteTournament = function (ctx: any, logger: any, nk: any, payload: string): string{
-    const userId = "00000000-0000-0000-0000-000000000000";
-    const collection = "tournament";
-    let data = JSON.parse(payload);
-    if(data.matchId){
-       let r = readTournament(nk,data.matchId);
-       if(r){
-             nk.storageDelete(r);
-             return JSON.stringify({success : true});
-       }
-       else{
-        throw new Error("match not found");
-       }
-    }else{
-        throw new Error("matchId not found");
-    }
+const deleteTournament = function (
+  ctx: any,
+  logger: any,
+  nk: any,
+  payload: string
+): string {
+  let data: any;
 
+  try {
+    data = JSON.parse(payload);
+  } catch {
+    throw new Error("Invalid payload JSON");
+  }
+
+  if (!data.matchId) {
+    throw new Error("matchId not found");
+  }
+
+  const userId = "00000000-0000-0000-0000-000000000000";
+  const collection = "tournament";
+  const key = data.matchId;
+
+  // Read first to confirm it exists
+  const result = nk.storageRead([
+    {
+      collection: collection,
+      key: key,
+      userId: userId
+    }
+  ]);
+
+  if (!result || result.length === 0) {
+    throw new Error("match not found");
+  }
+
+  // Delete requires THIS format
+  nk.storageDelete([
+    {
+      collection: collection,
+      key: key,
+      userId: userId
+    }
+  ]);
+
+  return JSON.stringify({ success: true });
 };
+
 const removeTournament = function(ctx:any,nk: any){
     nk.storageDelete([{ collection: 'tournament', key:ctx.matchId ,userId:"00000000-0000-0000-0000-000000000000"}]);
 }

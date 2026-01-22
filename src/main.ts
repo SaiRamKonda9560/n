@@ -1330,7 +1330,7 @@ const deleteTournament = function (
   if (!result || result.length === 0) {
     throw new Error("match not found");
   }
-  let t = result.value as tournament;
+  let t = result[0].value as tournament;
   if(t.adminId===ctx.userId){
     // Delete requires THIS format
     nk.storageDelete([

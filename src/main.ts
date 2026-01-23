@@ -1408,7 +1408,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
         if (state.isStarted) {
             for(let signal of state.playersWinSignal){
                 const gameData = signal.gameData;
-                const players = gameData.players;
+                const players = gameData.players as LudoPlayerData[];
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
 

@@ -1419,7 +1419,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                             notificationSend(["notice", {heading:"TOURNAMENT",body:"You lost this match and have been eliminated from the tournament."}],pl.UserId,nk);
                         }
                         }
-                        catch{
+                        catch(error){
 
                         }
                     }

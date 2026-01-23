@@ -1411,11 +1411,16 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
                     for(let pl of players){
+                        try{
                         if(player.UserId===pl.UserId){
                             notificationSend(["notice", {heading:"TOURNAMENT",body:"You won this match and have qualified for the next round.\nGet ready for the upcoming game."}],pl.UserId,nk);
                         }
                         else{
                             notificationSend(["notice", {heading:"TOURNAMENT",body:"You lost this match and have been eliminated from the tournament."}],pl.UserId,nk);
+                        }
+                        }
+                        catch{
+
                         }
                     }
                 if (!player || !player.UserId || !matchId) {

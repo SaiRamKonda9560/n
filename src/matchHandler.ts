@@ -697,7 +697,7 @@ for (const player of this.players) {
           else{
             const currentPlayer = this.players[this.WhosTurn];
             const move = (currentPlayer.isBot ) && (this.tickCount >(this.futureData.tickEnd-(this.tickCountForPlayer -1)));
-            if(move || true){ 
+            if(move){ 
               //bot
               this.autoMove(state,0);
             }

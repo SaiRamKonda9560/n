@@ -1377,6 +1377,8 @@ const matchJoin_Tournament = function (ctx: any, logger: any, nk: any, dispatche
     }
     for (const p of presences) {
         state.presences[p.userId] = p;
+        notificationSend(["notice", {heading:"TOURNAMENT",body:"You have successfully joined the tournament.\n Wait for the match to begin."}],p.userId,nk);
+
     }
     updateTournamentPlayers(nk,ctx.matchId,state);
     return { state };

@@ -1411,7 +1411,14 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 const players = gameData.players as LudoPlayerData[];
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
-
+                    for(let pl of players){
+                        if(player.UserId===pl.UserId){
+                            notificationSend(["notice", {heading:"TOURNAMENT",body:"You won this match and have qualified for the next round.\nGet ready for the upcoming game."}],pl.UserId,nk);
+                        }
+                        else{
+                            notificationSend(["notice", {heading:"TOURNAMENT",body:"You lost this match and have been eliminated from the tournament."}],pl.UserId,nk);
+                        }
+                    }
                 if (!player || !player.UserId || !matchId) {
                     logger.warn("Invalid playerWin signal");
                     return {state};
@@ -1435,14 +1442,6 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                     if(state.createdMatchs.length===0){
                         logger.error("round complected");
                         state.startRoundAfter = tick+5;
-                    }
-                    for(let pl of players){
-                        if(player.UserId===pl.UserId){
-                            notificationSend(["notice", {heading:"TOURNAMENT",body:"You won this match and have qualified for the next round.\nGet ready for the upcoming game."}],pl.UserId,nk);
-                        }
-                        else{
-                            notificationSend(["notice", {heading:"TOURNAMENT",body:"You lost this match and have been eliminated from the tournament."}],pl.UserId,nk);
-                        }
                     }
                 }
             }

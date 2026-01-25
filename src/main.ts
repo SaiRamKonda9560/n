@@ -30,6 +30,16 @@ class tournament{
         this.adminId=adminId;
     }
 }
+class dailyReward{
+    coins:number=0;
+    word:WordData=new WordData();
+    isCollected:boolean=false;
+    constructor(coins:number,word:WordData,isCollected:boolean){
+        this.coins = coins;
+        this.word= word;
+        this.isCollected = isCollected;
+    }
+}
 const fixedNumberOfplayer=[8, 16, 32, 64, 128, 256];
 
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
@@ -308,13 +318,13 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             return {
                 today: 0,
                 dailyRewardDatas: [
-                    {amount: 500, isCollected: false },
-                    {amount: 700, isCollected: false },
-                    {amount: 900, isCollected: false },
-                    {amount: 1200, isCollected: false },
-                    {amount: 1500, isCollected: false },
-                    {amount: 2000, isCollected: false },
-                    {amount: 3000, isCollected: false }
+                    new dailyReward(500,  new WordData(), false),
+                    new dailyReward(700,  new WordData(), false),
+                    new dailyReward(900,  new WordData(), false),
+                    new dailyReward(1200, new WordData(), false),
+                    new dailyReward(1500, new WordData(), false),
+                    new dailyReward(2000, new WordData(), false),
+                    new dailyReward(3000, new WordData(), false),
                 ]
             };
         }
@@ -397,7 +407,7 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         }
         const attendanceData = attendanceObjects[0].value;
         const today = attendanceData.dailyReward.today;
-        const todayReward = attendanceData.dailyReward.dailyRewardDatas[today];
+        const todayReward = attendanceData.dailyReward.dailyRewardDatas[today] as dailyReward;
         if (!todayReward) {
             throw new Error(`Reward for day ${today} not found`);
         }
@@ -411,7 +421,7 @@ const collectDailyReward = function (ctx: any,logger: any,nk: any,payload: strin
         if (todayReward.isCollected) {
             return JSON.stringify({success: false,message: "Reward already collected",coinsAdded: 0,currentCoins,attendanceData});
         }
-        const rewardAmount = todayReward.amount;
+        const rewardAmount = todayReward.coins;
         const newBalance = playerCoins(nk,userId,username, rewardAmount);
         todayReward.isCollected = true;
         nk.storageWrite([{collection: playerData_collection,key: dailyAttendance_key,userId,value: attendanceData,permissionRead: 1,permissionWrite: 1}]);

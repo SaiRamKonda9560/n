@@ -1402,6 +1402,11 @@ const updateTournamentPlayers=function(nk:any,matchId:any,state:any){
     }
 }
 const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
+    if(!state.isStarted){
+        if(tick >= 60*60){
+            return null;
+        }
+    }
   try {
     if(state.presences){
         if (state.isStarted) {
@@ -1410,19 +1415,19 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 const players = gameData.players as LudoPlayerData[];
                 const player = signal.player as LudoPlayerData;
                 const matchId = signal.matchId as string;
-                    for(let pl of players){
-                        try{
-                        if(player.UserId===pl.UserId){
-                            notificationSend(["notice", {heading:"TOURNAMENT",body:"You won this match and have qualified for the next round.\nGet ready for the upcoming game."}],pl.UserId,nk);
-                        }
-                        else{
-                            notificationSend(["notice", {heading:"TOURNAMENT",body:"You lost this match and have been eliminated from the tournament."}],pl.UserId,nk);
-                        }
-                        }
-                        catch(error){
-
-                        }
+                for(let pl of players){
+                    try{
+                    if(player.UserId===pl.UserId){
+                        notificationSend(["notice", {heading:"TOURNAMENT",body:"You won this match and have qualified for the next round.\nGet ready for the upcoming game."}],pl.UserId,nk);
                     }
+                    else{
+                        notificationSend(["notice", {heading:"TOURNAMENT",body:"You lost this match and have been eliminated from the tournament."}],pl.UserId,nk);
+                    }
+                    }
+                    catch(error){
+
+                    }
+                }
                 if (!player || !player.UserId || !matchId) {
                     logger.warn("Invalid playerWin signal");
                     return {state};

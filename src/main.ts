@@ -4,7 +4,6 @@ const leaderboardCoinsId = "leaderboard_coins";
 const leaderboardWinsId = "leaderboard_wins";
 const wordpacks_key = "wordpacks";
 const coins_KEY = "coins";
-
 class cards{
     public MeaningCards : number = 0;
     public SpeechCards : number = 0;
@@ -41,7 +40,6 @@ class dailyReward{
     }
 }
 const fixedNumberOfplayer=[8, 16, 32, 64, 128, 256];
-
 let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any, initializer: any) {
     initializer.registerMatch('lobby', {
         matchInit,
@@ -97,7 +95,6 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcDeactivateWordPack", rpcDeactivateWordPack);
     deleteAllTournaments(logger,nk);
 }
-
 //#region  rpcs
 const coinsHandler = function (ctx: any, logger: any, nk: any, payload: string): string {
     try {
@@ -314,17 +311,30 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             }
             return array;
         }
+        function createDefaultWordData(day: number): WordData {
+            return {
+                EnglishWord: "Word " + day,
+                audiofile: "",
+                PronunciationAudioClip: "",
+                Entries: [
+                    {
+                        PartOfSpeech: "noun",
+                        WordMeaning: "Default meaning for day " + day
+                    }
+                ]
+            };
+        }
         function generateDailyRewards() {
             return {
                 today: 0,
                 dailyRewardDatas: [
-                    new dailyReward(500,  new WordData(), false),
-                    new dailyReward(700,  new WordData(), false),
-                    new dailyReward(900,  new WordData(), false),
-                    new dailyReward(1200, new WordData(), false),
-                    new dailyReward(1500, new WordData(), false),
-                    new dailyReward(2000, new WordData(), false),
-                    new dailyReward(3000, new WordData(), false),
+                    new dailyReward(500,  createDefaultWordData(1), false),
+                    new dailyReward(700,  createDefaultWordData(2), false),
+                    new dailyReward(900,  createDefaultWordData(3), false),
+                    new dailyReward(1200, createDefaultWordData(4), false),
+                    new dailyReward(1500, createDefaultWordData(5), false),
+                    new dailyReward(2000, createDefaultWordData(6), false),
+                    new dailyReward(3000, createDefaultWordData(7), false),
                 ]
             };
         }

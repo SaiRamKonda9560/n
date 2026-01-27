@@ -37,6 +37,9 @@ class LudoGameData {
   public stealData: stealData | null = null;
   public maxTurnOverCount:number=0;
   public CurrentPackWords: { [playerIndex: number]: string } = {};
+  public fee : number=0;
+  public unlockAudioCost : number=0;
+  public unlockMeaningCost : number=0;
   public getTotalPlayersCount(): number {
     return this.TilesSetData.length - 1;
   }
@@ -480,6 +483,9 @@ for (const player of this.players) {
     this.isWaitingForDiceRoll = true;
     this.diceValue = 0;
     this.safeTiles = [];
+
+    this.unlockAudioCost = Math.round(this.fee * 0.2);   // 20%
+    this.unlockMeaningCost = Math.round(this.fee * 0.1);   // 10%
 
     this.generateDefaltCommands();
     this.generateSafeTiles();
@@ -2150,7 +2156,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                                     playerCoins(nk, p.userId, p.username, -state.fee);
                             }
                         });
-
+                        GameData.fee = state.fee;
                         GameData.start(logger, nk);
                         gameData = GameData;
 
@@ -2181,6 +2187,7 @@ const matchSignal = function (ctx: any,logger: any,nk: any,dispatcher: any,tick:
                                 GameData.players[i].isBot = true;
                             }
                         }
+                        GameData.fee = state.fee;
 
                         GameData.start(logger, nk);
                         gameData = GameData;
@@ -2308,6 +2315,8 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
                                     }
                               }
                           }
+                         GameData.fee = state.fee;
+
                           GameData.start(logger, nk);
                           state.gameData = GameData;
                           applyCommend(["roomStarted", state.gameData], state, dispatcher, nk,ctx);
@@ -2328,6 +2337,7 @@ const matchJoin = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
           }
           
         });
+        GameData.fee = state.fee;
         GameData.start(logger, nk);
         state.gameData = GameData;
       }

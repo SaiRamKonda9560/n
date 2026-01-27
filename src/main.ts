@@ -1424,6 +1424,7 @@ const updateTournamentPlayers=function(nk:any,matchId:any,state:any){
 const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: any,tick: number,state: any,messages: any[]) {
     if(!state.isStarted){
         if(tick >= 60*60){
+            removeTournament(ctx,nk);
             return null;
         }
     }
@@ -1550,6 +1551,7 @@ const matchLoop_Tournament = function (ctx: any,logger: any,nk: any,dispatcher: 
                 }
                 const data = readTournament(nk, ctx.matchId);
                 if (!data) {
+                    removeTournament(ctx,nk);
                     return null;
                 }
                 data.value.isStarted = true;

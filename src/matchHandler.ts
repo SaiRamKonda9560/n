@@ -1874,7 +1874,7 @@ const matchLoop = function (ctx: any, logger: any, nk: any, dispatcher: any, tic
         state.tickCount++;
 
         // Send tick counter to players
-        dispatcher.broadcastMessage( 0,nk.stringToBinary("tc:" + state.tickCount + "," + gameData.tickCount),Object.values(state.presences));
+        //dispatcher.broadcastMessage( 0,nk.stringToBinary("tc:" + state.tickCount + "," + gameData.tickCount),Object.values(state.presences));
         //applyCommend(["tc",(state.tickCount + "," + gameData.tickCount)],state,dispatcher,nk);
         // Save updated game state
         state.gameData = gameData;

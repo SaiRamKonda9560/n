@@ -1208,7 +1208,7 @@ const rpcSaveSevenWordsPack = (ctx: any, logger: any, nk: any, payload: string) 
         permissionRead: 1,
         permissionWrite: 1
     }]);
-    return JSON.stringify({ok:true});
+    return JSON.stringify({ok:true}); 
 };
 
 

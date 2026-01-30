@@ -313,7 +313,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             return array;
         }
 
-        function generateDailyRewards() {
+        function generateDailyRewards() { 
             let week = (attendanceData.week??0);
             let RootWordWrapper = readSevenWordsPack(nk);
             if(RootWordWrapper){

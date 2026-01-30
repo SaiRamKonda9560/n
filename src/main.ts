@@ -387,16 +387,17 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             generateSpinData();
             generateMysteryBox();
             // ---------- Daily Reward Cycle (INDEX BASED) ----------
-            const isComplected = (attendanceData.dailyReward && attendanceData.dailyReward.today && attendanceData.dailyReward.today >= (attendanceData.dailyReward.dailyRewardDatas.length-1));
-            if (!attendanceData.dailyReward || missedDays > 0 || isComplected)
-            {
+            const isCompleted = !!attendanceData.dailyReward && typeof attendanceData.dailyReward.today === "number" && attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length - 1;
+
+            if (!attendanceData.dailyReward || missedDays > 0 || isCompleted) {
                 // reset reward cycle
-                if(isComplected){
-                    attendanceData.week = ((attendanceData.week??0)+1);
+                if (isCompleted) {
+                    attendanceData.week = ((attendanceData.week ?? 0) + 1);
                 }
+
                 attendanceData.dailyReward = generateDailyRewards();
-                
-            } else {
+            }
+            else {
                 // move to next reward
                 attendanceData.dailyReward.today += 1;
             }

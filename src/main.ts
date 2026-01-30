@@ -343,7 +343,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                     }
                 }
                 catch{
-                    
+
                 }
             }
             return gData;
@@ -1209,7 +1209,7 @@ const rpcAddWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
 
 
 const rpcSaveSevenWordsPack = (ctx: any, logger: any, nk: any, payload: string) => {
-    const value = JSON.parse(payload) as RootWordWrapper;
+    const value = JSON.parse(payload).value as RootWordWrapper;
     const userId  = "00000000-0000-0000-0000-000000000000";
     const SevenWords_COLLECTION = "SevenWords";
     const SevenWords_key = "SevenWords";

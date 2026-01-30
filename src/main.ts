@@ -386,7 +386,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             const missedDays = Math.max(0, dayDiff - 1);
             generateSpinData();
             generateMysteryBox();
-            // ---------- Daily Reward Cycle (INDEX BASED) ----------
+            // ---------- Daily Reward Cycle (INDEX BASED) ---------- 
             const isCompleted = !!attendanceData.dailyReward && typeof attendanceData.dailyReward.today === "number" && attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length - 1;
 
             if (!attendanceData.dailyReward || missedDays > 0 || isCompleted) {

@@ -1195,48 +1195,6 @@ const rpcAddWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
 };
 
 
-
-
-export class RootWordItem {
-    Word!: string;
-    PartOfSpeech!: string;
-    SimpleMeaning!: string;
-    MemoryTrick!: string;
-    SimpleExample!: string;
-
-    Synonyms!: string;
-    Antonyms!: string;
-
-    PositiveForm!: string;
-    ComparativeForm!: string;
-    SuperlativeForm!: string;
-
-    VerbPresent!: string;
-    VerbPast!: string;
-    VerbPastParticiple!: string;
-    VerbFuture!: string;
-
-    CountabilityRule!: string;
-    TenseRule!: string;
-    ComparisonRule!: string;
-    ArticleRule!: string;
-    PrepositionRule!: string;
-    ActivePassiveVoiceRule!: string;
-    GrammarSummaryRule!: string;
-}
-
-export class RootWordGroup {
-    root!: string;
-    rootLanguage!: string;
-    rootMeaning!: string;
-    rootMemoryTrick!: string;
-    words: RootWordItem[] = [];
-}
-
-export class RootWordWrapper {
-    data!: RootWordGroup[];
-}
-
 const rpcSaveSevenWordsPack = (ctx: any, logger: any, nk: any, payload: string) => {
     const value = JSON.parse(payload) as RootWordWrapper;
     const userId  = "00000000-0000-0000-0000-000000000000";
@@ -1664,3 +1622,42 @@ function notificationSend(commend: [string, any],userId:string,nk: any) {
     nk.notificationSend(userId, subject, content, code, senderId, persistent);
 }
 // #endregion
+ class RootWordItem {
+    Word!: string;
+    PartOfSpeech!: string;
+    SimpleMeaning!: string;
+    MemoryTrick!: string;
+    SimpleExample!: string;
+
+    Synonyms!: string;
+    Antonyms!: string;
+
+    PositiveForm!: string;
+    ComparativeForm!: string;
+    SuperlativeForm!: string;
+
+    VerbPresent!: string;
+    VerbPast!: string;
+    VerbPastParticiple!: string;
+    VerbFuture!: string;
+
+    CountabilityRule!: string;
+    TenseRule!: string;
+    ComparisonRule!: string;
+    ArticleRule!: string;
+    PrepositionRule!: string;
+    ActivePassiveVoiceRule!: string;
+    GrammarSummaryRule!: string;
+}
+
+ class RootWordGroup {
+    root!: string;
+    rootLanguage!: string;
+    rootMeaning!: string;
+    rootMemoryTrick!: string;
+    words: RootWordItem[] = [];
+}
+
+ class RootWordWrapper {
+    data!: RootWordGroup[];
+}

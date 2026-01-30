@@ -85,7 +85,7 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcAddWordPack", rpcAddWordPack);
     initializer.registerRpc("rpcUpdateWordPackProgress", rpcUpdateWordPackProgress);
     initializer.registerRpc("rpcGetWordPacks", rpcGetWordPacks);
-    initializer.registerRpc("rpcSaveSevenWordsPack", rpcSaveSevenWordsPack);
+    initializer.registerRpc("rpcSaveSevenWordsPack", rpcSaveSevenWordsPack);  
 
     initializer.registerRpc("rpcRemoveWordPack", rpcRemoveWordPack);
     initializer.registerRpc("rpcBuyPackWithCoins", rpcBuyPackWithCoins);

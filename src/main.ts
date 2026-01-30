@@ -314,38 +314,35 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         }
 
         function generateDailyRewards() { 
+            let gData = {
+                RootWordGroup:new RootWordGroup(),
+                today: 0,
+                dailyRewardDatas: [
+                    new dailyReward(500,  false),
+                    new dailyReward(700,  false),
+                    new dailyReward(900,  false),
+                    new dailyReward(1200, false),
+                    new dailyReward(1500, false),
+                    new dailyReward(2000, false),
+                    new dailyReward(3000, false),
+                ]
+            };
             let week = (attendanceData.week??0);
-            let RootWordWrapper = readSevenWordsPack(nk);
+            const userId = "00000000-0000-0000-0000-000000000000";
+            const collection = "SevenWords";
+            const key = "SevenWords";
+            const objects = nk.storageRead([{collection,key,userId}]);
+            if (!objects || objects.length === 0) {
+                return gData;
+            }
+            let RootWordWrapper = objects[0].value;
             if(RootWordWrapper){
                 let length = RootWordWrapper.data.length;
                 let index = ((week % length) + length) % length;
                 let RootWordGroup = RootWordWrapper.data[index];
-                return {
-                today: 0,
-                RootWordGroup,
-                dailyRewardDatas: [
-                    new dailyReward(500,  false),
-                    new dailyReward(700,  false),
-                    new dailyReward(900,  false),
-                    new dailyReward(1200, false),
-                    new dailyReward(1500, false),
-                    new dailyReward(2000, false),
-                    new dailyReward(3000, false),
-                ]
-            };
+                gData.RootWordGroup = RootWordGroup;
             }
-            return {
-                today: 0,
-                dailyRewardDatas: [
-                    new dailyReward(500,  false),
-                    new dailyReward(700,  false),
-                    new dailyReward(900,  false),
-                    new dailyReward(1200, false),
-                    new dailyReward(1500, false),
-                    new dailyReward(2000, false),
-                    new dailyReward(3000, false),
-                ]
-            };
+            return gData;
         }
         function generateSpinData() {
             // ---------- Spin Data ----------

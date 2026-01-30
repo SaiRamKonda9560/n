@@ -392,7 +392,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length - 1) {
                 // reset reward cycle
                 if (isCompleted) {
-                    attendanceData.week = ((attendanceData.week ?? 0) + 1);
+                    attendanceData.week = ((attendanceData.week ?? 0) + 1); 
                 }
 
                 attendanceData.dailyReward = generateDailyRewards();

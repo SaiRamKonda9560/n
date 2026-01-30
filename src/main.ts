@@ -332,15 +332,19 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             const collection = "SevenWords";
             const key = "SevenWords";
             const objects = nk.storageRead([{collection,key,userId}]);
-            if (!objects || objects.length === 0) {
-                return gData;
-            }
-            let RootWordWrapper = objects[0].value;
-            if(RootWordWrapper){
-                let length = RootWordWrapper.data.length;
-                let index = ((week % length) + length) % length;
-                let RootWordGroup = RootWordWrapper.data[index];
-                gData.RootWordGroup = RootWordGroup;
+            if (objects && objects.length > 0) {
+                try{
+                    let RootWordWrapper = objects[0].value as RootWordWrapper;
+                    if(RootWordWrapper){
+                        let length = RootWordWrapper.data.length;
+                        let index = ((week % length) + length) % length;
+                        let RootWordGroup = RootWordWrapper.data[index];
+                        gData.RootWordGroup = RootWordGroup;
+                    }
+                }
+                catch{
+                    
+                }
             }
             return gData;
         }

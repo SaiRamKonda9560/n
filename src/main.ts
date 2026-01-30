@@ -1234,7 +1234,7 @@ const readSevenWordsPack = (nk: any) : RootWordWrapper => {
     if (!objects || objects.length === 0) {
         throw new Error("on data found");
     }
-    return objects[0] as RootWordWrapper;
+    return objects[0].value as RootWordWrapper;
 };
 
 

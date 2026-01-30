@@ -315,8 +315,8 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
 
         function generateDailyRewards() { 
             let week = (attendanceData.week??0);
-            if(false){
-              let RootWordWrapper = readSevenWordsPack(nk);
+            let RootWordWrapper = readSevenWordsPack(nk);
+            if(RootWordWrapper){
                 let length = RootWordWrapper.data.length;
                 let index = ((week % length) + length) % length;
                 let RootWordGroup = RootWordWrapper.data[index];

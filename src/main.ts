@@ -33,6 +33,7 @@ class dailyReward{
     coins:number=0;
     word:WordData=new WordData();
     isCollected:boolean=false;
+    
     constructor(coins:number,word:WordData,isCollected:boolean){
         this.coins = coins;
         this.word= word;
@@ -294,6 +295,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
                 killCount: 0,
                 wins: 0,
                 losses: 0,
+                week: 0,
                 houseOfWords: [],
                 cards:new cards()
             };
@@ -380,10 +382,15 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             generateSpinData();
             generateMysteryBox();
             // ---------- Daily Reward Cycle (INDEX BASED) ----------
-            if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= (attendanceData.dailyReward.dailyRewardDatas.length-1))
+            const isComplected = attendanceData.dailyReward.today >= (attendanceData.dailyReward.dailyRewardDatas.length-1);
+            if (!attendanceData.dailyReward || missedDays > 0 || isComplected)
             {
                 // reset reward cycle
+                if(isComplected){
+                    attendanceData.week = ((attendanceData.week??0)+1);
+                }
                 attendanceData.dailyReward = generateDailyRewards();
+                
             } else {
                 // move to next reward
                 attendanceData.dailyReward.today += 1;

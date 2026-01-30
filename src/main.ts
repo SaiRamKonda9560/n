@@ -1240,7 +1240,7 @@ export class RootWordWrapper {
 const rpcSaveSevenWordsPack = (ctx: any, logger: any, nk: any, payload: string) => {
     const value = JSON.parse(payload) as RootWordWrapper;
     saveSevenWordsPack(nk,value);
-    return JSON.stringify({});
+    return JSON.stringify({ok:true});
 };
 function saveSevenWordsPack(nk:any,data : RootWordWrapper){
     const STORE_USER = "00000000-0000-0000-0000-000000000000";

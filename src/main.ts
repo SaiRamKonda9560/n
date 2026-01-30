@@ -85,6 +85,8 @@ let InitModule: nkruntime.InitModule = function (ctx: any, logger: any, nk: any,
     initializer.registerRpc("rpcAddWordPack", rpcAddWordPack);
     initializer.registerRpc("rpcUpdateWordPackProgress", rpcUpdateWordPackProgress);
     initializer.registerRpc("rpcGetWordPacks", rpcGetWordPacks);
+    initializer.registerRpc("rpcSaveAddSevenWordsPack", rpcSaveSevenWordsPack);
+
     initializer.registerRpc("rpcRemoveWordPack", rpcRemoveWordPack);
     initializer.registerRpc("rpcBuyPackWithCoins", rpcBuyPackWithCoins);
     initializer.registerRpc("rpcResetProgress", rpcResetProgress);
@@ -1191,6 +1193,69 @@ const rpcAddWordPack = (ctx: any, logger: any, nk: any, payload: string) => {
     const { packId } = JSON.parse(payload);
     return JSON.stringify(addWordPack(nk, ctx.userId, packId));
 };
+
+
+
+
+export class RootWordItem {
+    Word!: string;
+    PartOfSpeech!: string;
+    SimpleMeaning!: string;
+    MemoryTrick!: string;
+    SimpleExample!: string;
+
+    Synonyms!: string;
+    Antonyms!: string;
+
+    PositiveForm!: string;
+    ComparativeForm!: string;
+    SuperlativeForm!: string;
+
+    VerbPresent!: string;
+    VerbPast!: string;
+    VerbPastParticiple!: string;
+    VerbFuture!: string;
+
+    CountabilityRule!: string;
+    TenseRule!: string;
+    ComparisonRule!: string;
+    ArticleRule!: string;
+    PrepositionRule!: string;
+    ActivePassiveVoiceRule!: string;
+    GrammarSummaryRule!: string;
+}
+
+export class RootWordGroup {
+    root!: string;
+    rootLanguage!: string;
+    rootMeaning!: string;
+    rootMemoryTrick!: string;
+    words: RootWordItem[] = [];
+}
+
+export class RootWordWrapper {
+    data!: RootWordGroup[];
+}
+
+const rpcSaveSevenWordsPack = (ctx: any, logger: any, nk: any, payload: string) => {
+    const value = JSON.parse(payload) as RootWordWrapper;
+    saveSevenWordsPack(nk,value);
+    return JSON.stringify({});
+};
+function saveSevenWordsPack(nk:any,data : RootWordWrapper){
+    const STORE_USER = "00000000-0000-0000-0000-000000000000";
+    const SevenWords_COLLECTION = "SevenWords";
+    const SevenWords_key = "SevenWords";
+    nk.storageWrite([{
+        collection: SevenWords_COLLECTION,
+        key: SevenWords_key,
+        STORE_USER,
+        value: data,
+        permissionRead: 1,
+        permissionWrite: 1
+    }]);
+}
+
 const rpcUpdateWordPackProgress = (ctx: any, logger: any, nk: any, payload: string) => {
     const { packId, completed } = JSON.parse(payload);
     return JSON.stringify(updateWordPackProgress(nk, ctx.userId, packId, completed));
@@ -1237,6 +1302,7 @@ const rpcGetActiveWordPackWithData = (ctx: any,logger: any,nk: any,payload: stri
 const rpcGetActiveWordPack = (ctx: any,logger: any,nk: any,payload: string) => {
     return JSON.stringify(getActiveWordPack(nk, ctx.userId));
 };
+
 //#endregion
 
 // #region Tournament match + RPCs

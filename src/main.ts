@@ -387,8 +387,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             generateSpinData();
             generateMysteryBox();
             // ---------- Daily Reward Cycle (INDEX BASED) ----------  
-            //const isCompleted = !!attendanceData.dailyReward && typeof attendanceData.dailyReward.today === "number" && attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length - 1;
-            const isCompleted = false;
+            const isCompleted = !!attendanceData.dailyReward && typeof attendanceData.dailyReward.today === "number" && attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length - 1;
             if (!attendanceData.dailyReward || missedDays > 0 || attendanceData.dailyReward.today >= attendanceData.dailyReward.dailyRewardDatas.length - 1) {
                 // reset reward cycle
                 if (isCompleted) {

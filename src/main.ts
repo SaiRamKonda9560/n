@@ -1239,22 +1239,20 @@ export class RootWordWrapper {
 
 const rpcSaveSevenWordsPack = (ctx: any, logger: any, nk: any, payload: string) => {
     const value = JSON.parse(payload) as RootWordWrapper;
-    saveSevenWordsPack(nk,value);
-    return JSON.stringify({ok:true});
-};
-function saveSevenWordsPack(nk:any,data : RootWordWrapper){
-    const STORE_USER = "00000000-0000-0000-0000-000000000000";
+    const userId  = "00000000-0000-0000-0000-000000000000";
     const SevenWords_COLLECTION = "SevenWords";
     const SevenWords_key = "SevenWords";
     nk.storageWrite([{
         collection: SevenWords_COLLECTION,
         key: SevenWords_key,
-        STORE_USER,
-        value: data,
+        userId ,
+        value,
         permissionRead: 1,
         permissionWrite: 1
     }]);
-}
+    return JSON.stringify({ok:true});
+};
+
 
 const rpcUpdateWordPackProgress = (ctx: any, logger: any, nk: any, payload: string) => {
     const { packId, completed } = JSON.parse(payload);

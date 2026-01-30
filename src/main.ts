@@ -31,12 +31,9 @@ class tournament{
 }
 class dailyReward{
     coins:number=0;
-    word:WordData=new WordData();
     isCollected:boolean=false;
-    
-    constructor(coins:number,word:WordData,isCollected:boolean){
+    constructor(coins:number,isCollected:boolean){
         this.coins = coins;
-        this.word= word;
         this.isCollected = isCollected;
     }
 }
@@ -315,30 +312,38 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
             }
             return array;
         }
-        function createDefaultWordData(day: number): WordData {
-            return {
-                EnglishWord: "Word " + day,
-                audiofile: "",
-                PronunciationAudioClip: "",
-                Entries: [
-                    {
-                        PartOfSpeech: "noun",
-                        WordMeaning: "Default meaning for day " + day
-                    }
+
+        function generateDailyRewards() {
+            let week = (attendanceData.week??0);
+            let RootWordWrapper = readSevenWordsPack(nk);
+            if(RootWordWrapper){
+                let length = RootWordWrapper.data.length;
+                let index = ((week % length) + length) % length;
+                let RootWordGroup = RootWordWrapper.data[index];
+                return {
+                today: 0,
+                RootWordGroup,
+                dailyRewardDatas: [
+                    new dailyReward(500,  false),
+                    new dailyReward(700,  false),
+                    new dailyReward(900,  false),
+                    new dailyReward(1200, false),
+                    new dailyReward(1500, false),
+                    new dailyReward(2000, false),
+                    new dailyReward(3000, false),
                 ]
             };
-        }
-        function generateDailyRewards() {
+            }
             return {
                 today: 0,
                 dailyRewardDatas: [
-                    new dailyReward(500,  createDefaultWordData(1), false),
-                    new dailyReward(700,  createDefaultWordData(2), false),
-                    new dailyReward(900,  createDefaultWordData(3), false),
-                    new dailyReward(1200, createDefaultWordData(4), false),
-                    new dailyReward(1500, createDefaultWordData(5), false),
-                    new dailyReward(2000, createDefaultWordData(6), false),
-                    new dailyReward(3000, createDefaultWordData(7), false),
+                    new dailyReward(500,  false),
+                    new dailyReward(700,  false),
+                    new dailyReward(900,  false),
+                    new dailyReward(1200, false),
+                    new dailyReward(1500, false),
+                    new dailyReward(2000, false),
+                    new dailyReward(3000, false),
                 ]
             };
         }
@@ -1216,6 +1221,20 @@ const rpcSaveSevenWordsPack = (ctx: any, logger: any, nk: any, payload: string) 
         permissionWrite: 1
     }]);
     return JSON.stringify({ok:true}); 
+};
+const readSevenWordsPack = (nk: any) : RootWordWrapper => {
+    const userId = "00000000-0000-0000-0000-000000000000";
+    const SevenWords_COLLECTION = "SevenWords";
+    const SevenWords_key = "SevenWords";
+    const objects = nk.storageRead([{
+        collection: SevenWords_COLLECTION,
+        key: SevenWords_key,
+        userId
+    }]);
+    if (!objects || objects.length === 0) {
+        throw new Error("on data found");
+    }
+    return objects[0] as RootWordWrapper;
 };
 
 

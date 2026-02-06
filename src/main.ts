@@ -372,7 +372,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         // ================= DAILY LOGIN CHECK =================
         let firstLoginToday = false;
         //for testing use useMin = true 
-        const useMin = false; // true = 1 minute = 1 day, false = real day 
+        const useMin = true; // true = 1 minute = 1 day, false = real day 
         // choose "day" length
         const DAY_MS = useMin ? 60 * 1000 : 24 * 60 * 60 * 1000;
         // normalize "today"

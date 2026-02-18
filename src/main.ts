@@ -372,7 +372,7 @@ const dailyAttendance = function (ctx: any,logger: any,nk: any,payload: string):
         // ================= DAILY LOGIN CHECK =================
         let firstLoginToday = false;
         //for testing use useMin = true 
-        const useMin = true; // true = 1 minute = 1 day, false = real day 
+        const useMin = false; // true = 1 minute = 1 day, false = real day 
         // choose "day" length
         const DAY_MS = useMin ? 60 * 1000 : 24 * 60 * 60 * 1000;
         // normalize "today"
@@ -676,11 +676,11 @@ const mystery = function (ctx: any, logger: any, nk: any, payload: string): stri
         switch(m.type){
             case 1:
                 cardsData.MeaningCards = (cardsData.MeaningCards ?? 0) + 1; + 1;
-                message = "meaning Unlock Cards";
+                message = "meaning Unlock Card";
                 break;
             case 2:
                 cardsData.SpeechCards = (cardsData.SpeechCards ?? 0) + 1; + 1;
-                message = "pronounciation Unlock Cards";
+                message = "pronounciation Unlock Card";
                 break;
         }
         attendanceData.cards = cardsData;
